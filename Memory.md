@@ -8,15 +8,15 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0-T1..T3 done. **Next: P0-T4** (settings, job lock, careers middlewares, router skeleton).
+- **Phase / task:** P0-T1..T6 done. **Next: P0-T7** (merge/split/undo service + admin company API).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b0021cc` feat(careers): P0-T3 careers_foundation migration
+- **Last commit:** `1414870` feat(careers): P0-T6 company matcher, resolver and registry seed
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 1 passed.
+- **Tests:** `npm test` → 87 passed (6 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -28,6 +28,15 @@
 | Vitest config | `server-acc/vitest.config.js` | `tests/**/*.test.js`, node env |
 | Tests | `server-acc/tests/careers/` | fixtures go in `tests/careers/fixtures/` |
 | Env names | `server-acc/.env.example` | names only |
+| Careers settings | `server-acc/services/careers/settings.js` | `SETTINGS` map (default, editable, zod schema); `getSetting`, `getAllSettings`, `setSetting` (validates; null → `Prisma.JsonNull`), 30 s cache |
+| Job lock | `services/careers/jobLock.js` | `withJobLock(key, name, fn)`, `JOB_LOCKS` constants (81001-81004); xact lock in a 1 h transaction; never throws; heartbeat after a run |
+| Heartbeat / academic year | `services/careers/heartbeat.js`, `academicYear.js` | |
+| Middlewares | `middlewares/careers/requireCareerAdmin.js` (also exports `isCareerAdmin`, `CAREER_ADMIN_ROLES`), `requireCareersEnabled.js` | |
+| Routers | `routes/careers.js` (student), `routes/careersAdmin.js` (admin), mounted at `/api/v1` in `server.js` | |
+| Controllers | `controllers/careers/statusController.js`, `adminSettingsController.js` | |
+| Normalisers | `services/careers/text/normalize.js` (`normalizeCompanyName`, `normalizeTitle`, `normalizeLocation`, `INDIA_CITY_ALIASES`), `text/html.js` (`htmlToText`, `decodeEntities`) | |
+| Company matching | `services/careers/companies/matcher.js` (`buildIndex`, `addToIndex`, `resolveName`, `similarity`), `resolveCompany.js`, `companyIndex.js` (`loadCompanyIndex`), `slug.js` (`slugify`, `uniqueSlug`) | |
+| Registry seed | `server-acc/prisma/seedCareers.js` (`npm run careers:seed`) | 60 companies; safe in production |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -35,6 +44,11 @@
 - `Company` only has relations to `CompanyAlias` and `Experience` for now; `postings` / `sources` relations are added in P1-T1 when those models exist (a schema-only change, no SQL).
 - Migrations are applied with `npx prisma migrate deploy` **after** reviewing the `--create-only` SQL. This applies exactly the reviewed file; `migrate dev` could regenerate it.
 - Client lint gate changed (change_specsheet C-33): lint only the files we touch (0 errors); `npx eslint src` must stay ≤ 36.
+- Job lock = transaction-scoped advisory lock (C-34). Don't switch to session locks.
+- `/careers/status` returns `{ enabled, visibleToStudents, isCareerAdmin }`. Clients use `enabled` to show the UI.
+- PUT `/careers/admin/settings` is all-or-nothing: any invalid, unknown or non-editable key → 400 and nothing is written. `runRequest` and `workerHeartbeat` are not editable there.
+- Aliases that normalise to an existing key aren't stored (unique `normalizedAlias`), so the exact-match tier only matters for aliases whose normal form differs.
+- Fuzzy threshold 0.92: one typo in a 10-letter name scores 0.90 and does NOT match (tested). Admins can lower `careers.fuzzyThreshold`.
 
 ## Gotchas / things that surprised me
 
@@ -44,6 +58,10 @@
 - Upstream `GET /posts/:id/comments` returns 500 if `page`/`limit` are missing (passes NaN to Prisma). The client always sends them. Not our bug (noted below).
 - Versions resolved: **zod 4**, **node-cron 4**, **vitest 5**, cheerio 1.2, undici 7. Check APIs against these majors (e.g. zod 4 error formatting, node-cron 4 `schedule` options).
 - Don't redirect logs to `/tmp_*` in Git Bash on Windows (permission denied). Use the session scratchpad.
+- A required `Json` column rejects plain `null` in Prisma; use `Prisma.JsonNull` (see settings.js).
+- zod 4: `z.prettifyError` prefixes messages with a "✖" glyph. For API responses use `error.issues.map(i => i.message)`.
+- cheerio `htmlToText`: add list bullets **before** block line breaks, or the bullet lands on its own line.
+- The dev DB now has `careers.visibleToStudents=false` and `careers.submissionDailyLimit=5` rows (written by the P0-T4 checks) and a test heartbeat `lockTestThrow`. Harmless.
 - The forbidden-SQL grep must not match `ON DELETE` / `ON UPDATE` in FK clauses. Use: `grep -n -i -E '\b(DROP|RENAME|ALTER COLUMN|SET NOT NULL|TRUNCATE)\b|^\s*(DELETE|UPDATE)\b' migration.sql`.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
@@ -93,3 +111,19 @@ Template for each entry:
 - Files touched: `prisma/schema.prisma` (+76, −0), `prisma/migrations/20260929174031_careers_foundation/migration.sql` (commit b0021cc).
 - Checks run + actual results: statement list = 3× CREATE TYPE, 4× CREATE TABLE, 2× CREATE UNIQUE INDEX, 6× CREATE INDEX, 1× ALTER TABLE ADD COLUMN (`Experience.companyId INTEGER`, nullable), 2× ADD CONSTRAINT FOREIGN KEY. No DROP/RENAME/ALTER COLUMN/SET NOT NULL. `migrate status` → "Database schema is up to date!". Data: experiences 12 (all companyId null), users 2. Existing endpoints after restart: login 200, GET /posts 200 (total 12), toggle-like 200/200, toggle-bookmark 200/200, comments (page=1&limit=10) 200, add comment 201, delete comment 200 (smoke comment removed).
 - Next step: P0-T4.
+
+### 2026-09-29, P0-T4: settings, job lock, middlewares, routers
+- Did: settings service (11 keys, zod, cache), transaction-scoped job lock + heartbeat, academicYear, requireCareerAdmin / requireCareersEnabled, `GET /careers/status`, `GET/PUT /careers/admin/settings`, mounted in server.js (+4 lines).
+- Files: see "Where things are" (commit 09a25f1).
+- Checks + actual results: `npm test` → 8 passed. HTTP: status student `{enabled:false, isCareerAdmin:false}` 200; admin `{enabled:true, isCareerAdmin:true}` 200; student GET/PUT settings → **403 JSON** `FORBIDDEN`; no cookie → 401; PUT threshold 1.7 → 400 "Too big: expected number to be <=1"; PUT workerHeartbeat → 400 "cannot be changed here"; unknown key → 400; valid PUT → 200 and student status flips to enabled:true, and back to false after reverting. Lock script: A `{ran:true, ok:true}`, B concurrent `{ran:false}` ("skipped: already running elsewhere"), C after A `{ran:true}` (lock released), throwing job caught `{ran:true, ok:false}`, heartbeat written.
+- Next: P0-T5.
+
+### 2026-09-29, P0-T5: text normalisers
+- Did: `normalize.js` (company/title/location + India city aliases), `html.js` (cheerio). Fixed bullet ordering. Added trailing "and" noise (C-37).
+- Checks + actual results: `npm test` → 60 passed (52 new assertions in normalize/html tests), incl. "Google India", "Google LLC", "google", "GOOGLE INDIA PVT. LTD." → `google`; "Software Engineer Intern - Summer 2026" ≠ "Software Engineer"; "Bangalore, India" → `bengaluru`.
+- Commit bed0a0c. Next: P0-T6.
+
+### 2026-09-29, P0-T6: matcher, resolver, seed
+- Did: matcher (exact → normalised → fuzzy, min length 5, tie → none), resolveCompany (CANDIDATE creation, P2002 race fallback), companyIndex, slug, seedCareers (settings + 60 companies).
+- Checks + actual results: `npm test` → **87 passed (6 files)**, incl. Beta ≠ Meta, Databriks (0.90) below the 0.92 threshold, tie → none, concurrent-insert fallback. Seed run 1: "7 settings created, 60 companies created, 85 aliases created"; run 2: "0 … 0 … 0 aliases created" (idempotent). Real-DB resolution: Google India / GOOGLE LLC → Google (normalized); J.P. Morgan → JPMorgan Chase (exact); D.E. Shaw & Co. → D. E. Shaw; Goldmann Sachs → Goldman Sachs (fuzzy 0.929); Acme Robotics → none; duplicateNormalizedNames = 0. Found "Flipkart Internet Pvt Ltd" unmatched → added alias → now resolves (86 aliases).
+- Commit 1414870. Next: P0-T7.
