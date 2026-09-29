@@ -7,14 +7,14 @@ Update this file at the end of **every** task. The commit column = short SHA.
 
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
-| P0 Foundation | 29 Sep – 1 Oct | 8 | 3 | In progress |
+| P0 Foundation | 29 Sep – 1 Oct | 8 | 6 | In progress |
 | P1 Ingestion | 1 – 4 Oct | 12 | 0 | Not started |
 | P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **3** | **10 %** |
+| **Total** | | **31** | **6** | **19 %** |
 
-**Next task:** `P0-T4` (settings service, job lock, careers middlewares, router skeleton)
+**Next task:** `P0-T7` (merge/split/undo service + admin company API)
 
 ---
 
@@ -24,9 +24,9 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P0-T1 | Fork, branch, local env, dev seed users + demo experiences | [x] | becda3b | Postgres via docker compose; logins verified |
 | P0-T2 | Test tooling (vitest), server deps, .env.example | [x] | 543cb36 | 1 test passes; server boots |
 | P0-T3 | Migration `careers_foundation` | [x] | b0021cc | Additive only; existing Career Vault endpoints re-tested |
-| P0-T4 | Settings, job lock, careers middlewares, router skeleton | [ ] | | |
-| P0-T5 | Text normalisers + tests | [ ] | | |
-| P0-T6 | Company matcher/resolver + seedCareers | [ ] | | |
+| P0-T4 | Settings, job lock, careers middlewares, router skeleton | [x] | 09a25f1 | 13 HTTP checks + lock concurrency check pass |
+| P0-T5 | Text normalisers + tests | [x] | bed0a0c | 52 normaliser/HTML tests |
+| P0-T6 | Company matcher/resolver + seedCareers | [x] | 1414870 | 87 tests total; seed idempotent (60 companies, 86 aliases) |
 | P0-T7 | Merge/split/undo service + admin company API | [ ] | | |
 | P0-T8 | Admin Companies UI | [ ] | | |
 
