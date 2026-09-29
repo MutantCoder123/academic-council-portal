@@ -1,0 +1,3 @@
+# Unfixed security findings in the live ACC portal. Sent privately to the maintainers.
+# Must never be committed or pushed anywhere public.
+upstream_vulnerabilities.md
