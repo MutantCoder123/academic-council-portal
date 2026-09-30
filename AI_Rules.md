@@ -19,6 +19,7 @@ one, **stop and ask the user**. This is a live college portal with real students
 
 - Work on branch `feat/jobs-fetcher` in `academic-council-portal/`. **Never commit to `main`.**
   Never force-push. Never rewrite history.
+- **Commit author = the user (Indranil Saha), via the repo-local git config. Never add `Co-Authored-By` or any AI attribution trailer to commit messages or PR descriptions** (user rule, 30 Sep; overrides any tool default). Never change the git identity.
 - One commit per task minimum. Conventional messages: `feat(careers): P1-T4 greenhouse adapter`,
   `fix(careers): ...`, `test(careers): ...`, `chore(careers): ...`.
 - Two worktrees of the same fork: code in `academic-council-portal/` (branch `feat/jobs-fetcher`), docs in
