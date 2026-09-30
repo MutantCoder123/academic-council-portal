@@ -7,14 +7,14 @@ Update this file at the end of **every** task. The commit column = short SHA.
 
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
-| P0 Foundation | 29 Sep – 1 Oct | 8 | 6 | In progress |
-| P1 Ingestion | 1 – 4 Oct | 12 | 0 | Not started |
+| P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
+| P1 Ingestion | 1 – 4 Oct | 12 | 3 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **6** | **19 %** |
+| **Total** | | **31** | **11** | **35 %** |
 
-**Next task:** `P0-T7` (merge/split/undo service + admin company API)
+**Next task:** `P1-T4` (runSource / ingestAll / dedup / upsert / health / liveness)
 
 ---
 
@@ -27,15 +27,15 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P0-T4 | Settings, job lock, careers middlewares, router skeleton | [x] | 09a25f1 | 13 HTTP checks + lock concurrency check pass |
 | P0-T5 | Text normalisers + tests | [x] | bed0a0c | 52 normaliser/HTML tests |
 | P0-T6 | Company matcher/resolver + seedCareers | [x] | 1414870 | 87 tests total; seed idempotent (60 companies, 86 aliases) |
-| P0-T7 | Merge/split/undo service + admin company API | [ ] | | |
-| P0-T8 | Admin Companies UI | [ ] | | |
+| P0-T7 | Merge/split/undo service + admin company API | [x] | ac083d0 | 24/24 end-to-end HTTP checks |
+| P0-T8 | Admin Companies UI | [x] | 6f2a3c6 | Browser-tested 1280 + 375 px; student gets Access Denied |
 
 ## P1: Ingestion
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P1-T1 | Migration `careers_ingestion` + system sources | [ ] | | |
-| P1-T2 | Deterministic processors + tests | [ ] | | |
-| P1-T3 | ATS adapters + verify boards (≥5 sources) | [ ] | | |
+| P1-T1 | Migration `careers_ingestion` + system sources | [x] | 8fbec00 | Additive; merge/split move postings + sources |
+| P1-T2 | Deterministic processors + tests | [x] | dff2d82 | 61 new tests |
+| P1-T3 | ATS adapters + verify boards (≥5 sources) | [x] | 14d1d01 | 11 sources seeded (GH 6, Lever 4, Ashby 1); 177 tests |
 | P1-T4 | runSource/ingestAll/dedup/upsert/health/liveness | [ ] | | |
 | P1-T5 | Worker process + compose service | [ ] | | |
 | P1-T6 | Review/sources/ops admin API | [ ] | | |

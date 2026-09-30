@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0-T1..T6 done. **Next: P0-T7** (merge/split/undo service + admin company API).
+- **Phase / task:** P0 done (8/8); P1-T1..T3 done. **Next: P1-T4** (runSource / ingestAll / dedup / upsert / health / liveness). Then wire `possibleDuplicatePostings` into the merge response (C-43).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `1414870` feat(careers): P0-T6 company matcher, resolver and registry seed
+- **Last commit:** `14d1d01` feat(careers): P1-T3 ATS adapters, board verification and seeded sources (code branch is 11 commits ahead of upstream `main`, all local)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 87 passed (6 files).
+- **Tests:** `npm test` → 177 passed (9 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -38,6 +38,14 @@
 | Normalisers | `services/careers/text/normalize.js` (`normalizeCompanyName`, `normalizeTitle`, `normalizeLocation`, `INDIA_CITY_ALIASES`), `text/html.js` (`htmlToText`, `decodeEntities`) | |
 | Company matching | `services/careers/companies/matcher.js` (`buildIndex`, `addToIndex`, `resolveName`, `similarity`), `resolveCompany.js`, `companyIndex.js` (`loadCompanyIndex`), `slug.js` (`slugify`, `uniqueSlug`) | |
 | Registry seed | `server-acc/prisma/seedCareers.js` (`npm run careers:seed`) | 60 companies; safe in production |
+| Errors | `services/careers/errors.js` | `CareersError(status, code, message, details)`, `sendError(res, err, ctx)` (zod → 400, P2002 → 409, P2025 → 404), `parseId` |
+| Merge/split/undo | `services/careers/companies/mergeService.js` | `MOVABLE` = aliases, experiences, postings, sources; undo newest-first only |
+| Admin company API | `controllers/careers/adminCompaniesController.js`, `adminMergeController.js`; routes in `routes/careersAdmin.js` | |
+| Admin UI | `client-acc/src/pages/admin/careers/` (`Companies.jsx` + dialogs), `client-acc/src/api/careersApi.js` | Route `/admin/careers/companies`; sidebar "Companies" |
+| Ingestion schema | `prisma/migrations/20260930021750_careers_ingestion/` | Source, SourceRun, Posting, PostingSource, PostingReview, LinkSubmission, Extraction, LlmUsage |
+| Processors | `services/careers/text/compensation.js`, `fingerprint.js`, `skills.js` + `skillsDictionary.js`, `workMode.js`, `relevance.js` + `relevanceRules.js` | all pure |
+| ATS adapters | `services/careers/ingest/adapters/{greenhouse,lever,ashby,index}.js`, `ingest/http.js` | `fetchPostings(source)` → `{ postings, fetchedCount, skipped }` |
+| Board check | `scripts/careers/verifyBoard.js <kind> <token> [--save] [--raw]` | |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -50,6 +58,10 @@
 - PUT `/careers/admin/settings` is all-or-nothing: any invalid, unknown or non-editable key → 400 and nothing is written. `runRequest` and `workerHeartbeat` are not editable there.
 - Aliases that normalise to an existing key aren't stored (unique `normalizedAlias`), so the exact-match tier only matters for aliases whose normal form differs.
 - Fuzzy threshold 0.92: one typo in a 10-letter name scores 0.90 and does NOT match (tested). Admins can lower `careers.fuzzyThreshold`.
+- Split undo folds everything the split-off company has (incl. rows attached later) back into the original, and deletes the name alias the split created.
+- RawPosting shape (all adapters): `{ externalId, title, companyName, locationText, url, descriptionText, workplaceText, employmentTypeText, compensationText, postedAt, deadline }`. Ashby `employmentType: "Intern"` and Greenhouse metadata can give the type: combine with `guessType(title)` in P1-T4.
+- Relevance: `evaluateRelevance` returns `location: 'unknown'` for non-geographic text such as "Hybrid" or "N/A". P1-T4 must add `location` to `uncertainFields` in that case.
+- Compensation: stipend must say monthly, else UNCLEAR; CTC in lakh/crore is annual; no period conversion; 0 only for "unpaid".
 
 ## Gotchas / things that surprised me
 
@@ -60,6 +72,12 @@
 - Versions resolved: **zod 4**, **node-cron 4**, **vitest 5**, cheerio 1.2, undici 7. Check APIs against these majors (e.g. zod 4 error formatting, node-cron 4 `schedule` options).
 - Don't redirect logs to `/tmp_*` in Git Bash on Windows (permission denied). Use the session scratchpad.
 - A required `Json` column rejects plain `null` in Prisma; use `Prisma.JsonNull` (see settings.js).
+- **Docker Desktop doesn't auto-start**: after a reboot, "Can't reach database server at localhost:5432" means start Docker Desktop, then `docker compose up -d postgres-acc`.
+- **Files checked out by git are CRLF** (autocrlf=true), e.g. `schema.prisma` after the history rewrite. Scripted edits must match `\r\n`; the Edit tool is safer.
+- Stop the API before `npx prisma generate` on Windows (the running server locks the query engine DLL).
+- Playwright MCP writes to `ACC Open Project/.playwright-mcp/` (outside both git folders). Delete it after testing; it holds page snapshots of logged-in sessions.
+- React Fast Refresh lint: `.jsx` files may only export components; put helpers in `.js` files.
+- The Greenhouse Databricks board is 9.6 MB (881 jobs) with 0 India early-career roles, which is why it isn't a source.
 - zod 4: `z.prettifyError` prefixes messages with a "✖" glyph. For API responses use `error.issues.map(i => i.message)`.
 - cheerio `htmlToText`: add list bullets **before** block line breaks, or the bullet lands on its own line.
 - The dev DB now has `careers.visibleToStudents=false` and `careers.submissionDailyLimit=5` rows (written by the P0-T4 checks) and a test heartbeat `lockTestThrow`. Harmless.
@@ -70,6 +88,7 @@
 - (29 Sep, dev laptop) Ollama 0.34.4 installed; models present: `qwen2.5:7b` (4.7 GB, Q4_K_M, 32k ctx), `llama3.2:1b`. GPU RTX 4060 8 GB, RAM 15.5 GB.
 - `POST /api/chat` with `format` = JSON schema works on `qwen2.5:7b`, and nullable types `{"type":["string","null"]}` are accepted. Cold call about 14 s. Response fields: `message.content`, `done_reason`, `prompt_eval_count`, `eval_count`.
 - Observed model errors (motivation for `verify.js`): intern labelled FULL_TIME, `overall_confidence: 100`, pay text paraphrased not verbatim.
+- (30 Sep) ATS response shapes, verified live and saved as fixtures (`tests/careers/fixtures/`): see change_specsheet C-41. Board results: C-40. Kept after relevance at verification time: stripe 17, paytm 16, rubrik 3 (all interns), groww 3, inmobi 2, sarvam 2, cloudflare 2, razorpay 1, meesho 1, zeta 1, cred 0.
 
 ## Upstream issues noticed (do NOT fix)
 
@@ -128,3 +147,28 @@ Template for each entry:
 - Did: matcher (exact → normalised → fuzzy, min length 5, tie → none), resolveCompany (CANDIDATE creation, P2002 race fallback), companyIndex, slug, seedCareers (settings + 60 companies).
 - Checks + actual results: `npm test` → **87 passed (6 files)**, incl. Beta ≠ Meta, Databriks (0.90) below the 0.92 threshold, tie → none, concurrent-insert fallback. Seed run 1: "7 settings created, 60 companies created, 85 aliases created"; run 2: "0 … 0 … 0 aliases created" (idempotent). Real-DB resolution: Google India / GOOGLE LLC → Google (normalized); J.P. Morgan → JPMorgan Chase (exact); D.E. Shaw & Co. → D. E. Shaw; Goldmann Sachs → Goldman Sachs (fuzzy 0.929); Acme Robotics → none; duplicateNormalizedNames = 0. Found "Flipkart Internet Pvt Ltd" unmatched → added alias → now resolves (86 aliases).
 - Commit 1414870. Next: P0-T7.
+
+### 2026-09-30, git identity + local-only mode
+- The user asked for commits authored by them, with no Claude co-author, and no push/merge until told. Set repo-local `user.name/email`; rewrote all local commits on both branches (author + trailers; contents identical to the backup branches). Rules added to AI_Rules §2 and to memory.
+
+### 2026-09-30, P0-T7: merge/split/undo + admin company API
+- Did: `errors.js`, `mergeService.js`, `adminCompaniesController.js`, `adminMergeController.js`, routes.
+- Checks + actual results: 24/24 PASS end-to-end over HTTP. A resolver-created candidate merged into Google, experiences followed; split back out; undo of the older merge → 409 "Undo the later split (#2) first."; undo split and undo merge restored every row and status; double undo → 409; alias owned elsewhere → 409 ALIAS_TAKEN; last alias delete → 400; approve candidate → ACTIVE; `javascript:` website → 400; student → 403. Demo experiences unlinked afterwards (backfill starts clean). Companies #61 "Google Cloud India" (ACTIVE) and #62 (MERGED) remain as history.
+- Commit ac083d0.
+
+### 2026-09-30, P0-T8: admin Companies UI
+- Did: Companies page + detail/merge/split/create dialogs + History (undo), route, sidebar.
+- Checks + actual results: changed files lint exit 0; `npx eslint src` = 36 errors (baseline); build ✓. Browser (Playwright): list at 1280 px; search "cloud" → open → Merge into… → Google → toast "Merged Google Cloud India into Google."; History → Undo → Confirm → "Undid merge #3."; 375 px: no horizontal overflow, detail opens as a bottom sheet; student at `/admin/careers/companies` → "Access Denied.". Fixed "1 aliases" pluralisation; moved `plural` to `format.js` (Fast Refresh lint).
+- Commit 6f2a3c6.
+
+### 2026-09-30, P1-T1: careers_ingestion migration
+- SQL: 11 CREATE TYPE, 8 CREATE TABLE, 13 CREATE INDEX, 2 CREATE UNIQUE INDEX, 6 FK constraints, all on new tables; forbidden scan = 0. `migrate deploy` ✓, status up to date. Seed: 2 system sources (idempotent). Merge/split/undo verified with a throwaway posting + source (4/4 PASS), then deleted. Posting defaults confirmed honest (NOT_DISCLOSED, null stipend, type UNKNOWN).
+- Commit 8fbec00.
+
+### 2026-09-30, P1-T2: deterministic processors
+- 148 tests (61 new). Bugs found by tests and fixed: "js" in "Node.js" matched JavaScript; "not a remote role" was REMOTE; canonicalizeSkills order.
+- Commit dff2d82.
+
+### 2026-09-30, P1-T3: ATS adapters + sources
+- Probed live responses first; wrote mappers against them; saved fixtures (3 jobs each; scanned for emails/phones: none). Scanned 40 candidate boards: 14 reachable in the first pass revealed foreign leaks → relevance rework (C-39) → rescan clean. Seeded 11 sources (C-40). `npm test` → 177 passed.
+- Commit 14d1d01. Next: P1-T4.
