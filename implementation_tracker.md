@@ -8,13 +8,13 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
-| P1 Ingestion | 1 – 4 Oct | 12 | 4 | In progress |
+| P1 Ingestion | 1 – 4 Oct | 12 | 5 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **12** | **39 %** |
+| **Total** | | **31** | **13** | **42 %** |
 
-**Next task:** `P1-T5` (worker process + compose service)
+**Next task:** `P1-T6` (review queue API + admin sources/ops API)
 
 ---
 
@@ -37,7 +37,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1-T2 | Deterministic processors + tests | [x] | dff2d82 | 61 new tests |
 | P1-T3 | ATS adapters + verify boards (≥5 sources) | [x] | 14d1d01 | 11 sources seeded (GH 6, Lever 4, Ashby 1); 177 tests |
 | P1-T4 | runSource/ingestAll/dedup/upsert/health/liveness | [x] | 1bccb4c | Run 1: 45 new / 2 dup; run 2: 0 new, 47 seen; bogus board FAILING; liveness expire verified |
-| P1-T5 | Worker process + compose service | [ ] | | |
+| P1-T5 | Worker process + compose service | [x] | 1635baf | Run request consumed at next minute tick; 2nd worker logged lock skip; heartbeat updates |
 | P1-T6 | Review/sources/ops admin API | [ ] | | |
 | P1-T7 | Review queue UI + manual entry | [ ] | | |
 | P1-T8 | Sources + Operations UI | [ ] | | |

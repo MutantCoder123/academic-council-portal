@@ -8,12 +8,12 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T4 done. **Next: P1-T5** (worker).
+- **Phase / task:** P0 done (8/8); P1-T1..T5 done. **Next: P1-T6** (review / sources / ops admin API).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `1bccb4c` feat(careers): P1-T4 ATS ingest run, dedup, upsert, source health and liveness (all local, not pushed)
+- **Last commit:** `1635baf` feat(careers): P1-T5 worker process, job table, run requests and fetcher-acc service (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -48,6 +48,7 @@
 | Board check | `scripts/careers/verifyBoard.js <kind> <token> [--save] [--raw]` | |
 | Ingest pipeline | `services/careers/ingest/{runSource,ingestAll,buildPosting,upsertPosting,dedup,health,liveness}.js` | pure: `buildPostingData`, `isSamePosting`, `findPossibleDuplicates`, `nextHealth`, `statusWhenSeen`, `shouldExpire` |
 | Job CLI | `scripts/careers/runJob.js ingest [sourceId]` (`npm run careers:job -- ingest`) | takes the worker's lock, no heartbeat |
+| Worker | `server-acc/worker.js` (`npm run worker`), jobs in `services/careers/jobs.js` | compose service `fetcher-acc` (container `acc-fetcher`) |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -86,6 +87,7 @@
 - The dev DB now has `careers.visibleToStudents=false` and `careers.submissionDailyLimit=5` rows (written by the P0-T4 checks) and a test heartbeat `lockTestThrow`. Harmless.
 - The forbidden-SQL grep must not match `ON DELETE` / `ON UPDATE` in FK clauses. Use: `grep -n -i -E '\b(DROP|RENAME|ALTER COLUMN|SET NOT NULL|TRUNCATE)\b|^\s*(DELETE|UPDATE)\b' migration.sql`.
 - Dev DB has a deliberate bogus source `GREENHOUSE/this-board-does-not-exist-acc` (id 15) for the FAILING checks. Disable or delete it before any demo.
+- On Windows, `kill -TERM` from Git Bash ends node without running the SIGTERM handler, so graceful shutdown can only be verified in Docker/Linux.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -188,3 +190,9 @@ Template for each entry:
   - Quality notes: 19/45 type UNKNOWN ("Associate", "Analyst" titles) → flagged; 1 Stripe new-grad role in Bucharest kept as location unknown (flagged, as designed). 0 deadlines published.
   - `npm test` → 214 passed.
 - Next step: P1-T5 worker.
+
+### 2026-10-01, P1-T5: worker
+- Did: `worker.js` (node-cron 4, tz Asia/Kolkata, noOverlap, start heartbeat, SIGTERM/SIGINT), `services/careers/jobs.js`, `fetcher-acc` compose service (`docker compose config --services` lists it).
+- Checks run + actual results: started two workers together; wrote `careers.runRequest = {sourceId: 6}` at 12:22:47Z. Worker 1: `run request: source 6 ...` then `source #6 GREENHOUSE/groww OK fetched=7 kept=3 new=0 dup=0 seen=3`; worker 2: `job runRequests skipped: already running elsewhere`. Afterwards `runRequest = null`, heartbeat `{ at: 12:24:00Z, job: 'runRequests' }`.
+- Not verified: SIGTERM handler output (Windows has no real signals; check on the VM / in Docker). The fetcher-acc image was not built locally (same Dockerfile as backend-acc).
+- Next step: P1-T6.
