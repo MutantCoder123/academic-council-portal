@@ -8,12 +8,12 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T6 done. **Next: P1-T7** (review queue UI + manual entry).
+- **Phase / task:** P0 done (8/8); P1-T1..T7 done. **Next: P1-T8** (Sources + Operations UI).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `1034953` feat(careers): P1-T6 review queue, sources and operations admin API (all local, not pushed)
+- **Last commit:** `7f72e2b` feat(careers): P1-T7 review queue UI and manual posting entry (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -50,6 +50,7 @@
 | Job CLI | `scripts/careers/runJob.js ingest [sourceId]` (`npm run careers:job -- ingest`) | takes the worker's lock, no heartbeat |
 | Worker | `server-acc/worker.js` (`npm run worker`), jobs in `services/careers/jobs.js` | compose service `fetcher-acc` (container `acc-fetcher`) |
 | Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
+| Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -89,6 +90,8 @@
 - The forbidden-SQL grep must not match `ON DELETE` / `ON UPDATE` in FK clauses. Use: `grep -n -i -E '\b(DROP|RENAME|ALTER COLUMN|SET NOT NULL|TRUNCATE)\b|^\s*(DELETE|UPDATE)\b' migration.sql`.
 - Dev DB has a deliberate bogus source `GREENHOUSE/this-board-does-not-exist-acc` (id 15) for the FAILING checks. Disable or delete it before any demo.
 - On Windows, `kill -TERM` from Git Bash ends node without running the SIGTERM handler, so graceful shutdown can only be verified in Docker/Linux.
+- Resizing the Playwright window from 1280 to 375 leaves the upstream sidebar half-open over the content; reload at 375 before judging the mobile layout.
+- Relevance lets through titles like "Risk Analyst | Exp - 1 to 3 Yrs" ("analyst" counts as junior). Admins reject them; consider an experience-range rule later.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -249,3 +252,10 @@ PASS  ops llm block present (reachability unknown until P1-T10)
 - Endpoints checked: GET review, GET/PATCH postings/:id, POST postings/:id/{approve,reject,expire,reopen}, POST postings/bulk-approve, POST postings, GET submissions, GET/POST sources, PATCH sources/:id, POST sources/:id/run, POST sources/run-all, GET sources/:id/runs, GET ops.
 - Dev data changed by the checks: some postings approved (LIVE), one rejected, two manual postings + candidate companies `Acme Robotics Test <ts>` / `Another Candidate <ts>` created.
 - Next step: P1-T7.
+
+### 2026-10-01, P1-T7: review queue UI + manual entry
+- Did: Jobs review page (4 tabs with counts, bulk approve), PostingEditor (two panes on xl, uncertain highlight, confidence meter, sticky footer: Reject with reason / Save / Approve & publish / Mark expired / Reopen), ManualPosting, CompanyPicker; routes + sidebar.
+- Checks run + actual results (browser, admin login, 1280 px): flagged Cloudflare #71 type changed to Full-time + Approve & publish → DB `LIVE`, `publishedAt` set, `uncertainFields []`, review `APPROVE {type: UNKNOWN→FULL_TIME}`; "Incident Response Analyst - React" rejected → `REJECTED`, reason "Not an early-career role"; Pending → Select page → "Approved 16; skipped 0" and the empty state reads "No postings waiting for review. Last ingestion: 1 Oct 2026, 5:53 pm, 1669 jobs fetched, 52 new postings in the last 24 hours."; manual posting (Groww, RANGE ₹60,000–80,000) Publish now → `LIVE`, tier MANUAL; candidate "Acme Robotics Test …" approved from the tab. Student login → Access Denied on /admin/careers/review. 375 px: no horizontal scroll (scrollWidth 375), editor stacks with the footer visible; confidence meter label now wraps.
+- Lint: changed files 0 errors; `npx eslint src` = 36 errors (baseline). `npm run build` ✓.
+- Not verified in the browser: Save without approve (covered by the T6 HTTP checks).
+- Next step: P1-T8.
