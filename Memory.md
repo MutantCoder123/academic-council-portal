@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T8 done. **Next: P1-T9** (student link pipeline).
+- **Phase / task:** P0 done (8/8); P1-T1..T9 done. **Next: P1-T10** (LLM provider layer + local Qwen + verify.js).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `bf52ad8` feat(careers): P1-T8 sources and operations pages (all local, not pushed)
+- **Last commit:** `4ef6cbd` feat(careers): P1-T9 student link pipeline with SSRF guard, ATS links and JSON-LD (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 243 passed (11 files).
+- **Tests:** `npm test` → 327 passed (13 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -52,6 +52,7 @@
 | Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
 | Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
 | Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
+| Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -94,6 +95,7 @@
 - Resizing the Playwright window from 1280 to 375 leaves the upstream sidebar half-open over the content; reload at 375 before judging the mobile layout.
 - Relevance lets through titles like "Risk Analyst | Exp - 1 to 3 Yrs" ("analyst" counts as junior). Admins reject them; consider an experience-range rule later.
 - A `position: fixed` modal rendered inside an element with `backdrop-blur` (our `cardClass`) is trapped inside that element. Render dialogs outside cards (FlagsCard does).
+- `10-0-0-1.nip.io` (public DNS answering 10.0.0.1) is a handy live test for the connect-time DNS guard.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -269,3 +271,29 @@ PASS  ops llm block present (reachability unknown until P1-T10)
 - Lint: changed files 0 errors; `npx eslint src` = 36 (baseline). Build ✓.
 - Dev state: `careers.workerHeartbeat` is the fake 45-min-old value (any worker run replaces it); `visibleToStudents` = false.
 - Next step: P1-T9.
+
+### 2026-10-01, P1-T9: student link pipeline (no LLM)
+- Did: ipGuard, canonicalUrl, blockedDomains, atsLink (GH/Lever single-job API, Ashby board lookup), jsonLd, safeFetch (undici Agent with guarded lookup, manual redirects, caps), processSubmission(s), submissions controller + rate limit, worker job + CLI. 84 new unit tests (every blocked range, URL checks, mocked-DNS lookup, canonical URLs, ATS link parsing, JSON-LD fixture).
+- Checks run + actual results (student, visibleToStudents temporarily on):
+```
+student submit 201 #1 http://127.0.0.1/admin
+student submit 201 #2 http://169.254.169.254/latest/meta-data/
+student submit 201 #3 http://10-0-0-1.nip.io/
+student submit 201 #4 https://www.linkedin.com/jobs/view/4012345678/?trk=public_jobs
+student submit 201 #5 https://boards.greenhouse.io/stripe/jobs/8031833
+6th submission in 24 h -> 429 RATE_LIMITED "You can share up to 5 links a day. Please try again tomorrow."
+same job link again (tracking params) -> 200 "This link was already shared. Thanks!" #5
+=== npm run careers:job -- links
+[careers] submission #1 failed: Address 127.0.0.1 is not allowed
+[careers] submission #2 failed: Address 169.254.169.254 is not allowed
+[careers] safeFetch GET 10-0-0-1.nip.io/
+[careers] submission #3 failed: 10-0-0-1.nip.io resolves to a blocked address (10.0.0.1)
+[careers] submission #4: www.linkedin.com is store-only; not fetched
+[careers] safeFetch GET example.com/
+[careers] processed 6 submission(s): {"FAILED":4,"STORED_ONLY":1,"DUPLICATE":1}
+```
+  - No `safeFetch GET` line for LinkedIn (proves no request). #5 → DUPLICATE of posting #59, which now has 3 observations: `STUDENT_LINK https://boards.greenhouse.io/stripe/jobs/8031833 | GREENHOUSE …gh_jid=8031833 | GREENHOUSE …gh_jid=8130807` (PRD success criterion 3).
+  - #6 (admin, https://example.com/) → FAILED "The page has almost no text (167 characters)…". The API process made 0 outbound fetches (all in the worker job).
+  - visibleToStudents set back to false.
+- Not verified live: a real JSON-LD page (covered by the fixture test) and the EXTRACTING path (exercised in P1-T10's smoke test).
+- Next step: P1-T10.
