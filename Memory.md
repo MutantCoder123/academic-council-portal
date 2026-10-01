@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T5 done. **Next: P1-T6** (review / sources / ops admin API).
+- **Phase / task:** P0 done (8/8); P1-T1..T6 done. **Next: P1-T7** (review queue UI + manual entry).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `1635baf` feat(careers): P1-T5 worker process, job table, run requests and fetcher-acc service (all local, not pushed)
+- **Last commit:** `1034953` feat(careers): P1-T6 review queue, sources and operations admin API (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 214 passed (10 files).
+- **Tests:** `npm test` → 243 passed (11 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -49,6 +49,7 @@
 | Ingest pipeline | `services/careers/ingest/{runSource,ingestAll,buildPosting,upsertPosting,dedup,health,liveness}.js` | pure: `buildPostingData`, `isSamePosting`, `findPossibleDuplicates`, `nextHealth`, `statusWhenSeen`, `shouldExpire` |
 | Job CLI | `scripts/careers/runJob.js ingest [sourceId]` (`npm run careers:job -- ingest`) | takes the worker's lock, no heartbeat |
 | Worker | `server-acc/worker.js` (`npm run worker`), jobs in `services/careers/jobs.js` | compose service `fetcher-acc` (container `acc-fetcher`) |
+| Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -196,3 +197,55 @@ Template for each entry:
 - Checks run + actual results: started two workers together; wrote `careers.runRequest = {sourceId: 6}` at 12:22:47Z. Worker 1: `run request: source 6 ...` then `source #6 GREENHOUSE/groww OK fetched=7 kept=3 new=0 dup=0 seen=3`; worker 2: `job runRequests skipped: already running elsewhere`. Afterwards `runRequest = null`, heartbeat `{ at: 12:24:00Z, job: 'runRequests' }`.
 - Not verified: SIGTERM handler output (Windows has no real signals; check on the VM / in Docker). The fetcher-acc image was not built locally (same Dockerfile as backend-acc).
 - Next step: P1-T6.
+
+### 2026-10-01, P1-T6: review queue, sources and ops admin API
+- Did: review list (pending/flagged), posting detail, PATCH, approve (+edits), reject, expire, reopen, bulk-approve, manual create, submissions list; sources list/create(validate)/patch/run/run-all/runs; ops summary + alerts. Unit tests for planEdit, checkCompensation, bulkSkipReason, reviewWhere, mergeRunRequest, alerts, IST boundaries.
+- Checks run + actual results (`scratchpad/http_t6.mjs`, API on :3000):
+```
+PASS  student gets 403 on all 17 new admin endpoints  (403,403,403,403,403,403,403,403,403,403,403,403,403,403,403,403,403)
+PASS  review pending/flagged 200  (pending=18 flagged=22 counts={"pending":18,"flagged":22,"candidates":6,"submissions":0})
+PASS  tabs never overlap
+PASS  flagged items all have uncertain fields or low confidence
+PASS  bad tab -> 400
+PASS  posting detail has observations + reviews  (#72 Associate, Mid Market Sales)
+PASS  missing posting -> 404
+PASS  PATCH saves changes with a diff  ({"type":{"from":"UNKNOWN","to":"INTERNSHIP"},"skills":{"from":[],"to":["React","Python"]}})
+PASS  PATCH clears the edited field from uncertainFields
+PASS  EDIT review row written with changes
+PASS  PATCH 0 for undisclosed pay -> 400
+PASS  PATCH unknown field -> 400
+PASS  approve -> LIVE + publishedAt, uncertain cleared  (Approved. The posting is live.)
+PASS  approve twice -> 409
+PASS  expire LIVE -> EXPIRED
+PASS  reopen approved posting -> LIVE  (Reopened as LIVE.)
+PASS  reject without reason -> 400
+PASS  reject -> REJECTED with reason
+PASS  reopen rejected -> PENDING_REVIEW
+PASS  bulk-approve approves clean ones, skips flagged with reasons  (Approved 2; skipped 2. [{"id":94,"reason":"MANUAL postings need an individual review"},{"id":93,"reason":"MANUAL postings need an individual review"}])
+PASS  manual create with a new company name -> 201 PENDING, company flagged  (Posting created and waiting for review.)
+PASS  manual duplicate apply link -> 409
+PASS  manual publish with a CANDIDATE company -> 409 COMPANY_NOT_ACTIVE  (Another Candidate 1790857891350 is CANDIDATE. Approve or merge it in Companies first, or pick another company.)
+PASS  manual publish with an ACTIVE company -> 201 LIVE  (Posting published.)
+PASS  manual without company -> 400
+PASS  submissions list 200
+PASS  sources list  (14 sources)
+PASS  add board with a bad token -> 400 BOARD_INVALID
+PASS  add an existing board -> 409
+PASS  add board with an invalid token format -> 400
+PASS  disable source -> DISABLED
+PASS  run a disabled source -> 409
+PASS  enable source -> UNKNOWN
+PASS  run now -> 202 + runRequest {sourceId: 4}
+PASS  second source while one waits -> ALL
+PASS  run-all -> 202
+PASS  recent runs  (4 runs)
+PASS  cannot disable a system source
+PASS  ops summary  ({"sources":{"total":12,"ok":10,"failing":1,"zeroResults":0,"disabled":0},"queue":{"pending":16,"flagged":22,"candidates":8,"submissions":{"received":0,"extracting":0,"failed":0,"storedOnly":0}},"postings":{"live":14,"expiredLast7d":0,"newLast24h":52}})
+PASS  ops alerts include the failing bogus board  (red:SOURCE_FAILING)
+PASS  ops llm block present (reachability unknown until P1-T10)
+
+41/41 passed
+```
+- Endpoints checked: GET review, GET/PATCH postings/:id, POST postings/:id/{approve,reject,expire,reopen}, POST postings/bulk-approve, POST postings, GET submissions, GET/POST sources, PATCH sources/:id, POST sources/:id/run, POST sources/run-all, GET sources/:id/runs, GET ops.
+- Dev data changed by the checks: some postings approved (LIVE), one rejected, two manual postings + candidate companies `Acme Robotics Test <ts>` / `Another Candidate <ts>` created.
+- Next step: P1-T7.
