@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T3 done. **Next: P1-T4** (runSource / ingestAll / dedup / upsert / health / liveness). Then wire `possibleDuplicatePostings` into the merge response (C-43).
+- **Phase / task:** P0 done (8/8); P1-T1..T4 done. **Next: P1-T5** (worker).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `14d1d01` feat(careers): P1-T3 ATS adapters, board verification and seeded sources (code branch is 11 commits ahead of upstream `main`, all local)
+- **Last commit:** `1bccb4c` feat(careers): P1-T4 ATS ingest run, dedup, upsert, source health and liveness (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 177 passed (9 files).
+- **Tests:** `npm test` → 214 passed (10 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -46,6 +46,8 @@
 | Processors | `services/careers/text/compensation.js`, `fingerprint.js`, `skills.js` + `skillsDictionary.js`, `workMode.js`, `relevance.js` + `relevanceRules.js` | all pure |
 | ATS adapters | `services/careers/ingest/adapters/{greenhouse,lever,ashby,index}.js`, `ingest/http.js` | `fetchPostings(source)` → `{ postings, fetchedCount, skipped }` |
 | Board check | `scripts/careers/verifyBoard.js <kind> <token> [--save] [--raw]` | |
+| Ingest pipeline | `services/careers/ingest/{runSource,ingestAll,buildPosting,upsertPosting,dedup,health,liveness}.js` | pure: `buildPostingData`, `isSamePosting`, `findPossibleDuplicates`, `nextHealth`, `statusWhenSeen`, `shouldExpire` |
+| Job CLI | `scripts/careers/runJob.js ingest [sourceId]` (`npm run careers:job -- ingest`) | takes the worker's lock, no heartbeat |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -62,6 +64,7 @@
 - RawPosting shape (all adapters): `{ externalId, title, companyName, locationText, url, descriptionText, workplaceText, employmentTypeText, compensationText, postedAt, deadline }`. Ashby `employmentType: "Intern"` and Greenhouse metadata can give the type: combine with `guessType(title)` in P1-T4.
 - Relevance: `evaluateRelevance` returns `location: 'unknown'` for non-geographic text such as "Hybrid" or "N/A". P1-T4 must add `location` to `uncertainFields` in that case.
 - Compensation: stipend must say monthly, else UNCLEAR; CTC in lakh/crore is annual; no period conversion; 0 only for "unpaid".
+- Liveness "seen" = every externalId the board returned (also those dropped by the relevance filter), so a rule change never expires a still-listed job.
 
 ## Gotchas / things that surprised me
 
@@ -82,6 +85,7 @@
 - cheerio `htmlToText`: add list bullets **before** block line breaks, or the bullet lands on its own line.
 - The dev DB now has `careers.visibleToStudents=false` and `careers.submissionDailyLimit=5` rows (written by the P0-T4 checks) and a test heartbeat `lockTestThrow`. Harmless.
 - The forbidden-SQL grep must not match `ON DELETE` / `ON UPDATE` in FK clauses. Use: `grep -n -i -E '\b(DROP|RENAME|ALTER COLUMN|SET NOT NULL|TRUNCATE)\b|^\s*(DELETE|UPDATE)\b' migration.sql`.
+- Dev DB has a deliberate bogus source `GREENHOUSE/this-board-does-not-exist-acc` (id 15) for the FAILING checks. Disable or delete it before any demo.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -172,3 +176,15 @@ Template for each entry:
 ### 2026-09-30, P1-T3: ATS adapters + sources
 - Probed live responses first; wrote mappers against them; saved fixtures (3 jobs each; scanned for emails/phones: none). Scanned 40 candidate boards: 14 reachable in the first pass revealed foreign leaks → relevance rework (C-39) → rescan clean. Seeded 11 sources (C-40). `npm test` → 177 passed.
 - Commit 14d1d01. Next: P1-T4.
+
+### 2026-10-01, P1-T4: ATS ingest run, dedup, upsert, health, liveness
+- Did: runSource / ingestAll / buildPosting / upsertPosting / dedup / health / liveness (ATS part), runJob.js, merge response now reports `possibleDuplicatePostings` (C-43 closed). Fixed 0-salary placeholder (C-47).
+- Checks run + actual results (dev DB reset first):
+  - Run 1: `TOTAL sources=11 failed=0 fetched=1669 kept=47 new=45 dup=2 seen=0`; all sources OK. Per source kept: stripe 17, rubrik 3, groww 3, inmobi 2, cloudflare 2, razorpay 1, paytm 15, meesho 1, zeta 1, cred 0, sarvam 2.
+  - Run 2: `new=0 dup=0 seen=47`; 47/47 observations have lastSeenAt > firstSeenAt; 45 postings PENDING_REVIEW.
+  - Bogus board added: `#15 FAILED FAILING error: HTTP 404 from boards-api.greenhouse.io` while the other 11 stayed OK; consecutiveFailures 2 after two runs.
+  - Liveness: fake LIVE observation on source #6: run A `missed/dropped/expired 1/0/0`, run B `1/1/1` → posting EXPIRED, observation isLive=false missedRuns=2.
+  - Dedup merges checked by hand: Stripe "Software Engineer, Intern" (two Bengaluru reqs), Paytm "Talent Acquisition Intern - Bangalore" (two reqs) → correct.
+  - Quality notes: 19/45 type UNKNOWN ("Associate", "Analyst" titles) → flagged; 1 Stripe new-grad role in Bucharest kept as location unknown (flagged, as designed). 0 deadlines published.
+  - `npm test` → 214 passed.
+- Next step: P1-T5 worker.
