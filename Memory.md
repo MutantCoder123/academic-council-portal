@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T9 done. **Next: P1-T10** (LLM provider layer + local Qwen + verify.js).
+- **Phase / task:** P0 done (8/8); P1-T1..T10 done. **Next: P1-T10b** (Gemini provider, needs the user's `GEMINI_API_KEY`) **and P1-T11** (liveness recheck for manual/link postings). User asked to stop after T10 on 1 Oct.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `4ef6cbd` feat(careers): P1-T9 student link pipeline with SSRF guard, ATS links and JSON-LD (all local, not pushed)
+- **Last commit:** `754aa3e` feat(careers): P1-T10 LLM extraction with a pluggable provider (local Qwen via Ollama) and verify.js (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 327 passed (13 files).
+- **Tests:** `npm test` → 368 passed (14 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -53,6 +53,7 @@
 | Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
 | Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
 | Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
+| LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -96,6 +97,9 @@
 - Relevance lets through titles like "Risk Analyst | Exp - 1 to 3 Yrs" ("analyst" counts as junior). Admins reject them; consider an experience-range rule later.
 - A `position: fixed` modal rendered inside an element with `backdrop-blur` (our `cardClass`) is trapped inside that element. Render dialogs outside cards (FlagsCard does).
 - `10-0-0-1.nip.io` (public DNS answering 10.0.0.1) is a handy live test for the connect-time DNS guard.
+- Grounding can't catch a wrong value that does appear on the page: on a Peerlist page Qwen took the company from sidebar noise ("Colecta" for a Google job). It ends up as a CANDIDATE company (flagged), so review catches it.
+- Hosted job platforms (Keka, Peerlist, Semesteria) aren't the employer; when the page names no company, the hostname fallback gives e.g. "keka" (flagged candidate).
+- Keyword work-mode override can be wrong on pages listing other jobs (MyGyan: page says Onsite, keywords gave HYBRID). Consider preferring the model's value when its word is in the page header.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -297,3 +301,15 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - visibleToStudents set back to false.
 - Not verified live: a real JSON-LD page (covered by the fixture test) and the EXTRACTING path (exercised in P1-T10's smoke test).
 - Next step: P1-T10.
+
+### 2026-10-01, P1-T10: LLM extraction (provider layer + local Qwen + verify.js)
+- Did: schema (JSON schema + zod), prompt, providers/ollama, callModel, providerStatus (plugged into /ops), verify, outcome, pricing, budget, runExtractions, applyExtraction, branchCodes; job `linksAndExtraction` now runs processSubmissions then runExtractions. 41 new tests (incl. the 29 Sep case: FULL_TIME→INTERNSHIP, paraphrased pay dropped → NOT_DISCLOSED, confidence 100 → 0.5 → −0.15 −0.10 = 0.25; invented company / skill / deadline dropped; mocked fetch: success, ECONNREFUSED → stays QUEUED + backoff + stop + alert, 404 → MODEL_MISSING/FAILED, done_reason length → FAILED, no strong model → no escalation, cost 0).
+- Smoke test (real pages, qwen2.5:7b on the RTX 4060):
+  - First try with institute programme pages (IIPE SIP, IIIT-B summer internship): Qwen correctly answered `is_job_posting:false` (programme announcements, no role title) → FAILED with that reason; verify caught Qwen adding "Stipend:" to the IIPE pay text (dropped as not verbatim). indiascienceandtechnology.gov.in timed out on connect (FAILED with the reason).
+  - Real single-job pages without ATS links or JSON-LD (found by probing with safeFetch + jsonLd): loop.keka.com/careers/jobdetails/48372, app.semesteria.com/jobs/software-engineer-intern-bengaluru-mygyan-…, peerlist.io/company/google/careers/software-engineering-intern-summer-2026/…
+  - Timings: 16.1 s cold, then 3.6 s / 4.0 s / 5.0 s (732–1832 input tokens, 154–217 output). LlmUsage rows provider=ollama, costUsd 0.
+  - Results: #101 "Software Engineer Intern" (MyGyan, candidate) conf 0.40, stipend UNCLEAR raw "INR 30K"; #102 "Software Engineering Intern, Summer 2026" conf 0.55 but company "Colecta" (sidebar noise; should be Google); #103 Keka "Software Engineer - Intern" (after C-60) conf 0.55, company "keka". All PENDING_REVIEW, tier LLM_FAST, all in the Flagged tab (checked with reviewWhere).
+- Done-when checks: `llmEnabled` off → `skipped: careers.llmEnabled is off`, row stays QUEUED. Ollama unreachable (OLLAMA_URL → closed port) → `extraction paused: … ECONNREFUSED`, row QUEUED (attempts 0); /ops `llm.usable=false` + `red:LLM_UNAVAILABLE … Links wait as QUEUED.`; back to normal → no alert, row processed.
+- Not verified: actually stopping the Ollama app (simulated with a closed port instead); escalation with a real strong model (none configured locally; unit-tested).
+- Dev state: `careers.llmEnabled` back to false; submissions #7–#12 + postings #101–#103 exist in the dev DB.
+- Next step: P1-T10b (Gemini, needs the key) and P1-T11.
