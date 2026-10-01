@@ -8,13 +8,13 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
-| P1 Ingestion | 1 – 4 Oct | 12 | 7 | In progress |
+| P1 Ingestion | 1 – 4 Oct | 12 | 8 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **15** | **48 %** |
+| **Total** | | **31** | **16** | **52 %** |
 
-**Next task:** `P1-T8` (Sources + Operations UI)
+**Next task:** `P1-T9` (student link pipeline without the LLM)
 
 ---
 
@@ -40,7 +40,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1-T5 | Worker process + compose service | [x] | 1635baf | Run request consumed at next minute tick; 2nd worker logged lock skip; heartbeat updates |
 | P1-T6 | Review/sources/ops admin API | [x] | 1034953 | 41/41 HTTP checks (student 403 on all 17); approve→LIVE+publishedAt; bulk skips flagged |
 | P1-T7 | Review queue UI + manual entry | [x] | 7f72e2b | Browser: edit+approve, reject, bulk approve (16), manual publish, candidate approve; 1280 + 375 px |
-| P1-T8 | Sources + Operations UI | [ ] | | |
+| P1-T8 | Sources + Operations UI | [x] | bf52ad8 | FAILING board red with error; worker stale alert (faked heartbeat); visibleToStudents toggle flips student status |
 | P1-T9 | Student link pipeline (SSRF guard, JSON-LD, ATS links) | [ ] | | |
 | P1-T10 | LLM extraction: provider layer + local Qwen 7B (Ollama) + verify.js | [ ] | | |
 | P1-T10b | Gemini provider (required for final phase; needs API key) | [ ] | | Qwen = testing only; switch before P4-T2 |

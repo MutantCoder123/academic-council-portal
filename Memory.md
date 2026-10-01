@@ -8,12 +8,12 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T7 done. **Next: P1-T8** (Sources + Operations UI).
+- **Phase / task:** P0 done (8/8); P1-T1..T8 done. **Next: P1-T9** (student link pipeline).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `7f72e2b` feat(careers): P1-T7 review queue UI and manual posting entry (all local, not pushed)
+- **Last commit:** `bf52ad8` feat(careers): P1-T8 sources and operations pages (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -51,6 +51,7 @@
 | Worker | `server-acc/worker.js` (`npm run worker`), jobs in `services/careers/jobs.js` | compose service `fetcher-acc` (container `acc-fetcher`) |
 | Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
 | Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
+| Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -92,6 +93,7 @@
 - On Windows, `kill -TERM` from Git Bash ends node without running the SIGTERM handler, so graceful shutdown can only be verified in Docker/Linux.
 - Resizing the Playwright window from 1280 to 375 leaves the upstream sidebar half-open over the content; reload at 375 before judging the mobile layout.
 - Relevance lets through titles like "Risk Analyst | Exp - 1 to 3 Yrs" ("analyst" counts as junior). Admins reject them; consider an experience-range rule later.
+- A `position: fixed` modal rendered inside an element with `backdrop-blur` (our `cardClass`) is trapped inside that element. Render dialogs outside cards (FlagsCard does).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -259,3 +261,11 @@ PASS  ops llm block present (reachability unknown until P1-T10)
 - Lint: changed files 0 errors; `npx eslint src` = 36 errors (baseline). `npm run build` ✓.
 - Not verified in the browser: Save without approve (covered by the T6 HTTP checks).
 - Next step: P1-T8.
+
+### 2026-10-01, P1-T8: Sources + Operations UI
+- Did: Sources page (health badges, error text for FAILING, enable/disable, Run now / Run all, recent runs, Add board dialog), Operations page (alerts banner red→amber with links, 5 stat cards, Feature flags card with toggles + limits, confirmation dialog for student visibility), routes + sidebar "Sources & Ops".
+- Checks run + actual results (browser, 1280 px): Sources shows `FAILING Bogus test board … HTTP 404 from boards-api.greenhouse.io (2 failed runs in a row)` in red; Operations shows red alert `Bogus test board is failing: HTTP 404 …`. Heartbeat set to 45 min ago → red `The worker has not reported for 45 minutes. No sources are being fetched.` and Worker card "Stale". Toggle "Show Jobs & Internships to students" → confirmation dialog → student `GET /careers/status` = `{"enabled":true,"visibleToStudents":true}`; switched back off afterwards. 375 px: no element overflows on ops / review / new / sources (checked by script).
+- Bugs found + fixed: confirm dialog trapped inside the blurred card; header buttons wrapping / overflowing on mobile.
+- Lint: changed files 0 errors; `npx eslint src` = 36 (baseline). Build ✓.
+- Dev state: `careers.workerHeartbeat` is the fake 45-min-old value (any worker run replaces it); `visibleToStudents` = false.
+- Next step: P1-T9.
