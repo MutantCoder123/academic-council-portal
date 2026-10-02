@@ -9,12 +9,12 @@ Update this file at the end of **every** task. The commit column = short SHA.
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
 | P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
-| P2 Browsing | 5 – 6 Oct | 4 | 3 | In progress |
+| P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **22** | **71 %** |
+| **Total** | | **31** | **23** | **74 %** |
 
-**Next task:** `P2-T4` (job detail page + submit link). Deferred: P1-T10b (needs Gemini key, before P4-T2)
+**Next task:** `P3-T1` (company API + pages). Deferred: P1-T10b (needs Gemini key, before P4-T2)
 
 ---
 
@@ -52,7 +52,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P2-T1 | Migration `careers_user_cpi` + eligibility API | [x] | 179f0f4 | 397 tests; migration = 2 nullable ADD COLUMNs; 26/26 HTTP checks (set/clear CPI, 6 invalid bodies → 400, flag off → 404 for student / 200 for admin, no `cpi` in 13 other responses) |
 | P2-T2 | Postings list/detail API (null-safe + eligibility) | [x] | 4fd7f3e | 416 tests; 40/40 HTTP checks: PRD criterion 5 (NOT_DISCLOSED excluded with includeUndisclosed=false, included + counted with true), eligibleOnly hides ME-only for CS (hiddenByEligibility 1), non-LIVE → 404 for students, flag off → CAREERS_DISABLED for student / works for admin |
 | P2-T3 | Jobs list page + filters + eligibility card | [x] | b81b60e | Browser 1280 + 375 px: filters in URL (survive reload), undisclosed + eligibility counts, empty state "1 is hidden by 'Eligible for me'" + Show all, CPI save/clear, mobile drawer, flag off → "isn't open yet" + no sidebar item; build ✓, changed files lint 0, src baseline 36 |
-| P2-T4 | Job detail page + submit link | [ ] | | |
+| P2-T4 | Job detail page + submit link | [x] | 47ccf38 | 24/24 browser checks (1280 + 375 px): freshness line (amber at 5 days), deadline only when stated with "stated by source", 3/3 source links, shared link "Being processed" → after the links job "Couldn't be read" + reason; Escape closes dialogs; build ✓, lint 0 / baseline 36, 416 tests |
 
 ## P3: Linking
 | ID | Task | Status | Commit | Notes |

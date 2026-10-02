@@ -8,12 +8,12 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1..T3 done. **Next: P2-T4** (job detail page + submit link).
+- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). **P2 done (4/4).** **Next: P3-T1** (company API + pages).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b81b60e` feat(careers): P2-T3 student jobs page with URL filters, eligibility card and flag-gated sidebar item (all local, not pushed)
+- **Last commit:** `47ccf38` feat(careers): P2-T4 job detail page, source links and share-a-link dialog with submission statuses (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -57,6 +57,7 @@
 | Eligibility / CPI | `services/careers/postings/eligibility.js` (`eligibilityProfile`, `postingEligibility`, `cpiBody`, `toCpi`), `controllers/careers/eligibilityController.js`; migration `20261002042222_careers_user_cpi` | CPI hidden by the global omit in `config/db.js` |
 | Student postings API | `services/careers/postings/query.js` (`postingsQuery`, `compensationWhere`, `eligibilityWhere`, `baseWhere`, `withEligibility`, `orderByFor`), `controllers/careers/postingsController.js` (`listPostings`, `getPosting`), `controllers/careers/companiesController.js` (`searchCompanies`) | routes in `routes/careers.js`; `/careers/companies/search` has no flag gate |
 | Student jobs UI | `client-acc/src/pages/Careers/JobsPage.jsx`, `pages/Careers/components/*`, `pages/Careers/lib/{format,filters}.js`, `hooks/useCareersStatus.js` | route `/dashboard/career-vault/jobs`; sidebar "Jobs & Internships" only when `useCareersStatus().enabled` |
+| Job detail + share link | `client-acc/src/pages/Careers/JobDetailPage.jsx`, `components/{SourceLinks,SubmitLinkModal,MySubmissions}.jsx` | route `/dashboard/career-vault/jobs/:id`; `lib/format.js` has `formatDate`, `collectedBy`, `submissionStatus`, `safeHref` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -108,6 +109,8 @@
 - Prisma `String[]` / `Int[]` columns without a default hold NULL when a create omits them, Prisma *reads* NULL as `[]`, and `{ isEmpty: true }` does not match NULL. Filter "empty" with `OR: [{ f: { isEmpty: true } }, { f: { equals: null } }]`, and always write `[]`.
 - React Router 7's `setSearchParams` updates in a transition, so a controlled checkbox bound to the URL shows its old state for a moment after a click. Playwright's `check()`/`uncheck()` then fails ("did not change its state"); use `click()` and wait.
 - Browser checks without putting the dev password in a tool call: in `browser_run_code_unsafe`, `page.goto('file:///…/server-acc/.env')`, read it with `page.evaluate`, then `page.request.post('/auth/login')` (the cookie lands in the browser context). `require` is not available there. Screenshots can only be saved under `ACC Open Project/` (`.playwright-mcp/`), which must be deleted afterwards.
+- Browser checks without the Playwright MCP: the MCP's own package is in the npx cache (`%LOCALAPPDATA%/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`). Import it from a Node script and launch with `executablePath: %LOCALAPPDATA%/ms-playwright/chromium-1223/chrome-win64/chrome.exe` (its default headless-shell build 1247 isn't installed). The script reads the dev password from `.env` itself. Script: scratchpad `browser_p2t4.mjs`.
+- The dashboard layout has its own `<h1>Portal Dashboard</h1>`; select page headings inside `main main`.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -361,3 +364,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: a student without a roll number in the browser (no such dev user).
 - Dev state: test values restored, student CPI null, `visibleToStudents` false; servers stopped; `.playwright-mcp/` deleted.
 - Next step: P2-T4.
+
+### 2026-10-02, P2-T4: job detail page + share a link
+- Did: `JobDetailPage.jsx` (header with chips, freshness, deadline only when stated, PPO only when stated, Apply link, share button; description as plain text; rail: pay, eligibility, company, sources), `SourceLinks.jsx`, `SubmitLinkModal.jsx`, `MySubmissions.jsx`; jobs page header button; card → detail with `state.fromList` so "All openings" goes back to the filtered list; API additions and Escape-to-close (C-72).
+- Checks (`browser_p2t4.mjs`, real Chromium via playwright-core, student login, flag on, test values on #59 deadline 15 Oct + PPO + years 3/4 + CPI 7 and #91 UNCLEAR pay + confirmed 5 days ago; all restored, test submission deleted): **24 passed, 0 failed**. Card opens "Operations Associate, Apprenticeship"; "All openings" → `/jobs?type=INTERNSHIP`. #59: "First seen yesterday · confirmed live yesterday", "Deadline stated by source: 15 Oct 2026", "PPO mentioned by the source", 3 of 3 sources listed (stripe.com ×2, boards.greenhouse.io), all `_blank` + `noopener noreferrer`, Apply → https://stripe.com/jobs/search?gh_jid=8031833, eligibility "3rd, 4th", "Minimum CPI: 7", badge "CPI ≥ 7.0 · add your CPI". #91: "Pay mentioned: see details" + raw text verbatim, "confirmed live 5 days ago" with an amber dot, no deadline/PPO lines. PENDING_REVIEW #68 and id `abc` → "This posting is not available." Shared `https://example.org/careers/p2t4-test-…` → toast + "Being processed"; `linksJob` → FAILED (HTTP 404 from example.org); after Refresh → "Couldn't be read" + "HTTP 404 from example.org". The earlier Stripe link shows "Live on the portal · View posting". 375 px: scrollWidth 375, rail before the description. No console errors (the deliberate 404/400 resource errors excluded).
+- Found and fixed during the checks: Escape didn't close the dialog (shared Modal); on phones pay/eligibility came after a very long description.
+- Also: `npm test` → 416 passed; client changed files lint 0, `npx eslint src` 36 errors (baseline); `npm run build` ✓.
+- Not verified: the "Already listed" (DUPLICATE) status in the browser (covered by the P1-T9 HTTP checks); the "← All openings" arrow sits under the upstream sidebar toggle at 375 px (layout issue on every dashboard page).
+- Dev state: test values restored, `visibleToStudents` false, servers stopped, Docker still running.
+- Next step: P3-T1.
