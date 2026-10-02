@@ -11,10 +11,10 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
-| P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **27** | **87 %** |
+| P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
+| **Total** | | **31** | **28** | **90 %** |
 
-**Next task:** `P4-T1` (saved + application tracking). Deferred: P1-T10b (needs Gemini key, before P4-T2)
+**Next task:** `P1-T10b` (Gemini provider; needs GEMINI_API_KEY from the user), then `P4-T2` (demo readiness)
 
 ---
 
@@ -65,7 +65,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 ## P4-lite + Buffer
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P4-T1 ◇ | Saved + application tracking | [ ] | | |
+| P4-T1 ◇ | Saved + application tracking | [x] | 30ed0ca | Migration careers_tracking (additive). Save + status persist across reload/new session; deleting a posting cascades its saves and applications (checked in a rolled-back transaction); API checks 25/25; browser: New badge on exactly the 3 postings published after lastVisit, status cycle + menu, Saved filters, expired saved posting, 375 px; 464 tests |
 | P4-T2 | Demo readiness + PRD §7 criteria run | [ ] | | |
 | P4-T3 | Final QA + PR draft | [ ] | | |
 

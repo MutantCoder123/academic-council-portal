@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). **Next: P4-T1** (saved + application tracking).
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Next: P1-T10b**, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `18bdd86` feat(careers): P3-T4 optional company picker on the Career Vault experience form (all local, not pushed)
+- **Last commit:** `30ed0ca` feat(careers): P4-T1 saved postings and application tracking (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 455 passed (20 files).
+- **Tests:** `npm test` → 464 passed (21 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -62,6 +62,7 @@
 | Experience backfill | `server-acc/services/careers/companies/suggest.js`, `controllers/careers/adminBackfillController.js`; client `pages/admin/careers/{ExperienceBackfill,BackfillRow}.jsx` | route `/admin/careers/backfill`, button on the admin Companies page |
 | Cross-links | `server-acc/services/careers/companies/openRoles.js` (used by upstream `getAllPosts`); client `pages/Careers/components/{OpenRolesChip,ExperiencePanel}.jsx` | chip + tabs in `CareerVaultuser/index.jsx`, panel on `JobDetailPage.jsx` |
 | Experience company field | `server-acc/services/careers/companies/experienceCompany.js` (used by upstream `addpost`/`editPost`); client `pages/Careers/components/CompanyPicker.jsx` | picker in `CreatePostView` of `CareerVaultuser/index.jsx`, flag-gated |
+| Saved + application tracking | `server-acc/services/careers/postings/tracking.js` (`withTracking`, `trackedBy`, `applicationBody`), `controllers/careers/trackingController.js`; migration `20261002185258_careers_tracking`; client `pages/Careers/SavedPage.jsx`, `components/{SaveButton,ApplicationStatusButton}.jsx`, `lib/tracking.js` (statuses, `visitBaseline`, `isNewSince`) | route `/dashboard/career-vault/saved`, Saved tab |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -82,6 +83,7 @@
 - `User.cpi` is never returned unless a query `select`s it (global omit, C-66). Don't add `omit: { cpi: false }` anywhere except `/careers/me/*`; the T2 eligibility filter reads CPI with its own `select`.
 - `ExperienceCard` renders the description with the same `dangerouslySetInnerHTML` + classes as `CareerVaultuser/index.jsx` (AI_Rules §9: same rendering; no new client deps, so no DOMPurify). The underlying stored-XSS / self-publish issue is item 14 in the private security report (2 Oct). If the maintainers add a sanitiser, use it in ExperienceCard too.
 - `companyId` on `PATCH /posts/:id`: omitted = unchanged (the admin editor never sends it), `null` = unlink. Admins otherwise link/relink experiences through the backfill page (P3-T2).
+- Tracking data is per student and never shown to admins (no admin endpoint reads it). `GET /careers/saved` as an admin returns the admin's own list.
 
 ## Gotchas / things that surprised me
 
@@ -121,6 +123,8 @@
 - N+1 check recipe: set `globalThis.prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })` before importing a controller (config/db.js reuses it), call the handler with a fake req/res and count `$on('query')` events (scratchpad `nplus1.mjs`).
 - Dev DB has an ACTIVE test company "Acme Robotics Test 1790857833260" (left by an earlier check); it shows first in the student company picker. Delete or merge it before any demo.
 - Publishing an experience calls upstream `notifyOnNewPost`, which emails **every user**. Locally there are no SMTP settings and only dev users, so nothing is sent; keep it that way for test publishes.
+- Stopping the dev servers with TaskStop on Windows can leave the child `node server.js` / vite process listening on :3000 / :5173. Check `netstat -ano | grep LISTEN` and stop the PID.
+- Settings cache again: a script that turns the flag off at the end leaves the API answering CAREERS_DISABLED for 30 s, so wait before the next browser check.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -417,3 +421,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 455 passed (20 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
 - Dev state: test experiences deleted (12 left, none linked), flag false, `.playwright-mcp/` deleted, client stopped. An API dev server (nodemon) started before this session was still on :3000 and was used as is.
 - Next step: P4-T1.
+
+### 2026-10-03, P4-T1: saved postings + application tracking
+- Did: migration `careers_tracking` (reviewed: CREATE TYPE / TABLE / INDEX + 4 cascading FKs only; forbidden-SQL grep clean; `migrate deploy`; no upstream schema line removed). Tracking service + controller + 4 routes; `saved`/`applicationStatus` on list, detail and company cards; students can open their tracked expired postings. Client: SaveButton, ApplicationStatusButton, SavedPage + tab + route, stretched-link JobCard, New badge (C-78). 7 new tests (one helper test file).
+- Checks:
+  - API (`http_p4t1.mjs`, 25/25): save LIVE → 200, again → still one row; save PENDING / untracked EXPIRED → 404; bad id → 400; list shows saved true/false; status APPLIED without saving → 200; HIRED / missing → 400; status on PENDING → 404; detail shows IN_PROGRESS; own saved EXPIRED posting opens (200, status EXPIRED) and accepts REJECTED, an untracked expired one is still 404; Saved list order [E, B, A] = most recently touched first, E shows EXPIRED + REJECTED, no `cpi` in the response; the admin's Saved list is empty (no leak); unsave → false; status null → row deleted; a fresh login session sees saved + INTERESTED; deleting posting A in a transaction removed its 1 save + 1 application (rolled back afterwards); flag off → CAREERS_DISABLED.
+  - Browser (Playwright MCP, student, flag on): while the flag was still cached off, the jobs page didn't touch `careers.lastVisit`; with lastVisit set between publish times, "New" was on exactly postings 53, 59, 63, lastVisit moved to now and a reload kept the 3 badges (session baseline). Tabs: Experiences | Jobs & Internships | Companies | Saved. Bookmark on a card saved it without navigating and stayed saved after reload; clicking the card body opened the posting. Detail: "Track application" → Interested → Applied → In progress; the next click opens the menu (5 statuses + Clear status), Escape closes it; Offer from the menu persisted after reload. Saved page: pills "All 2 · Bookmarked 1 · … · Offer 1"; `?show=OFFER` lists only the Offer posting, Interested filter correct, Rejected shows "No postings marked \"Rejected\"."; unsaving a bookmark-only posting kept the card until reload, then it was gone. An expired saved posting (#96) shows "No longer live" on the card and page, no Apply button, status still settable. 375 px: scrollWidth 375 on Saved and detail. Console 0 errors/warnings.
+  - `npm test` → 464 passed (21 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
+- Dev state: all saves/applications deleted, flag false, `.playwright-mcp/` deleted, servers stopped (ports 3000/5173 free).
+- Next step: P1-T10b (needs the Gemini key from the user), then P4-T2.
