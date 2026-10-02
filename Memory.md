@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T10 done. **Deferred by the user (2 Oct): P1-T10b** (Gemini; waiting for the key; REQUIRED before P4-T2) **and P1-T11** (liveness recheck; no key needed). **Next: P2-T1.**
+- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred by the user until the key arrives; REQUIRED before P4-T2). P1-T11 done 2 Oct. **Next: P2-T1** (user asked for P2-T1..T2 on 2 Oct).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `754aa3e` feat(careers): P1-T10 LLM extraction with a pluggable provider (local Qwen via Ollama) and verify.js (all local, not pushed)
+- **Last commit:** `64ea7bf` feat(careers): P1-T11 daily liveness recheck for manual and student-link postings (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 368 passed (14 files).
+- **Tests:** `npm test` → 373 passed (15 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -52,7 +52,7 @@
 | Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
 | Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
 | Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
-| Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
+| Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission,recheckLiveness}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
 | LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
@@ -100,6 +100,7 @@
 - Grounding can't catch a wrong value that does appear on the page: on a Peerlist page Qwen took the company from sidebar noise ("Colecta" for a Google job). It ends up as a CANDIDATE company (flagged), so review catches it.
 - Hosted job platforms (Keka, Peerlist, Semesteria) aren't the employer; when the page names no company, the hostname fallback gives e.g. "keka" (flagged candidate).
 - Keyword work-mode override can be wrong on pages listing other jobs (MyGyan: page says Onsite, keywords gave HYBRID). Consider preferring the model's value when its word is in the page header.
+- `boards.greenhouse.io/<board>/jobs/<id>` links (e.g. Stripe) redirect more than 3 times, so the recheck can't verify them (logged, not counted). Their postings also have an ATS observation, which the nightly ingest covers.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -318,3 +319,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - User decision: skip P1-T10b (no Gemini key yet) and P1-T11 for now; continue with P2.
 - Dependency check: nothing in P2/P3 needs them; P4-T2 requires `LLM_PROVIDER=gemini` (P1-T10b). P1-T11 needs no key and can be done any time before P4.
 - Until then: student links that need the model use local Qwen (or wait QUEUED with `careers.llmEnabled=false`); manual / link postings are not re-checked for liveness (admins can expire them by hand).
+
+### 2026-10-02, P1-T11: liveness recheck for manual / student-link postings
+- Did: `recheckUpdate` / `recheckResult` (pure) in `ingest/liveness.js`; `links/recheckLiveness.js` (safeFetch each live MANUAL/STUDENT_LINK observation; 404/410 = miss; 2 misses → observation not live; posting with no live observation → EXPIRED; network errors / other statuses logged only; blocked domains skipped); job `recheckLiveness` (`30 5 * * *`, lock 81002) in `jobs.js`; CLI `runJob.js liveness`. 5 new tests (fake DB + fake fetch: 404 twice → EXPIRED; network error not counted; 200 resets; another live observation keeps the posting live; LinkedIn skipped).
+- Checks: `npm test` → 373 passed (15 files). Dev DB, real fetches: run 1 `{checked:12, ok:3, gone:8, errors:1, dropped:0, expired:0}`; run 2 `{checked:12, ok:3, gone:8, errors:1, dropped:8, expired:8}` (the example.com test postings from P1-T6/T7, which really return 404); run 3 `{checked:4, ok:3, gone:0, errors:1}`. The 3 real job pages (Keka, Semesteria, Peerlist) stayed live; the Stripe Greenhouse link → TOO_MANY_REDIRECTS, not counted. `node worker.js` logs `recheckLiveness "30 5 * * *"` among the jobs.
+- Not verified: the 05:30 cron firing for real (schedule registration only).
+- Dev state: postings #93–#100 (example.com test data) are now EXPIRED.
+- Next step: P2-T1.

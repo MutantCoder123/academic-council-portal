@@ -8,13 +8,13 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
-| P1 Ingestion | 1 – 4 Oct | 12 | 10 | In progress |
+| P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **18** | **58 %** |
+| **Total** | | **31** | **19** | **61 %** |
 
-**Next task:** `P2-T1` (migration `careers_user_cpi` + eligibility API). Deferred: P1-T10b (needs Gemini key, before P4-T2), P1-T11
+**Next task:** `P2-T1` (migration `careers_user_cpi` + eligibility API). Deferred: P1-T10b (needs Gemini key, before P4-T2)
 
 ---
 
@@ -44,7 +44,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1-T9 | Student link pipeline (SSRF guard, JSON-LD, ATS links) | [x] | 4ef6cbd | 127.0.0.1 / 169.254.169.254 / 10.x hostname FAILED; LinkedIn STORED_ONLY unfetched; GH link DUPLICATE (+obs); 6th → 429 |
 | P1-T10 | LLM extraction: provider layer + local Qwen 7B (Ollama) + verify.js | [x] | 754aa3e | 368 tests; smoke: 3 real non-ATS job pages → LLM_FAST postings in Flagged (0.40/0.55/0.55); llmEnabled off stops; Ollama down → red alert, rows QUEUED |
 | P1-T10b | Gemini provider (required for final phase; needs API key) | [ ] | | **Deferred (user, 2 Oct): waiting for GEMINI_API_KEY. Must be done before P4-T2** |
-| P1-T11 ◇ | Liveness recheck for manual/link postings | [ ] | | Deferred (user, 2 Oct); no key needed, small; do before P4 |
+| P1-T11 ◇ | Liveness recheck for manual/link postings | [x] | 64ea7bf | 373 tests; dev DB: 8 example.com test postings 404 twice → EXPIRED; real pages stay live; worker lists recheckLiveness 30 5 * * * |
 
 ## P2: Browsing
 | ID | Task | Status | Commit | Notes |
