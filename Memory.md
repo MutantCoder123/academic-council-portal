@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1, P3-T2 done. **Next: P3-T3** (cross-links).
+- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1..T3 done. **Next: P3-T4** (company picker on the experience form).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `d5d72f3` feat(careers): P3-T2 experience backfill with title-based company suggestions, apply and unlink (all local, not pushed)
+- **Last commit:** `835741a` feat(careers): P3-T3 cross-links between experiences and postings (open-roles chip, past-experiences panel, Career Vault tabs) (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 441 passed (18 files).
+- **Tests:** `npm test` → 443 passed (19 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -60,6 +60,7 @@
 | Job detail + share link | `client-acc/src/pages/Careers/JobDetailPage.jsx`, `components/{SourceLinks,SubmitLinkModal,MySubmissions}.jsx` | route `/dashboard/career-vault/jobs/:id`; `lib/format.js` has `formatDate`, `collectedBy`, `submissionStatus`, `safeHref` |
 | Company pages | `server-acc/services/careers/companies/directory.js`, `services/careers/postings/cards.js`, `controllers/careers/companiesController.js` (`listCompanies`, `getCompanyPage`); client `pages/Careers/{CompaniesPage,CompanyPage}.jsx`, `components/{ExperienceCard,PageTitle}.jsx` | routes `/dashboard/career-vault/companies[/:slug]` |
 | Experience backfill | `server-acc/services/careers/companies/suggest.js`, `controllers/careers/adminBackfillController.js`; client `pages/admin/careers/{ExperienceBackfill,BackfillRow}.jsx` | route `/admin/careers/backfill`, button on the admin Companies page |
+| Cross-links | `server-acc/services/careers/companies/openRoles.js` (used by upstream `getAllPosts`); client `pages/Careers/components/{OpenRolesChip,ExperiencePanel}.jsx` | chip + tabs in `CareerVaultuser/index.jsx`, panel on `JobDetailPage.jsx` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -114,6 +115,8 @@
 - Browser checks without putting the dev password in a tool call: in `browser_run_code_unsafe`, `page.goto('file:///…/server-acc/.env')`, read it with `page.evaluate`, then `page.request.post('/auth/login')` (the cookie lands in the browser context). `require` is not available there. Screenshots can only be saved under `ACC Open Project/` (`.playwright-mcp/`), which must be deleted afterwards.
 - Browser checks without the Playwright MCP: the MCP's own package is in the npx cache (`%LOCALAPPDATA%/npm-cache/_npx/9833c18b2d85bc59/node_modules/playwright-core`). Import it from a Node script and launch with `executablePath: %LOCALAPPDATA%/ms-playwright/chromium-1223/chrome-win64/chrome.exe` (its default headless-shell build 1247 isn't installed). The script reads the dev password from `.env` itself. Script: scratchpad `browser_p2t4.mjs`.
 - The dashboard layout has its own `<h1>Portal Dashboard</h1>`; select page headings inside `main main`.
+- Playwright MCP `CONNECT_TIMEOUT` at startup = `npx @playwright/mcp@latest` too slow. Fixed with `MCP_TIMEOUT=120000` in the user settings (needs a Claude Code restart). If it still fails, `/mcp` reconnects it, and the local playwright-core script fallback (P2-T4 gotcha) still works.
+- N+1 check recipe: set `globalThis.prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })` before importing a controller (config/db.js reuses it), call the handler with a fake req/res and count `$on('query')` events (scratchpad `nplus1.mjs`).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -391,3 +394,13 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Also: `npm test` → 441 passed (18 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
 - Dev state: experiences all unlinked again (so the demo can show the backfill); servers stopped.
 - Next step: P3-T3 (cross-links).
+
+### 2026-10-02, P3-T3: cross-links (posting ↔ experiences)
+- Playwright first (user request): the MCP had failed with CONNECT_TIMEOUT because the plugin runs `npx @playwright/mcp@latest` and the start-up can exceed 30 s. It reconnected during the session (tools verified with a navigate); `env.MCP_TIMEOUT=120000` added to `~/.claude/settings.json` (valid JSON, all 42 plugins kept) for future starts (C-76). This task's browser checks used the Playwright MCP again.
+- Did: `withOpenRoles` (one grouped query) + 3-line change to upstream `getAllPosts`; `OpenRolesChip`, CareerVaultTabs on the upstream Career Vault page (6-line change, flag-gated); `ExperiencePanel` on the job detail page + `companyExperiences` in the detail API (C-75). 2 new tests.
+- Checks:
+  - N+1 (`nplus1.mjs`, real `getAllPosts` with the Prisma query log): 1 linked post → 7 queries; 11 linked → 7 queries (experience count, experiences, users, companies, likes, bookmarks, one Posting groupBy). #1 → Google openRoles 1, #3 → Microsoft openRoles 0, #12 company null.
+  - Browser (Playwright MCP, student, temporary: 11 demo experiences linked, #102 LIVE at Google, flag on; all restored): Career Vault shows tabs "Experiences | Jobs & Internships | Companies" and chips ("1 open role at Google →", "Microsoft →", …); the chip opens `/dashboard/career-vault/companies/google` ("1 open role", "2 experiences from seniors"); the posting there opens the job; its panel "2 past experiences at Google →" lists both titles and opens the company page; no experience got expanded by the chip click; 375 px: scrollWidth 375 on Career Vault and the job page; console 0 errors/warnings. Flag off (after the 30 s cache): 0 tabs, 0 chips, experiences still listed.
+  - `npm test` → 443 passed (19 files); client changed files lint 0 (incl. index.jsx), `npx eslint src` 36 (baseline); build ✓.
+- Dev state: experiences unlinked again, #102 back to Colecta/PENDING_REVIEW, flag false; `.playwright-mcp/` deleted; servers stopped.
+- Next step: P3-T4.
