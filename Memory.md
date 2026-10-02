@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1..T3 done. **Next: P3-T4** (company picker on the experience form).
+- **Phase / task:** P0, P2, P3 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). **Next: P4-T1** (saved + application tracking).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `835741a` feat(careers): P3-T3 cross-links between experiences and postings (open-roles chip, past-experiences panel, Career Vault tabs) (all local, not pushed)
+- **Last commit:** `18bdd86` feat(careers): P3-T4 optional company picker on the Career Vault experience form (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 443 passed (19 files).
+- **Tests:** `npm test` → 455 passed (20 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -61,6 +61,7 @@
 | Company pages | `server-acc/services/careers/companies/directory.js`, `services/careers/postings/cards.js`, `controllers/careers/companiesController.js` (`listCompanies`, `getCompanyPage`); client `pages/Careers/{CompaniesPage,CompanyPage}.jsx`, `components/{ExperienceCard,PageTitle}.jsx` | routes `/dashboard/career-vault/companies[/:slug]` |
 | Experience backfill | `server-acc/services/careers/companies/suggest.js`, `controllers/careers/adminBackfillController.js`; client `pages/admin/careers/{ExperienceBackfill,BackfillRow}.jsx` | route `/admin/careers/backfill`, button on the admin Companies page |
 | Cross-links | `server-acc/services/careers/companies/openRoles.js` (used by upstream `getAllPosts`); client `pages/Careers/components/{OpenRolesChip,ExperiencePanel}.jsx` | chip + tabs in `CareerVaultuser/index.jsx`, panel on `JobDetailPage.jsx` |
+| Experience company field | `server-acc/services/careers/companies/experienceCompany.js` (used by upstream `addpost`/`editPost`); client `pages/Careers/components/CompanyPicker.jsx` | picker in `CreatePostView` of `CareerVaultuser/index.jsx`, flag-gated |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -80,6 +81,7 @@
 - Liveness "seen" = every externalId the board returned (also those dropped by the relevance filter), so a rule change never expires a still-listed job.
 - `User.cpi` is never returned unless a query `select`s it (global omit, C-66). Don't add `omit: { cpi: false }` anywhere except `/careers/me/*`; the T2 eligibility filter reads CPI with its own `select`.
 - `ExperienceCard` renders the description with the same `dangerouslySetInnerHTML` + classes as `CareerVaultuser/index.jsx` (AI_Rules §9: same rendering; no new client deps, so no DOMPurify). The underlying stored-XSS / self-publish issue is item 14 in the private security report (2 Oct). If the maintainers add a sanitiser, use it in ExperienceCard too.
+- `companyId` on `PATCH /posts/:id`: omitted = unchanged (the admin editor never sends it), `null` = unlink. Admins otherwise link/relink experiences through the backfill page (P3-T2).
 
 ## Gotchas / things that surprised me
 
@@ -117,6 +119,8 @@
 - The dashboard layout has its own `<h1>Portal Dashboard</h1>`; select page headings inside `main main`.
 - Playwright MCP `CONNECT_TIMEOUT` at startup = `npx @playwright/mcp@latest` too slow. Fixed with `MCP_TIMEOUT=120000` in the user settings (needs a Claude Code restart). If it still fails, `/mcp` reconnects it, and the local playwright-core script fallback (P2-T4 gotcha) still works.
 - N+1 check recipe: set `globalThis.prisma = new PrismaClient({ log: [{ emit: 'event', level: 'query' }] })` before importing a controller (config/db.js reuses it), call the handler with a fake req/res and count `$on('query')` events (scratchpad `nplus1.mjs`).
+- Dev DB has an ACTIVE test company "Acme Robotics Test 1790857833260" (left by an earlier check); it shows first in the student company picker. Delete or merge it before any demo.
+- Publishing an experience calls upstream `notifyOnNewPost`, which emails **every user**. Locally there are no SMTP settings and only dev users, so nothing is sent; keep it that way for test publishes.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -404,3 +408,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 443 passed (19 files); client changed files lint 0 (incl. index.jsx), `npx eslint src` 36 (baseline); build ✓.
 - Dev state: experiences unlinked again, #102 back to Colecta/PENDING_REVIEW, flag false; `.playwright-mcp/` deleted; servers stopped.
 - Next step: P3-T4.
+
+### 2026-10-02, P3-T4: company picker on the experience form
+- Did: `experienceCompanyId` + 7-line change to upstream `addpost`/`editPost`; `CompanyPicker.jsx` (react-select async, existing dep) in the upstream Share Experience form, shown only with the flag on (C-77). 12 new tests.
+- Checks:
+  - API (`http_p3t4.mjs`, 15/15): no companyId → 201, companyId null; Google id (number or string) → linked; null → none; CANDIDATE / MERGED / missing id → 400 "That company can’t be selected…"; "abc" / true → 400 "Invalid company."; rejected requests created nothing; admin publish without companyId keeps Google; the Google company page and the Career Vault list (company google) show it; editPost with a MERGED id → 400, link unchanged; editPost null → unlinked.
+  - Browser (Playwright MCP, flag on): student form shows "Company (optional)"; typing "goog" lists Google and Google Cloud India; picked Google, submitted → request `companyId: 1`, 201. Admin opened it in Manage Posts → Edit → Publish Post (PATCH 201, body without companyId) → the experience is on `/dashboard/career-vault/companies/google` and Career Vault shows the "Google →" chip. 375 px: picker 287 px wide, page scrollWidth 375, "No company matches. Leave it empty." for an unknown name. Flag off (after the 30 s cache): no tabs, no picker, labels Title/Experience Type/Domain only; submit → request keys exactly `title, description, experienceType, domain, status, resumeUrl`, 201, companyId null. Console 0 errors/warnings.
+  - `npm test` → 455 passed (20 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
+- Dev state: test experiences deleted (12 left, none linked), flag false, `.playwright-mcp/` deleted, client stopped. An API dev server (nodemon) started before this session was still on :3000 and was used as is.
+- Next step: P4-T1.

@@ -10,11 +10,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
 | P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
-| P3 Linking | 7 – 8 Oct | 4 | 3 | In progress |
+| P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **26** | **84 %** |
+| **Total** | | **31** | **27** | **87 %** |
 
-**Next task:** `P3-T4` (company picker on the experience form). Deferred: P1-T10b (needs Gemini key, before P4-T2)
+**Next task:** `P4-T1` (saved + application tracking). Deferred: P1-T10b (needs Gemini key, before P4-T2)
 
 ---
 
@@ -60,7 +60,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P3-T1 | Company API + pages | [x] | 42a8087 | 21/21 browser+HTTP checks: Google page shows its LIVE posting + both linked demo experiences with counts ("1 open role", "2 experiences from seniors"); experience HTML rendered exactly as Career Vault; merged slug redirects; 375 px OK; 421 tests |
 | P3-T2 | Experience backfill (admin) | [x] | d5d72f3 | 21/21 browser+API checks: suggestions right for 12/12 demo titles (11 companies + none for the startup post); bulk apply + manual pick link them; company pages update (Google 3 → unlink → 2); candidate refused; student 403; 441 tests |
 | P3-T3 | Cross-links (posting ↔ experiences) | [x] | 835741a | Both directions navigate (chip → /companies/google; job panel "2 past experiences at Google →" → company page); Career Vault list: 7 queries with 1 or 11 linked posts (no N+1, Prisma query log); flag off → no tabs/chips; 375 px OK; 443 tests |
-| P3-T4 | Company picker on experience form | [ ] | | |
+| P3-T4 | Company picker on experience form | [x] | 18bdd86 | Form submit with Google → admin publish (admin editor) → on the Google company page + chip; without a company the request is the original 6 fields (201); non-ACTIVE/malformed companyId → 400; API checks 15/15; 455 tests |
 
 ## P4-lite + Buffer
 | ID | Task | Status | Commit | Notes |
