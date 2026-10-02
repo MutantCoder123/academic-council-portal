@@ -9,12 +9,12 @@ Update this file at the end of **every** task. The commit column = short SHA.
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
 | P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
-| P2 Browsing | 5 – 6 Oct | 4 | 0 | Not started |
+| P2 Browsing | 5 – 6 Oct | 4 | 1 | In progress |
 | P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **19** | **61 %** |
+| **Total** | | **31** | **20** | **65 %** |
 
-**Next task:** `P2-T1` (migration `careers_user_cpi` + eligibility API). Deferred: P1-T10b (needs Gemini key, before P4-T2)
+**Next task:** `P2-T2` (postings list/detail API). Deferred: P1-T10b (needs Gemini key, before P4-T2)
 
 ---
 
@@ -49,7 +49,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 ## P2: Browsing
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P2-T1 | Migration `careers_user_cpi` + eligibility API | [ ] | | |
+| P2-T1 | Migration `careers_user_cpi` + eligibility API | [x] | 179f0f4 | 397 tests; migration = 2 nullable ADD COLUMNs; 26/26 HTTP checks (set/clear CPI, 6 invalid bodies → 400, flag off → 404 for student / 200 for admin, no `cpi` in 13 other responses) |
 | P2-T2 | Postings list/detail API (null-safe + eligibility) | [ ] | | |
 | P2-T3 | Jobs list page + filters + eligibility card | [ ] | | |
 | P2-T4 | Job detail page + submit link | [ ] | | |

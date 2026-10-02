@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred by the user until the key arrives; REQUIRED before P4-T2). P1-T11 done 2 Oct. **Next: P2-T1** (user asked for P2-T1..T2 on 2 Oct).
+- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1 done. **Next: P2-T2** (user asked for P2-T1..T2 on 2 Oct).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `64ea7bf` feat(careers): P1-T11 daily liveness recheck for manual and student-link postings (all local, not pushed)
+- **Last commit:** `179f0f4` feat(careers): P2-T1 User.cpi migration and eligibility API (CPI hidden from every other query) (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 373 passed (15 files).
+- **Tests:** `npm test` → 397 passed (15 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -54,6 +54,7 @@
 | Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
 | Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission,recheckLiveness}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
 | LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
+| Eligibility / CPI | `services/careers/postings/eligibility.js` (`eligibilityProfile`, `postingEligibility`, `cpiBody`, `toCpi`), `controllers/careers/eligibilityController.js`; migration `20261002042222_careers_user_cpi` | CPI hidden by the global omit in `config/db.js` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -71,6 +72,7 @@
 - Relevance: `evaluateRelevance` returns `location: 'unknown'` for non-geographic text such as "Hybrid" or "N/A". P1-T4 must add `location` to `uncertainFields` in that case.
 - Compensation: stipend must say monthly, else UNCLEAR; CTC in lakh/crore is annual; no period conversion; 0 only for "unpaid".
 - Liveness "seen" = every externalId the board returned (also those dropped by the relevance filter), so a rule change never expires a still-listed job.
+- `User.cpi` is never returned unless a query `select`s it (global omit, C-66). Don't add `omit: { cpi: false }` anywhere except `/careers/me/*`; the T2 eligibility filter reads CPI with its own `select`.
 
 ## Gotchas / things that surprised me
 
@@ -322,7 +324,14 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 
 ### 2026-10-02, P1-T11: liveness recheck for manual / student-link postings
 - Did: `recheckUpdate` / `recheckResult` (pure) in `ingest/liveness.js`; `links/recheckLiveness.js` (safeFetch each live MANUAL/STUDENT_LINK observation; 404/410 = miss; 2 misses → observation not live; posting with no live observation → EXPIRED; network errors / other statuses logged only; blocked domains skipped); job `recheckLiveness` (`30 5 * * *`, lock 81002) in `jobs.js`; CLI `runJob.js liveness`. 5 new tests (fake DB + fake fetch: 404 twice → EXPIRED; network error not counted; 200 resets; another live observation keeps the posting live; LinkedIn skipped).
-- Checks: `npm test` → 373 passed (15 files). Dev DB, real fetches: run 1 `{checked:12, ok:3, gone:8, errors:1, dropped:0, expired:0}`; run 2 `{checked:12, ok:3, gone:8, errors:1, dropped:8, expired:8}` (the example.com test postings from P1-T6/T7, which really return 404); run 3 `{checked:4, ok:3, gone:0, errors:1}`. The 3 real job pages (Keka, Semesteria, Peerlist) stayed live; the Stripe Greenhouse link → TOO_MANY_REDIRECTS, not counted. `node worker.js` logs `recheckLiveness "30 5 * * *"` among the jobs.
+- Checks: `npm test` → 373 passed (14 files). Dev DB, real fetches: run 1 `{checked:12, ok:3, gone:8, errors:1, dropped:0, expired:0}`; run 2 `{checked:12, ok:3, gone:8, errors:1, dropped:8, expired:8}` (the example.com test postings from P1-T6/T7, which really return 404); run 3 `{checked:4, ok:3, gone:0, errors:1}`. The 3 real job pages (Keka, Semesteria, Peerlist) stayed live; the Stripe Greenhouse link → TOO_MANY_REDIRECTS, not counted. `node worker.js` logs `recheckLiveness "30 5 * * *"` among the jobs.
 - Not verified: the 05:30 cron firing for real (schedule registration only).
 - Dev state: postings #93–#100 (example.com test data) are now EXPIRED.
 - Next step: P2-T1.
+
+### 2026-10-02, P2-T1: User.cpi migration + eligibility API
+- Did: schema `User.cpi Decimal(4,2)?`, `cpiUpdatedAt DateTime?`; migration `20261002042222_careers_user_cpi` (reviewed: `ALTER TABLE "User" ADD COLUMN "cpi" DECIMAL(4,2), ADD COLUMN "cpiUpdatedAt" TIMESTAMP(3);`, forbidden-SQL grep empty), applied with `migrate deploy`; `migrate diff` DB→schema: no difference. Global omit in `config/db.js` (C-66). `postings/eligibility.js` + `eligibilityController.js`; routes `GET /careers/me/eligibility`, `PATCH /careers/me/cpi` (checkAuth + requireCareersEnabled). 24 new tests (16-case matrix incl. no roll number / no CPI, July year boundary, cpiBody).
+- Checks: `npm test` → 397 passed (15 files). Prisma omit probe: findFirst / findMany / `include: { uploadedBy: true }` → no `cpi` key; explicit select → returns it. HTTP (`http_p2t1.mjs`): 26 passed, 0 failed: flag off → student 404 CAREERS_DISABLED, admin 200; student GET → `{branchName:'CS', academicYear:3, cpi:null, hasRollNumber:true}`; PATCH 8.25 → 200; PATCH 10.5 / -1 / 8.255 / "8.5" / {} / {cpi, userId} → 400 and CPI unchanged; with CPI set, no `cpi` key in /auth/me, /getuser/me, /careers/status, /careers/submissions/mine, /posts, admin review (flagged, pending), posting #59, submissions, ops, companies, sources; PATCH null → cpi and cpiUpdatedAt null; no cookie → 401. `grep -i cpi controllers/` (minus minCpi) → only eligibilityController.js.
+- Not verified: upstream `GET /users` over HTTP (needs a SUPER_ADMIN login; covered by the findMany probe).
+- Dev state: `careers.visibleToStudents` back to false; the dev student's CPI is cleared.
+- Next step: P2-T2.
