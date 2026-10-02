@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1 done. **Next: P3-T2** (experience backfill).
+- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1, P3-T2 done. **Next: P3-T3** (cross-links).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `42a8087` feat(careers): P3-T1 company directory and company pages with live postings and linked experiences (all local, not pushed)
+- **Last commit:** `d5d72f3` feat(careers): P3-T2 experience backfill with title-based company suggestions, apply and unlink (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 421 passed (17 files).
+- **Tests:** `npm test` → 441 passed (18 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -59,6 +59,7 @@
 | Student jobs UI | `client-acc/src/pages/Careers/JobsPage.jsx`, `pages/Careers/components/*`, `pages/Careers/lib/{format,filters}.js`, `hooks/useCareersStatus.js` | route `/dashboard/career-vault/jobs`; sidebar "Jobs & Internships" only when `useCareersStatus().enabled` |
 | Job detail + share link | `client-acc/src/pages/Careers/JobDetailPage.jsx`, `components/{SourceLinks,SubmitLinkModal,MySubmissions}.jsx` | route `/dashboard/career-vault/jobs/:id`; `lib/format.js` has `formatDate`, `collectedBy`, `submissionStatus`, `safeHref` |
 | Company pages | `server-acc/services/careers/companies/directory.js`, `services/careers/postings/cards.js`, `controllers/careers/companiesController.js` (`listCompanies`, `getCompanyPage`); client `pages/Careers/{CompaniesPage,CompanyPage}.jsx`, `components/{ExperienceCard,PageTitle}.jsx` | routes `/dashboard/career-vault/companies[/:slug]` |
+| Experience backfill | `server-acc/services/careers/companies/suggest.js`, `controllers/careers/adminBackfillController.js`; client `pages/admin/careers/{ExperienceBackfill,BackfillRow}.jsx` | route `/admin/careers/backfill`, button on the admin Companies page |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -383,3 +384,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Also: `npm test` → 421 passed (17 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
 - Dev state: restored (#102 back to Colecta/PENDING_REVIEW, experiences unlinked, flag false, CPI null); servers stopped.
 - Next step: P3-T2 (experience backfill).
+
+### 2026-10-02, P3-T2: experience backfill (admin)
+- Did: `suggest.js` (pure; alias scan + title patterns through the matcher), `adminBackfillController.js` (`listBackfill`, `applyBackfill`, `unlinkBackfill`) + routes; `ExperienceBackfill.jsx` + `BackfillRow.jsx` (Not linked / Linked tabs with counts, title search, suggestion with how it was found, "Choose another company" picker, select-all + bulk Link, Re-link, Unlink); route + "Link experiences" on the admin Companies page (C-74). 20 new tests (all 12 demo titles, longest alias, whole words, short alias score, fuzzy via pattern, no guess for "Qualcom").
+- Checks (`browser_p3t2.mjs`, playwright-core + Chromium 1223, admin and student logins; all 12 experiences restored to unlinked afterwards): **21 passed, 0 failed**. Suggestions in the UI: 12/12 right (Google ×2, Microsoft ×2, Goldman Sachs, Amazon ×2, Texas Instruments, Qualcomm, Flipkart, D. E. Shaw; none for "Building a campus startup"); tabs "Not linked (12) | Linked (0)". Picking the CANDIDATE "Colecta" → warning + Link disabled; picking Google → "Linked 1 experience". "Select all with a company (11)" → "Link 11 selected" → "Linked 11 experiences"; DB 12/12 linked to the expected company; Google page 3 experiences, Microsoft 2 (also in the browser). Unlink the startup post → Google 2, tabs "Not linked (1) | Linked (11)". API: CANDIDATE → 400 COMPANY_NOT_ACTIVE; same experience twice → 400; unknown experience → 404; unlink unlinked → 409 NOT_LINKED; student → 403 (list and apply). 375 px: scrollWidth 375. No console errors.
+- Also: `npm test` → 441 passed (18 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
+- Dev state: experiences all unlinked again (so the demo can show the backfill); servers stopped.
+- Next step: P3-T3 (cross-links).
