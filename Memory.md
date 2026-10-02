@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1 done. **Next: P2-T2** (user asked for P2-T1..T2 on 2 Oct).
+- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1, P2-T2 done (user asked for P2-T1..T2 on 2 Oct; stopped there). **Next: P2-T3.**
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `179f0f4` feat(careers): P2-T1 User.cpi migration and eligibility API (CPI hidden from every other query) (all local, not pushed)
+- **Last commit:** `4fd7f3e` feat(careers): P2-T2 student postings list/detail API with null-safe pay and eligibility filters, company search (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 397 passed (15 files).
+- **Tests:** `npm test` → 416 passed (16 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -55,6 +55,7 @@
 | Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission,recheckLiveness}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
 | LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
 | Eligibility / CPI | `services/careers/postings/eligibility.js` (`eligibilityProfile`, `postingEligibility`, `cpiBody`, `toCpi`), `controllers/careers/eligibilityController.js`; migration `20261002042222_careers_user_cpi` | CPI hidden by the global omit in `config/db.js` |
+| Student postings API | `services/careers/postings/query.js` (`postingsQuery`, `compensationWhere`, `eligibilityWhere`, `baseWhere`, `withEligibility`, `orderByFor`), `controllers/careers/postingsController.js` (`listPostings`, `getPosting`), `controllers/careers/companiesController.js` (`searchCompanies`) | routes in `routes/careers.js`; `/careers/companies/search` has no flag gate |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -103,6 +104,7 @@
 - Hosted job platforms (Keka, Peerlist, Semesteria) aren't the employer; when the page names no company, the hostname fallback gives e.g. "keka" (flagged candidate).
 - Keyword work-mode override can be wrong on pages listing other jobs (MyGyan: page says Onsite, keywords gave HYBRID). Consider preferring the model's value when its word is in the page header.
 - `boards.greenhouse.io/<board>/jobs/<id>` links (e.g. Stripe) redirect more than 3 times, so the recheck can't verify them (logged, not counted). Their postings also have an ATS observation, which the nightly ingest covers.
+- Prisma `String[]` / `Int[]` columns without a default hold NULL when a create omits them, Prisma *reads* NULL as `[]`, and `{ isEmpty: true }` does not match NULL. Filter "empty" with `OR: [{ f: { isEmpty: true } }, { f: { equals: null } }]`, and always write `[]`.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -335,3 +337,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: upstream `GET /users` over HTTP (needs a SUPER_ADMIN login; covered by the findMany probe).
 - Dev state: `careers.visibleToStudents` back to false; the dev student's CPI is cleared.
 - Next step: P2-T2.
+
+### 2026-10-02, P2-T2: postings list/detail API + company search
+- Did: `postings/query.js` (zod query parser, null-safe pay clause, eligibility clause, base where, orderBy); `postingsController.js` (list with `meta.undisclosedIncluded`, `hiddenByEligibility`, `eligibility.applied/reason`; detail: LIVE for students, any status for career admins, observations with source name/kind, `companyExperienceCount`); `companiesController.js` `searchCompanies` (ACTIVE, name or alias, max 10, no flag gate). Fixed NULL array columns (C-69) and the recheck's `lastSeenLiveAt` (C-70, commit 4b0fb60). 19 new tests (query shapes) + 1 (buildPostingData arrays).
+- Checks: `npm test` → 416 passed (16 files). HTTP (`http_p2t2.mjs`, temporary test values on #63/#64/#66/#67/#90, restored afterwards and verified): first run 37/40, the 3 eligibility checks failed (eligibleOnly hid all 28: NULL arrays) → fixed → **40 passed, 0 failed**: `minStipend=10000&includeUndisclosed=false` → only #64 (₹50k), #59 NOT_DISCLOSED excluded, ₹8k #63 and USD #90 excluded, undisclosedIncluded 0, no FULL_TIME; `includeUndisclosed=true` → 16 results incl. #59 and #90, undisclosedIncluded 15; default true; #59 card has null amounts; ME-only #66 → NOT_ELIGIBLE without the filter, hidden with `eligibleOnly` (hiddenByEligibility 1, applied true); #67 (year 3, CPI 7) → NEEDS_CPI with no CPI, hidden with CPI 6.5 (hidden 2), no `cpi` key in the response; type / location=Bangalore / q=stripe / paging / sort=lastSeen work; 5 bad query values → 400; detail #59 → 200 (3 observations: 2 Greenhouse + 1 student link, companyExperienceCount 0) without review internals; PENDING_REVIEW #68 and EXPIRED #93 → 404 for the student, 200 for the admin; unknown id 404, bad id 400; company search q=pay → Juspay, Paytm, Razorpay (id/name/slug only); flag off → student list/detail 404 CAREERS_DISABLED, admin list 200, company search still 200; no cookie 401.
+- Not verified: a student without a roll number over HTTP (no such dev user; unit-tested: `NO_ROLL_NUMBER`).
+- Dev state: test values restored (0 LIVE postings with disclosed pay / non-INR / branch limits / CPI cutoff); student CPI null; `visibleToStudents` false; API stopped.
+- Next step: P2-T3 (jobs list page).
