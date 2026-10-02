@@ -8,12 +8,12 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1, P2-T2 done (user asked for P2-T1..T2 on 2 Oct; stopped there). **Next: P2-T3.**
+- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P2-T1..T3 done. **Next: P2-T4** (job detail page + submit link).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `4fd7f3e` feat(careers): P2-T2 student postings list/detail API with null-safe pay and eligibility filters, company search (all local, not pushed)
+- **Last commit:** `b81b60e` feat(careers): P2-T3 student jobs page with URL filters, eligibility card and flag-gated sidebar item (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -56,6 +56,7 @@
 | LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
 | Eligibility / CPI | `services/careers/postings/eligibility.js` (`eligibilityProfile`, `postingEligibility`, `cpiBody`, `toCpi`), `controllers/careers/eligibilityController.js`; migration `20261002042222_careers_user_cpi` | CPI hidden by the global omit in `config/db.js` |
 | Student postings API | `services/careers/postings/query.js` (`postingsQuery`, `compensationWhere`, `eligibilityWhere`, `baseWhere`, `withEligibility`, `orderByFor`), `controllers/careers/postingsController.js` (`listPostings`, `getPosting`), `controllers/careers/companiesController.js` (`searchCompanies`) | routes in `routes/careers.js`; `/careers/companies/search` has no flag gate |
+| Student jobs UI | `client-acc/src/pages/Careers/JobsPage.jsx`, `pages/Careers/components/*`, `pages/Careers/lib/{format,filters}.js`, `hooks/useCareersStatus.js` | route `/dashboard/career-vault/jobs`; sidebar "Jobs & Internships" only when `useCareersStatus().enabled` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -105,6 +106,8 @@
 - Keyword work-mode override can be wrong on pages listing other jobs (MyGyan: page says Onsite, keywords gave HYBRID). Consider preferring the model's value when its word is in the page header.
 - `boards.greenhouse.io/<board>/jobs/<id>` links (e.g. Stripe) redirect more than 3 times, so the recheck can't verify them (logged, not counted). Their postings also have an ATS observation, which the nightly ingest covers.
 - Prisma `String[]` / `Int[]` columns without a default hold NULL when a create omits them, Prisma *reads* NULL as `[]`, and `{ isEmpty: true }` does not match NULL. Filter "empty" with `OR: [{ f: { isEmpty: true } }, { f: { equals: null } }]`, and always write `[]`.
+- React Router 7's `setSearchParams` updates in a transition, so a controlled checkbox bound to the URL shows its old state for a moment after a click. Playwright's `check()`/`uncheck()` then fails ("did not change its state"); use `click()` and wait.
+- Browser checks without putting the dev password in a tool call: in `browser_run_code_unsafe`, `page.goto('file:///…/server-acc/.env')`, read it with `page.evaluate`, then `page.request.post('/auth/login')` (the cookie lands in the browser context). `require` is not available there. Screenshots can only be saved under `ACC Open Project/` (`.playwright-mcp/`), which must be deleted afterwards.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -344,3 +347,17 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: a student without a roll number over HTTP (no such dev user; unit-tested: `NO_ROLL_NUMBER`).
 - Dev state: test values restored (0 LIVE postings with disclosed pay / non-INR / branch limits / CPI cutoff); student CPI null; `visibleToStudents` false; API stopped.
 - Next step: P2-T3 (jobs list page).
+
+### 2026-10-02, P2-T3: jobs list page
+- Did: student API methods in `careersApi.js`; `useCareersStatus`; jobs page with filters in URL search params (q, type, workMode, location, skills, minStipend, minCtcLpa → minCtc, includeUndisclosed, eligibleOnly, sort, page), sticky sidebar on lg / drawer below lg, results summary line, explained empty states, skeletons, pagination; EligibilityCard (branch/year read-only, CPI save/clear with the privacy note); badges per Design §5; route + flag-gated sidebar item (C-71).
+- Checks (browser, student login, temporary test values on #63/#64/#66/#67/#89/#90/#91, flag on; restored afterwards and verified):
+  - 1280 px: layout per Design §4. minStipend=10000 → "17 openings · 15 with undisclosed pay included"; unticking undisclosed → "2 openings" (₹40,000–60,000 /mo and ₹50,000 /mo); Eligible for me → "27 openings · 1 hidden by eligibility" (filter shows "1 hidden"); Full-time hides the stipend field → 11; location Noida → 7; reload keeps `?eligibleOnly=true&type=FULL_TIME&location=Noida`, the inputs and the pressed type button.
+  - Empty state: `q=video editor&eligibleOnly=true` → "No openings match. 1 is hidden by \"Eligible for me\"." + Show all → the ME-only card with "Not eligible: ME only".
+  - Badges: "$3,000 /mo", "Pay mentioned: see details", "₹12 LPA", "Undisclosed" (italic), "CPI ≥ 7.0 · add your CPI", "Eligibility not stated". CPI 6.5 saved (toast "CPI saved. It is only used to filter postings for you.") → that card "Not eligible: CPI ≥ 7.0" and hidden by the filter; Clear → empty input, posting back.
+  - 375 px: no horizontal scroll (scrollWidth 375); "Filters (1)" opens the drawer with the eligibility card and filters, "Show 17 openings", Escape closes, count becomes "Filters (2)" after picking Internships. The sidebar toggle overlapping the title at 375 px is the upstream layout (same on Career Vault).
+  - Flag off (after the 30 s settings cache): "Jobs & Internships isn't open yet." and no sidebar item. Console: 0 errors, 0 warnings.
+- Found and fixed during the checks: freshness said "First seen today" for a posting from yesterday evening (24-hour periods) → calendar days.
+- Lint: changed files 0 problems; `npx eslint src` = 36 errors (baseline). `npm run build` ✓.
+- Not verified: a student without a roll number in the browser (no such dev user).
+- Dev state: test values restored, student CPI null, `visibleToStudents` false; servers stopped; `.playwright-mcp/` deleted.
+- Next step: P2-T4.
