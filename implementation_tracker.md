@@ -10,11 +10,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
 | P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
-| P3 Linking | 7 – 8 Oct | 4 | 0 | Not started |
+| P3 Linking | 7 – 8 Oct | 4 | 1 | In progress |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
-| **Total** | | **31** | **23** | **74 %** |
+| **Total** | | **31** | **24** | **77 %** |
 
-**Next task:** `P3-T1` (company API + pages). Deferred: P1-T10b (needs Gemini key, before P4-T2)
+**Next task:** `P3-T2` (experience backfill, admin). Deferred: P1-T10b (needs Gemini key, before P4-T2)
 
 ---
 
@@ -57,7 +57,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 ## P3: Linking
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P3-T1 | Company API + pages | [ ] | | |
+| P3-T1 | Company API + pages | [x] | 42a8087 | 21/21 browser+HTTP checks: Google page shows its LIVE posting + both linked demo experiences with counts ("1 open role", "2 experiences from seniors"); experience HTML rendered exactly as Career Vault; merged slug redirects; 375 px OK; 421 tests |
 | P3-T2 | Experience backfill (admin) | [ ] | | |
 | P3-T3 | Cross-links (posting ↔ experiences) | [ ] | | |
 | P3-T4 | Company picker on experience form | [ ] | | |

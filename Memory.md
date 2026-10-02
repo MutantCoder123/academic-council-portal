@@ -8,16 +8,16 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). **P2 done (4/4).** **Next: P3-T1** (company API + pages).
+- **Phase / task:** P0, P2 done; P1 done except **P1-T10b** (Gemini; deferred until the key arrives; REQUIRED before P4-T2). P3-T1 done. **Next: P3-T2** (experience backfill).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `47ccf38` feat(careers): P2-T4 job detail page, source links and share-a-link dialog with submission statuses (all local, not pushed)
+- **Last commit:** `42a8087` feat(careers): P3-T1 company directory and company pages with live postings and linked experiences (all local, not pushed)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 416 passed (16 files).
+- **Tests:** `npm test` → 421 passed (17 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -58,6 +58,7 @@
 | Student postings API | `services/careers/postings/query.js` (`postingsQuery`, `compensationWhere`, `eligibilityWhere`, `baseWhere`, `withEligibility`, `orderByFor`), `controllers/careers/postingsController.js` (`listPostings`, `getPosting`), `controllers/careers/companiesController.js` (`searchCompanies`) | routes in `routes/careers.js`; `/careers/companies/search` has no flag gate |
 | Student jobs UI | `client-acc/src/pages/Careers/JobsPage.jsx`, `pages/Careers/components/*`, `pages/Careers/lib/{format,filters}.js`, `hooks/useCareersStatus.js` | route `/dashboard/career-vault/jobs`; sidebar "Jobs & Internships" only when `useCareersStatus().enabled` |
 | Job detail + share link | `client-acc/src/pages/Careers/JobDetailPage.jsx`, `components/{SourceLinks,SubmitLinkModal,MySubmissions}.jsx` | route `/dashboard/career-vault/jobs/:id`; `lib/format.js` has `formatDate`, `collectedBy`, `submissionStatus`, `safeHref` |
+| Company pages | `server-acc/services/careers/companies/directory.js`, `services/careers/postings/cards.js`, `controllers/careers/companiesController.js` (`listCompanies`, `getCompanyPage`); client `pages/Careers/{CompaniesPage,CompanyPage}.jsx`, `components/{ExperienceCard,PageTitle}.jsx` | routes `/dashboard/career-vault/companies[/:slug]` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -76,6 +77,7 @@
 - Compensation: stipend must say monthly, else UNCLEAR; CTC in lakh/crore is annual; no period conversion; 0 only for "unpaid".
 - Liveness "seen" = every externalId the board returned (also those dropped by the relevance filter), so a rule change never expires a still-listed job.
 - `User.cpi` is never returned unless a query `select`s it (global omit, C-66). Don't add `omit: { cpi: false }` anywhere except `/careers/me/*`; the T2 eligibility filter reads CPI with its own `select`.
+- `ExperienceCard` renders the description with the same `dangerouslySetInnerHTML` + classes as `CareerVaultuser/index.jsx` (AI_Rules §9: same rendering; no new client deps, so no DOMPurify). The underlying stored-XSS / self-publish issue is item 14 in the private security report (2 Oct). If the maintainers add a sanitiser, use it in ExperienceCard too.
 
 ## Gotchas / things that surprised me
 
@@ -373,3 +375,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: the "Already listed" (DUPLICATE) status in the browser (covered by the P1-T9 HTTP checks); the "← All openings" arrow sits under the upstream sidebar toggle at 375 px (layout issue on every dashboard page).
 - Dev state: test values restored, `visibleToStudents` false, servers stopped, Docker still running.
 - Next step: P3-T1.
+
+### 2026-10-02, P3-T1: company API + pages
+- Did: `listCompanies`, `getCompanyPage` (+ `directory.js` pure: query, where, counts, ranking; `cards.js` shared with postings); routes (search before :slug; flag-gated except search); client CompaniesPage (search in URL, cards with open-role / experience counts, paging), CompanyPage (counts, Open roles with JobCards, Experiences from seniors with expandable ExperienceCards), Companies tab, company links from the job detail page (C-73). 5 new tests.
+- Security: Career Vault renders experience HTML unsanitised and `addpost`/`editPost` take `status` from the body (a student can self-publish) → stored XSS. Added as item 14 (High) to the local `upstream_vulnerabilities.md` (gitignored; not committed). ExperienceCard follows the rule to render the same way (decision above).
+- Checks (`browser_p3t1.mjs`, playwright-core + Chromium 1223 because the Playwright MCP failed to connect; temporary: experiences #1, #2 linked to Google, posting #102 moved to Google and LIVE, flag on; all restored): **21 passed, 0 failed**. Directory: Google "1 open role | 2 experiences"; order Paytm, Groww, Rubrik, Sarvam AI, Stripe; Companies tab `aria-current=page`; search "goo" → Google only, `?q=goo`. Google page: "1 open role", "2 experiences from seniors", posting "Software Engineering Intern, Summer 2026", both experiences; expanded body innerHTML === stored description, classes `text-slate-600 leading-relaxed quill-content text-sm`. Posting card → job detail; company name there → company page; `/companies/google-cloud` (merged) → `/companies/google`; `colecta` (CANDIDATE) and an unknown slug → "This company page does not exist."; 375 px scrollWidth 375 on both pages; no console errors; company JSON has no `cpi` with CPI 8.5 set; flag off → directory 404 CAREERS_DISABLED, picker search 200.
+- Also: `npm test` → 421 passed (17 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
+- Dev state: restored (#102 back to Colecta/PENDING_REVIEW, experiences unlinked, flag false, CPI null); servers stopped.
+- Next step: P3-T2 (experience backfill).
