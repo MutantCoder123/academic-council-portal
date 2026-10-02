@@ -8,7 +8,7 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 done (8/8); P1-T1..T10 done. **Next: P1-T10b** (Gemini provider, needs the user's `GEMINI_API_KEY`) **and P1-T11** (liveness recheck for manual/link postings). User asked to stop after T10 on 1 Oct.
+- **Phase / task:** P0 done (8/8); P1-T1..T10 done. **Deferred by the user (2 Oct): P1-T10b** (Gemini; waiting for the key; REQUIRED before P4-T2) **and P1-T11** (liveness recheck; no key needed). **Next: P2-T1.**
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
@@ -313,3 +313,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: actually stopping the Ollama app (simulated with a closed port instead); escalation with a real strong model (none configured locally; unit-tested).
 - Dev state: `careers.llmEnabled` back to false; submissions #7–#12 + postings #101–#103 exist in the dev DB.
 - Next step: P1-T10b (Gemini, needs the key) and P1-T11.
+
+### 2026-10-02, plan change: P1-T10b and P1-T11 deferred
+- User decision: skip P1-T10b (no Gemini key yet) and P1-T11 for now; continue with P2.
+- Dependency check: nothing in P2/P3 needs them; P4-T2 requires `LLM_PROVIDER=gemini` (P1-T10b). P1-T11 needs no key and can be done any time before P4.
+- Until then: student links that need the model use local Qwen (or wait QUEUED with `careers.llmEnabled=false`); manual / link postings are not re-checked for liveness (admins can expire them by hand).

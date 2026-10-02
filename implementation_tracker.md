@@ -14,7 +14,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 0 | Not started |
 | **Total** | | **31** | **18** | **58 %** |
 
-**Next task:** `P1-T10b` (Gemini provider; needs GEMINI_API_KEY) or `P1-T11` (liveness recheck)
+**Next task:** `P2-T1` (migration `careers_user_cpi` + eligibility API). Deferred: P1-T10b (needs Gemini key, before P4-T2), P1-T11
 
 ---
 
@@ -43,8 +43,8 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1-T8 | Sources + Operations UI | [x] | bf52ad8 | FAILING board red with error; worker stale alert (faked heartbeat); visibleToStudents toggle flips student status |
 | P1-T9 | Student link pipeline (SSRF guard, JSON-LD, ATS links) | [x] | 4ef6cbd | 127.0.0.1 / 169.254.169.254 / 10.x hostname FAILED; LinkedIn STORED_ONLY unfetched; GH link DUPLICATE (+obs); 6th → 429 |
 | P1-T10 | LLM extraction: provider layer + local Qwen 7B (Ollama) + verify.js | [x] | 754aa3e | 368 tests; smoke: 3 real non-ATS job pages → LLM_FAST postings in Flagged (0.40/0.55/0.55); llmEnabled off stops; Ollama down → red alert, rows QUEUED |
-| P1-T10b | Gemini provider (required for final phase; needs API key) | [ ] | | Qwen = testing only; switch before P4-T2 |
-| P1-T11 ◇ | Liveness recheck for manual/link postings | [ ] | | |
+| P1-T10b | Gemini provider (required for final phase; needs API key) | [ ] | | **Deferred (user, 2 Oct): waiting for GEMINI_API_KEY. Must be done before P4-T2** |
+| P1-T11 ◇ | Liveness recheck for manual/link postings | [ ] | | Deferred (user, 2 Oct); no key needed, small; do before P4 |
 
 ## P2: Browsing
 | ID | Task | Status | Commit | Notes |
