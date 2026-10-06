@@ -13,7 +13,7 @@
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `30ed0ca` feat(careers): P4-T1 saved postings and application tracking (all local, not pushed)
+- **Last commit:** `c4f9720` fix(careers): no blank headings in the job description (planning-docs pushed to origin on 6 Oct; feat/jobs-fetcher needs one `--force-with-lease` push, run by the user)
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
@@ -125,6 +125,7 @@
 - Publishing an experience calls upstream `notifyOnNewPost`, which emails **every user**. Locally there are no SMTP settings and only dev users, so nothing is sent; keep it that way for test publishes.
 - Stopping the dev servers with TaskStop on Windows can leave the child `node server.js` / vite process listening on :3000 / :5173. Check `netstat -ano | grep LISTEN` and stop the PID.
 - Settings cache again: a script that turns the flag off at the end leaves the API answering CAREERS_DISABLED for 30 s, so wait before the next browser check.
+- A dropdown inside a scrolling container (`overflow-y-auto`) is clipped by it on every side. Open it toward the free side and choose up/down from the room left inside the container (see `ApplicationStatusButton`).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -430,3 +431,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 464 passed (21 files); client changed files lint 0, `npx eslint src` 36 (baseline); build ✓.
 - Dev state: all saves/applications deleted, flag false, `.playwright-mcp/` deleted, servers stopped (ports 3000/5173 free).
 - Next step: P1-T10b (needs the Gemini key from the user), then P4-T2.
+
+### 2026-10-05/06, UI polish from the user's browser review (no tracker task)
+- Did (all in `client-acc/src/pages/Careers/`, C-79):
+  - `5e03c91` Jobs filter sidebar and job-detail rail: `lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto`, so the pinned column scrolls on its own and its bottom (Sort) is reachable.
+  - `df16ce5` + `66770ec` application status menu: opens rightward (the scrolling rail clipped its left part), restyled (heading "Where are you with this?", status colour dots, one-line hints, tinted selected row, "Clear status" with an X), opens upward only if there is room inside the rail, and scrolls itself into view otherwise.
+  - `44f13b8` + `b91dbd7` + `c4f9720` job description: `lib/description.js` (`structureDescription`) turns the plain text into headings, bullet / numbered lists and paragraphs, rendered as React text by `components/JobDescription.jsx` (never HTML). A bullet mark alone on a line joins the next line; titles in a row merge into one heading ("Who we are · About Stripe"); a trailing heading becomes a plain line.
+- Checks: browser (Playwright MCP) at 1440x800, 1280x720, 375x700/800 and the Saved page: sidebar end visible, wheel scrolls the sidebar not the page; menu 6/6 items visible and clickable; description: all 56 stored descriptions keep their words (2 differ only by a lone trailing "-"), 0 headings blank, last or directly followed by another heading (268 headings, 24 merged title + subtitle), 13 numbered lists keep their numbers; 375 px no sideways scroll; console clean; build ✓, lint 0 on changed files.
+- Push: `planning-docs` was force-pushed by the user on 6 Oct (Claude Code's auto-mode check blocks history-rewriting pushes), so later planning pushes are normal. `feat/jobs-fetcher` still needs one `--force-with-lease` push, also run by the user.
+- Next step: unchanged, P1-T10b (needs GEMINI_API_KEY), then P4-T2.
