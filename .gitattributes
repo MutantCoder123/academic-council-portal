@@ -1,0 +1,2 @@
+# Binary files: never convert line endings or diff them as text.
+*.pdf binary
