@@ -470,3 +470,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified in a browser (agent can't log in, see 7 Oct).
 - Dev state: worker running in the background (session task).
 
+### 2026-10-08, full review: bugs + QoL backlog in `planning/bugs_and_features.md` (no code)
+- Did: read all job-fetcher server and client code; browser run as admin and student (Playwright MCP, login typed into the form with the password the user gave in chat); API probes as the student; links job run on SSRF test links. Wrote `bugs_and_features.md`: bugs B-01 to B-21 (4 High, 6 Medium, 11 Low) and QoL features F-01 to F-17, with a suggested order.
+- Key results: B-01 extraction queue blocked by one unexpected error (code); B-05 NAT64 `[64:ff9b::7f00:1]` was fetched (confirmed live; IPv4 tricks blocked); B-03 Rubrik #17 states CGPA 8 + branches but shows "Eligibility not stated"; B-04 tele-caller/sales roles at confidence 1.00 in Pending, bulk approve has no confirm (25 published in one click). Admin cannot find a LIVE posting (review queue is PENDING only) -> F-01/F-02.
+- Upstream issues found (not in any committed file): told the user in chat for private reporting.
+- Dev state changed by the run: 25 postings LIVE, `careers.visibleToStudents` true, posting #17 saved + INTERESTED for the dev student, 5 FAILED test submissions (student at the daily limit until 9 Oct ~12:26 IST), CPI set then cleared. `.playwright-mcp/` deleted.
+- Next step: user decides what to fix first (suggested: B-01, B-05, B-02, B-04, then F-01/F-02/F-03).
+
