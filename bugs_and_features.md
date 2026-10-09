@@ -121,6 +121,23 @@
 | B-20 | No size cap on job-board responses (a broken board could return hundreds of MB) | `ingest/http.js` | Read the body with a cap (e.g. 30 MB) like `safeFetch` | S |
 | B-21 | Pay filter is close to useless on real data: none of the 25 live postings states pay, so "minimum stipend" only shows undisclosed results | data, `JobFilters.jsx` | UI hint ("Most company boards don't publish pay"); B-03-style parser for "stipend ₹…" in descriptions | S |
 
+
+**Status of the Low bugs (9 Oct):** all fixed.
+
+| ID | Commit | Result |
+|---|---|---|
+| B-11 | `8ed22e4` | Count + insert under a per-student advisory lock; 8 parallel shares with limit 5: 6 created before, 5 after (C-91) |
+| B-12 | `9ee3339` | Company and counts hidden unless career admin or feature visible (C-92) |
+| B-13 | `294d46e` | `setSettings` in one transaction |
+| B-14 | `e747314` | `likeSafe` on all 12 searches; q=% 53 → 0 results (C-93) |
+| B-15 | `a8aabc2` | Index `(status, publishedAt)` (C-93) |
+| B-16 | `59d5d0f` | Greenhouse locations cleaned without changing any India/foreign class; `|` lines not headings; glued words are in the source HTML (C-94) |
+| B-17 | `45635f9` | "Fetch finished: N new postings / no new postings / N boards failed" (C-95) |
+| B-18 | `544735b` | 3 admin links (incl. company website) through `safeHref` |
+| B-19 | `7e3acfb` | Compose health check; unhealthy is shown, not auto-restarted (C-95) |
+| B-20 | `bb1b1d6` | 30 MB cap on board responses |
+| B-21 | `3dace0b` | Pay read from the description when stated with an amount (flagged); filter hint (C-95) |
+
 ---
 
 ## 2. QoL features

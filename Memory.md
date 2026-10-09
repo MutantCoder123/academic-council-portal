@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-10 done; user, 9 Oct: "I have been assigned only the bug fixes" → fix all B-xx; F-xx not in scope); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** **all bugs B-01–B-21 fixed** (user, 9 Oct: "I have been assigned only the bug fixes"; F-xx features not in scope); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `3cb9d43` fix(careers): B-10 a LIVE posting can no longer end up under a hidden company. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
+- **Last commit:** `3dace0b` fix(careers): B-21 read pay stated in the description; explain the pay filter. 22 code commits since `origin/feat/jobs-fetcher` (not pushed). Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 575 passed (28 files).
+- **Tests:** `npm test` → 603 passed (31 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -32,6 +32,8 @@
 | Env names | `server-acc/.env.example` | names only |
 | Careers settings | `server-acc/services/careers/settings.js` | `SETTINGS` map (default, editable, zod schema); `getSetting`, `getAllSettings`, `setSetting` (validates; null → `Prisma.JsonNull`), 30 s cache |
 | Job lock | `services/careers/jobLock.js` | `withJobLock(key, name, fn)`, `JOB_LOCKS` constants (81001-81004); xact lock in a 1 h transaction; never throws; heartbeat after a run |
+| Worker health check | `server-acc/scripts/careers/workerHealth.js` (compose `fetcher-acc` healthcheck), `workerHealthy` in `ops/alerts.js` | B-19 |
+| Search escaping | `services/careers/text/likeSafe.js` | every `contains` uses it (B-14) |
 | Heartbeat / academic year / IST dates | `services/careers/heartbeat.js`, `academicYear.js`, `istDate.js` (`istDayStart`, `istMonthStart`) | |
 | Middlewares | `middlewares/careers/requireCareerAdmin.js` (also exports `isCareerAdmin`, `CAREER_ADMIN_ROLES`), `requireCareersEnabled.js` | |
 | Routers | `routes/careers.js` (student), `routes/careersAdmin.js` (admin), mounted at `/api/v1` in `server.js` | |
@@ -525,3 +527,20 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - **B-10** (`3cb9d43`): `mergeProblem`, `companyChangeNeedsActive`. Tests: 4 failed first (not functions) → pass. Real DB with a temporary CANDIDATE company (deleted afterwards): edit LIVE #41 → 409 `COMPANY_NOT_ACTIVE`; merge Google → candidate → 409 `TARGET_NOT_ACTIVE`; #41 unchanged, Google ACTIVE.
 - `npm test` after B-10 → **28 files, 575 passed**.
 - Next: B-11 … B-21 (Low).
+
+### 2026-10-09, B-11 – B-21 (Low backlog bugs, C-91 – C-95)
+- **B-11** (`8ed22e4`): reproduced first on the dev DB (`scratchpad/b11_race.mjs`: 8 parallel shares through the real middleware + controller, limit 5) → `codes 201,201,201,429,201,429,201,201; created 6`. Unit test failed (`$executeRaw` never called). After: 3 runs → `created 5` each. Test rows deleted.
+- **B-12** (`9ee3339`): tests 3 failed → pass. Client already hides chips unless `careers.enabled`.
+- **B-13** (`294d46e`): tests failed (`setSettings is not a function`) → pass. Real controller: same values back → 200; one invalid key → 400 "Nothing was changed", limit still 5.
+- **B-14** (`e747314`): real DB first: `contains '%'` and `'_'` → 53/53. Helper test red → green. Real `listPostings`: q=% → 0, q=_ → 0, q=intern → 13.
+- **B-15** (`a8aabc2`): migration reviewed (one CREATE INDEX), deployed. EXPLAIN: default plan Bitmap Index Scan on the new index + Sort (25 rows, sort is cheaper); with `enable_sort=off` → `Index Scan Backward using "Posting_status_publishedAt_idx"`, presorted `publishedAt`. (Committed before reading the full plan; the follow-up check confirmed it.)
+- **B-16** (`59d5d0f`): location tests 3 failed → pass. Live comparison on 8 Greenhouse boards (`scratchpad/b16_boards.mjs`, read-only; needs `?content=true` or offices are missing): first version changed 10 jobs' location class (Stripe "Remote; US" → remote-india) → two new failing tests ("Remote" alone is not a place; dedup key includes the class) → 852 strings changed, **0** class changes. Client: Rubrik #17 links line heading → paragraph; old vs new `structureDescription` output text identical on all 53 postings. Glued words: not our code (see C-94).
+- **B-17** (`45635f9`): test failed → pass. Real `listSources`: `runsSince` 3 days → `{runs:157,newPostings:6,failed:0}`; bad date → 400; no param → no key. Messages checked in Node for 0/1/2 new and a failure.
+- **B-18** (`544735b`): `safeHref`: https kept; `javascript:`, `data:`, junk → null. Lint 0.
+- **B-19** (`7e3acfb`): tests failed → pass. Script with no worker → exit 1 ("last heartbeat 2026-10-08T13:30Z"); worker started → exit 0; worker stopped (0 left). `docker compose config` fails on this machine for an unrelated upstream service (`smp/server/.env` missing; same with the committed file), so the YAML was checked with PyYAML.
+- **B-20** (`bb1b1d6`): tests failed → pass. All 13 real boards fetched through the capped reader (largest Cloudflare 6.3 MB).
+- **B-21** (`3dace0b`): tests 2 failed → pass (first run hit a duplicate `AMOUNT` constant → renamed). 0 of 53 dev descriptions state pay with an amount, so nothing changes on current data. Filter hint lint 0, build ✓.
+- Final: `npm test` → **31 files, 603 passed**; client build ✓, `npx eslint src` 36; working tree clean; upstream files changed this session: `ForumController.js` (1 line), `docker-compose.yml`, `schema.prisma` (all allowed by AI_Rules §4).
+- Not verified in a browser (agent can't log in): bulk-approve dialog, editor apply-link warning, eligibility highlight, "first shared by another student", Fetch-finished toast, pay filter hint.
+- Dev DB notes for the demo: rules apply to new postings only — #38/#39/#42/#45/#48 (junk roles) still LIVE, Rubrik #16/#17 eligibility still empty; fix by hand or re-review.
+- Next: user decides (push; P1-T10b Gemini key; P4-T2/T3).
