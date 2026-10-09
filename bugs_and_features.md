@@ -58,6 +58,7 @@
   2. A posting whose relevance came only from the description, not the title, gets `relevance` uncertain (goes to Flagged).
   3. Bulk approve: confirmation dialog listing the count and the first titles; see F-04 for undo.
 - **Effort:** M
+- **Status:** ✅ Fixed 9 Oct (`49bae6f`, C-85): experience titles dropped, non-campus / description-only flagged `relevance`, bulk-approve confirmation; 16 new tests. Undo is still F-04.
 - **Status:** ✅ Fixed 9 Oct (`eff87d3`, C-84): deterministic parser `text/eligibility.js`, values flagged for review; 20 new tests.
 
 ### Medium
