@@ -8,7 +8,7 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** **all bugs B-01–B-21 fixed** (user, 9 Oct: "I have been assigned only the bug fixes"; F-xx features not in scope); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** **all bugs B-01–B-21 fixed** (user, 9 Oct: "I have been assigned only the bug fixes"; F-xx features not in scope). **Go-live checklist L-01 – L-07 and student-usefulness features F-18 – F-32** are in `bugs_and_features.md` §2–3 (added 9 Oct, nothing built); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
