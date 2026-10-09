@@ -1,7 +1,10 @@
 # Bugs and QoL features: Job & Internship Fetcher
 
 > Written 8 Oct 2026 after a full review of the job-fetcher code (server + client) and a browser
-> run as admin and student on the local dev stack. Nothing here is implemented yet.
+> run as admin and student on the local dev stack. **Bugs B-01 – B-21: all fixed on 9 Oct** (status
+> under each bug). **Features F-01 – F-32: none built yet.** F-18 – F-32 and the go-live checklist
+> were added on 9 Oct after a completeness review: what the feature still needs to be truly useful to
+> students once it is live on the college website.
 > IDs are stable: refer to them in commits and in `change_specsheet.md` (e.g. "fixes B-01").
 >
 > Upstream portal issues found during the review are **not** in this file (this branch is public);
@@ -15,7 +18,7 @@
 ## Contents
 1. [Bugs](#1-bugs)
 2. [QoL features](#2-qol-features)
-3. [Suggested order](#3-suggested-order)
+3. [Go-live checklist and suggested order](#3-go-live-checklist-and-suggested-order)
 4. [Already works (checked on 8 Oct)](#4-already-works-checked-on-8-oct)
 
 ---
@@ -235,23 +238,106 @@
 - **Design:** `npm run careers:job -- cleanup --dry-run` lists test companies (e.g. "Acme Robotics Test …"), example.com postings, failing test sources and test submissions; without `--dry-run` it removes them. Local and staging only (refuses when `NODE_ENV=production`).
 - **Effort:** S
 
+### Making it useful to students (added 9 Oct)
+
+> Why these: today a student sees ~25 roles, mostly Bengaluru tech companies, has to remember to
+> come back to the portal, and cannot tell which openings fit their batch or programme beyond the
+> roll-number guess. These items close that gap. ⚖️ marks anything that sends email or touches a
+> PRD non-goal / stretch item and needs the user's OK first.
+
+#### F-18 Shared links never sit at "Being processed" forever
+- **Problem:** a shared link that is neither an ATS link nor a page with JSON-LD waits for the AI step. With `careers.llmEnabled` off (the production default, Gemini not built, Ollama on the VM undecided) it stays `EXTRACTING` for good; the student sees "Being processed" and the admin has no action on it.
+- **Design:** while the AI tier is off (or the provider is unusable), such links get a student status "Waiting for an ACC admin" (not "Being processed") and appear in the Student links tab under "Needs a person", with **Create posting from this link** (F-09) and **Dismiss** (reason shown to the student, e.g. "Not a job page"). Ops alert (amber) when a link has waited > 48 h. When the AI tier is turned on later, the waiting rows are processed as today.
+- **Effort:** S–M
+
+#### F-19 Job alerts (saved searches + email digest) ⚖️
+- **Problem:** students only see new openings if they remember to visit; most won't.
+- **Design:** "Get alerts for this search" on the jobs page saves the current filters (incl. "Eligible for me"); a weekly (or daily, student's choice) digest lists new LIVE postings matching each saved search, sent through the existing nodemailer transporter, with a one-click unsubscribe link. Opt-in only, max 3 saved searches per student, never sent while the feature is hidden. Must **not** reuse upstream `notifyOnNewPost` (emails every user). 🗄️ `SavedSearch` (userId, filters JSON, frequency, lastSentAt).
+- **Effort:** M–L (PRD lists digest email as stretch: needs the user's go-ahead)
+
+#### F-20 Deadlines for saved postings
+- **Design:** the Saved page gets a "Deadlines stated by source" section, sorted by date, only for postings whose source published a deadline ("Deadline stated by source: 15 Oct"); expired ones move to the bottom. Optional later: a reminder in the F-19 digest for saved postings whose stated deadline is within 3 days. Plain dates only: no countdown timers (PRD non-goal).
+- **Effort:** S (in-app), +S with F-19 ⚖️
+
+#### F-21 "New for you" badge in the student sidebar
+- **Design:** the "Jobs & Internships" sidebar item shows the number of LIVE postings published since the student's last visit (`careers.lastVisit`, already stored for the New badge) that pass "Eligible for me". One small count call, cached for the session.
+- **Effort:** S
+
+#### F-22 Eligibility by graduation batch and programme
+- **Problem:** postings say "2027 graduates" or "final year", but a student's year is guessed from `admissionYear` assuming a 4-year B.Tech; dual-degree, M.Tech, M.Sc and PhD students are matched wrongly or not at all.
+- **Design:** the eligibility card shows the derived programme and **expected graduation year** and lets the student correct them (self-reported, like CPI, only visible to them). Postings store eligibility as graduation years when the source states a batch (B-03 parser already finds it), and "Eligible for me" matches on graduation year first, academic year second. 🗄️ nullable `User.programme`, `User.graduationYear` (additive, global omit like `cpi`); nullable `Posting.eligibleGradYears Int[]`.
+- **Effort:** M
+
+#### F-23 Many more sources (coverage)
+- **Problem:** 13 boards, of which most kept postings come from 4 companies. Value for students scales with coverage.
+- **Design:** (1) a script that checks a candidate list of ~150 companies known to hire IIT students (Greenhouse / Lever / Ashby tokens) and reports which boards exist and how many India early-career roles each keeps; (2) an "Add boards in bulk" dialog (paste `kind token company` lines, each validated like Add board); (3) per-source quality stats on Sources & Ops: kept → approved → rejected ratio over 30 days, so noisy boards can be disabled (see F-08).
+- **Effort:** M
+
+#### F-24 More job-board types
+- **Design:** adapters for ATSs with documented public JSON APIs that Indian companies use: SmartRecruiters (`/v1/companies/{id}/postings`) and Workable (`/api/v3/accounts/{subdomain}/jobs`), same `fetchPostings` contract, fixtures + tests like P1-T3. Workday stays in the stretch backlog (undocumented API).
+- **Effort:** M per adapter (verify each API live first, AI_Rules §12)
+
+#### F-25 Internship season and duration
+- **Design:** read "Summer 2027", "Winter", "6 months", "Jan – Jun 2027" from the title/description (deterministic, flagged for review like B-03) into season / start month / duration; filter "Summer internships", "Winter", "6-month"; shown as a chip on cards. 🗄️ nullable `season`, `startMonth`, `durationMonths` on `Posting`.
+- **Effort:** M
+
+#### F-26 "Did you apply?" nudge
+- **Design:** clicking **Apply** remembers the time (localStorage, per posting). The next time the student opens that posting or the Saved page: "You opened the application on 9 Oct. Mark as Applied?" one click → status APPLIED (and saved). Nothing is stored on the server until the student clicks.
+- **Effort:** S
+
+#### F-27 Quick filter presets
+- **Design:** one-tap chips above the list: "For me" (eligible + my year), "Internships", "Remote", "New this week", plus the student's last-used filters. Each chip just sets URL params, so links stay shareable.
+- **Effort:** S
+
+#### F-28 Explain what these openings are
+- **Problem:** students may confuse this with the placement cell (TPC/CDC) process.
+- **Design:** a short dismissible banner and an "About these openings" panel: off-campus roles collected from company job boards and student links, reviewed by ACC before they appear; apply on the company's site; ACC does not run the hiring; how to share a link; how to report a problem (F-05). Text only, stored with the page.
+- **Effort:** S
+
+#### F-29 Seniors' reported stipend and process on company pages ⚖️
+- **Problem:** pay is almost never published (0 of 53 dev postings), and students care most about it.
+- **Design:** optional structured fields on the experience form (role type, stipend reported, number of rounds, year), shown on the company page only as aggregates ("3 seniors reported ₹40k – 60k / month, 2024 – 2026") and only when ≥ 3 experiences report it. Clearly labelled "reported by seniors", never shown as the posting's pay. 🗄️ nullable columns on `Experience`; touches the upstream form (P3-allowed file). Overlaps stretch item "OA / interview pattern guide".
+- **Effort:** M–L
+
+#### F-30 Usage numbers for ACC (aggregate only)
+- **Design:** on Sources & Ops: per week, LIVE postings, unique students who opened the jobs page, saves, application statuses set, Apply clicks; per posting (in F-01): saves / applied counts. Aggregate counts only, never which student did what. Lets ACC judge whether the feature helps and which sources are worth keeping. 🗄️ `PostingStat` daily counters (or computed from existing `SavedPosting` / `PostingApplication` + a click counter).
+- **Effort:** M
+
+#### F-31 Review reminders for admins ⚖️
+- **Problem:** postings only help while fresh; a queue left for a week means students see stale roles.
+- **Design:** the F-16 sidebar badge, plus an optional daily email to career admins when items have waited > 24 h ("12 postings waiting, oldest 2 days"). Ops alert (amber) at > 48 h.
+- **Effort:** S–M
+
+#### F-32 Share a posting
+- **Design:** "Copy link" on the job page (a portal URL; the reader still needs to log in) and a "Share on WhatsApp" link with the title + URL, since that is how openings travel between batchmates.
+- **Effort:** S
+
 **Rules note.** Hard deletes (F-02, F-07, F-09, F-11, F-17) are new destructive features. AI_Rules §3 says rows are only changed through explicit features, so each needs the user's go-ahead before it is built, and each must: confirm in the UI, show what else is removed, and leave an audit line. Every 🗄️ item is an additive migration (new table or nullable column), reviewed with `--create-only` first.
 
 ---
 
-## 3. Suggested order
+## 3. Go-live checklist and suggested order
 
-Deadline is 10 Oct, so in two groups:
+All bugs (B-01 – B-21) were fixed on 9 Oct, so this section now covers launch and features.
 
-**Before the upstream PR (P4-T2 / P4-T3)**
-1. B-01, B-05, B-02, B-04 (confirmation + relevance rules), B-06, B-10: the safety and correctness fixes.
-2. F-01 + F-02 level 1 (find and take down a live posting) + F-03: without them an admin can't remove a bad job after approving it.
-3. F-04 (confirm + undo on bulk approve), F-07 edit + archive, F-09 retry, F-10 shortcuts.
-4. B-03 (at least: flag postings whose description mentions eligibility).
+### Go-live checklist (not features; needed before students see it)
 
-**After the PR**
-- B-07, B-08, B-09, B-11–B-21.
-- F-02 level 2 (permanent delete), F-05, F-06, F-08, F-11–F-17.
+| # | Task | Why |
+|---|---|---|
+| L-01 | Deploy the `fetcher-acc` worker on the VM, run `npx prisma migrate deploy`, set the new env vars, watch its health check | Without the worker nothing is fetched and "Fetch now" waits forever (PRD open question 1: who deploys it) |
+| L-02 | Decide the AI tier: Gemini (P1-T10b, needs the key), Ollama on the VM, or keep it off and ship F-18 | Otherwise shared non-ATS links never resolve |
+| L-03 | Ship F-01 + F-02 level 1 + F-03 | An approved bad posting can't be taken down from the UI today |
+| L-04 | Add the boards in production, do a first review round, run P4-T2 (PRD §7 criteria 1 – 10, recorded in Memory.md) | Production starts with an empty database |
+| L-05 | One week admin-only (`visibleToStudents` off), then switch on; name the reviewer(s) and a daily review habit (F-16 / F-31 help) | Freshness depends on reviews |
+| L-06 | Council answer on self-reported CPI (PRD open question 3) | Privacy sign-off |
+| L-07 | P4-T3: final QA + PR description; the user opens the PR | Plan |
+
+### Suggested feature order
+
+1. **Before go-live:** F-01, F-02 (level 1), F-03, F-18, F-09, F-16, F-28.
+2. **First month after launch (most value for students):** F-23, F-21, F-27, F-26, F-14, F-20 (in-app), F-05, F-04, F-12, F-13, F-07.
+3. **Next:** F-19 ⚖️, F-22, F-25, F-30, F-31 ⚖️, F-32, F-24, F-06, F-08, F-10, F-11, F-15.
+4. **Later / needs a decision:** F-29 ⚖️, F-02 level 2 (permanent delete), F-17.
 
 ## 4. Already works (checked on 8 Oct)
 
