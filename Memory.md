@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-05 done); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-06 done); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `da6b430` fix(careers): B-05 link guard judges IPv4 addresses embedded in IPv6. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
+- **Last commit:** `198a711` fix(careers): B-06 expire postings when their stated deadline passes. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 549 passed (25 files).
+- **Tests:** `npm test` → 553 passed (26 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -32,7 +32,7 @@
 | Env names | `server-acc/.env.example` | names only |
 | Careers settings | `server-acc/services/careers/settings.js` | `SETTINGS` map (default, editable, zod schema); `getSetting`, `getAllSettings`, `setSetting` (validates; null → `Prisma.JsonNull`), 30 s cache |
 | Job lock | `services/careers/jobLock.js` | `withJobLock(key, name, fn)`, `JOB_LOCKS` constants (81001-81004); xact lock in a 1 h transaction; never throws; heartbeat after a run |
-| Heartbeat / academic year | `services/careers/heartbeat.js`, `academicYear.js` | |
+| Heartbeat / academic year / IST dates | `services/careers/heartbeat.js`, `academicYear.js`, `istDate.js` (`istDayStart`, `istMonthStart`) | |
 | Middlewares | `middlewares/careers/requireCareerAdmin.js` (also exports `isCareerAdmin`, `CAREER_ADMIN_ROLES`), `requireCareersEnabled.js` | |
 | Routers | `routes/careers.js` (student), `routes/careersAdmin.js` (admin), mounted at `/api/v1` in `server.js` | |
 | Controllers | `controllers/careers/statusController.js`, `adminSettingsController.js` | |
@@ -509,3 +509,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: `links/ipGuard.js` `v6Blocked`: NAT64 `64:ff9b::/96`, 6to4 `2002::/16` and IPv4-translated `::ffff:0:a.b.c.d` judged by the embedded IPv4; `64:ff9b:1::/48`, `fec0::/10`, Teredo `2001::/32` blocked outright. Teredo and IPv4-translated go slightly beyond the backlog text (same bug class: IPv6 addresses that carry an IPv4 address); no change_specsheet row (Architecture 7a already says private addresses must be unreachable).
 - Checks + actual results: 14 new cases in `links.test.js`; first run **11 failed** (every new "blocks" case; the 3 "allows" cases passed); after the fix **98 passed**; `npm test` → **25 files, 549 passed**. Live `safeFetch` (`scratchpad/b05_live.mjs`): `http://[64:ff9b::7f00:1]/` (the 8 Oct case), `http://[2002:7f00:1::1]/`, `http://[::ffff:0:127.0.0.1]/` → `BLOCKED_ADDRESS` with no connection attempt; public `http://[64:ff9b::808:808]/` → attempted (`safeFetch GET` logged), then `ENETUNREACH` (no IPv6 route on this laptop).
 - Commit: `da6b430` (code). Next: B-06.
+
+### 2026-10-09, B-06: expire postings past their stated deadline (backlog fix, C-86)
+- Did: `postings/deadlines.js` `expirePastDeadlines({ db, now })`, called by `livenessJob` after `recheckLiveness` (result gets `deadlines: { expired, ids }`); `ingest/liveness.js` `deadlinePassed` + `statusWhenSeen(posting, wasLive, now)` keeps a past-deadline posting EXPIRED; `upsertPosting` / `DEDUP_SELECT` select `deadlineStated`; IST helpers moved to `istDate.js`.
+- Checks + actual results: new tests first run → `deadlinePassed is not a function`, `expected 'LIVE' to be 'EXPIRED'`, `deadlines.js` missing; after the change **43 passed** in the 2 files; `npm test` → **26 files, 553 passed**. Real job on the dev DB: #38 given `deadlineStated = 2026-10-01` → `npm run careers:job -- liveness` printed `[careers] deadlines: expired 1 posting(s) whose stated deadline passed: #38 Risk Analyst | Exp - 1 to 3 Yrs` and `{"checked":0,…,"deadlines":{"expired":1,"ids":[38]}}`; DB → EXPIRED. Restored #38 to LIVE with no deadline (as before). No dev posting has a real `deadlineStated` (0 rows).
+- Note: docs commit `68e044d` went out without this Memory entry (a formatting error in the update script); added in the next docs commit.
+- Commit: `198a711` (code). Next: B-07.
