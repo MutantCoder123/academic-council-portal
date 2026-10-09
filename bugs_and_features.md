@@ -68,6 +68,7 @@
 - **What goes wrong:** NAT64 `64:ff9b::/96` (and the local-use `64:ff9b:1::/48`) and 6to4 `2002::/16` are not blocked. **Confirmed live:** a link to `http://[64:ff9b::7f00:1]/` (= 127.0.0.1) was fetched; the connection only failed because the dev laptop has no IPv6 route. On a network with NAT64 it would reach internal IPv4 addresses. Plain IPv4 tricks were all blocked (port 3000, 169.254.169.254, decimal `2130706433`).
 - **Fix:** for `64:ff9b::/96` judge the last 32 bits as IPv4; for `2002::/16` judge bits 16–48 as IPv4; block `64:ff9b:1::/48` and `fec0::/10` (old site-local) outright. Unit tests for each.
 - **Effort:** S
+- **Status:** ✅ Fixed 9 Oct (`da6b430`): as proposed, plus IPv4-translated `::ffff:0:a.b.c.d` (also missed) and Teredo `2001::/32` blocked; 14 new cases.
 
 #### B-06 Postings never expire on their stated deadline
 - **Where:** nothing reads `deadlineStated` after it is stored.

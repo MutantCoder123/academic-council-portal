@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-04 done); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-05 done); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `49bae6f` fix(careers): B-04 drop experienced roles, flag non-campus ones, confirm bulk approve. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
+- **Last commit:** `da6b430` fix(careers): B-05 link guard judges IPv4 addresses embedded in IPv6. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 535 passed (25 files).
+- **Tests:** `npm test` → 549 passed (25 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -504,3 +504,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Existing dev postings are not re-evaluated (the rules run at ingest); #38/#39/#42/#45/#48 are still LIVE in the dev DB from the 8 Oct bulk approve — expire them by hand before the demo.
 - Not verified in a browser: the confirmation dialog (agent can't log in).
 - Commit: `49bae6f` (code). Next: B-05.
+
+### 2026-10-09, B-05: IPv6 forms that embed IPv4 (backlog fix)
+- Did: `links/ipGuard.js` `v6Blocked`: NAT64 `64:ff9b::/96`, 6to4 `2002::/16` and IPv4-translated `::ffff:0:a.b.c.d` judged by the embedded IPv4; `64:ff9b:1::/48`, `fec0::/10`, Teredo `2001::/32` blocked outright. Teredo and IPv4-translated go slightly beyond the backlog text (same bug class: IPv6 addresses that carry an IPv4 address); no change_specsheet row (Architecture 7a already says private addresses must be unreachable).
+- Checks + actual results: 14 new cases in `links.test.js`; first run **11 failed** (every new "blocks" case; the 3 "allows" cases passed); after the fix **98 passed**; `npm test` → **25 files, 549 passed**. Live `safeFetch` (`scratchpad/b05_live.mjs`): `http://[64:ff9b::7f00:1]/` (the 8 Oct case), `http://[2002:7f00:1::1]/`, `http://[::ffff:0:127.0.0.1]/` → `BLOCKED_ADDRESS` with no connection attempt; public `http://[64:ff9b::808:808]/` → attempted (`safeFetch GET` logged), then `ENETUNREACH` (no IPv6 route on this laptop).
+- Commit: `da6b430` (code). Next: B-06.
