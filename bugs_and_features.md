@@ -30,6 +30,7 @@
 - **Cost:** with Gemini each retry is a real call that is recorded in `LlmUsage` *before* the failure, so it eats the daily request cap and, on a paid key, money.
 - **Fix:** wrap the per-row body in `try/catch`; on an unexpected error mark the row `FAILED` with the message (and the submission `FAILED`), count it, and continue. Add a unit test with a mocked provider that throws a plain `Error`.
 - **Verified:** by reading the code (extraction is off locally, so not triggered live). **Effort:** S
+- **Status:** ✅ Fixed 9 Oct (`ee4bde2`): rows run in `processRow` inside `try/catch`; 2 unit tests.
 
 #### B-02 A shared link can put a phishing "Apply" link under a real company
 - **Where:** `links/jsonLd.js` (`jobPostingToRaw`: `url` and `hiringOrganization` taken from the page), `extract/verify.js` (`apply_url` and `company_name` only need to appear in the page text), `PostingEditor.jsx` (no warning).

@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Next: P1-T10b**, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01 done); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
-- **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** On 30 Sep all local commits were rewritten to author = Indranil Saha with the Claude co-author trailers removed, so **the history differs from GitHub: the next push must be `git push --force-with-lease`** (only when the user says). Backups: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
+- **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `48e1fa5` feat(careers): fetch every 6 h, fetch new boards at once, 10 s "Fetch now" pickup in the worker (C-80 + C-82). Local only: **not pushed** (user, 8 Oct: commit, don't push).
+- **Last commit:** `ee4bde2` fix(careers): B-01 one failing extraction no longer blocks the AI queue. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 475 passed (22 files).
+- **Tests:** `npm test` → 477 passed (23 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -477,3 +477,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Dev state changed by the run: 25 postings LIVE, `careers.visibleToStudents` true, posting #17 saved + INTERESTED for the dev student, 5 FAILED test submissions (student at the daily limit until 9 Oct ~12:26 IST), CPI set then cleared. `.playwright-mcp/` deleted.
 - Next step: user decides what to fix first (suggested: B-01, B-05, B-02, B-04, then F-01/F-02/F-03).
 
+### 2026-10-09, B-01: one failing extraction no longer blocks the AI queue (backlog fix)
+- Did: `extract/runExtractions.js`: the per-row body moved into `processRow` (returns `'STOP'` for provider problems, as before); the loop wraps it in `try/catch`, so an unexpected error (non-JSON reply, `applyExtraction` throwing "Could not tell which company", a DB error while saving) marks the extraction and its submission FAILED with `Unexpected error: …`, counts it in `summary.failed` and continues. `LlmError` handling unchanged. New `tests/careers/runExtractions.test.js` (in-memory fake DB; mocks settings, provider status, budget, callModel, applyExtraction; real schema/verify/outcome).
+- Checks + actual results: new tests first run **2 failed** (the thrown errors escaped `runExtractions`: "Error: Unexpected token < in JSON at position 0", "Error: Could not tell which company"); after the fix **2 passed**; `npm test` → **23 files, 477 passed**.
+- Not verified live: extraction is off locally (`careers.llmEnabled` false) and no real page reliably triggers the failure; covered by the unit tests.
+- Commit: `ee4bde2` (code). Next: B-02.
