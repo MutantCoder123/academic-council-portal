@@ -75,6 +75,7 @@
 - **What goes wrong:** a role whose application deadline has passed stays LIVE (and in "Newest first") until it leaves its job board, which some companies never do.
 - **Fix:** in the daily `recheckLiveness` job (or a new tiny daily job), expire LIVE postings with `deadlineStated < start of today (IST)`; write a `PostingReview` row with action `EXPIRE` and note "Deadline passed". Students' Saved page already handles EXPIRED.
 - **Effort:** S
+- **Status:** ✅ Fixed 9 Oct (`198a711`, C-86): expiry in the daily job (LIVE + pending), no revival past the deadline; logged instead of a `PostingReview` row (no system user).
 
 #### B-07 Dedup revives old postings, including ones an admin expired
 - **Where:** `ingest/upsertPosting.js` (duplicate branch) + `liveness.js` (`statusWhenSeen(posting, false)`).
