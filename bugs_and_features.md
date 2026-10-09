@@ -40,6 +40,7 @@
   2. In the review editor, show the apply-link domain next to the company and warn in red when it is not the company's website domain or a known ATS (greenhouse.io, lever.co, ashbyhq.com).
   3. A link whose company resolves to an existing ACTIVE company but whose host is unrelated gets `company` added to `uncertainFields` (goes to Flagged).
 - **Effort:** M
+- **Status:** ✅ Fixed 9 Oct (`a0603c7`, C-83): `links/linkTrust.js` + editor warning; 22 unit tests.
 
 #### B-03 Eligibility shown to students is wrong for job-board postings
 - **Where:** `ingest/buildPosting.js` (`eligibleBranches: []`, `eligibleYears: []`, no `minCpi`); student card "Eligibility not stated".

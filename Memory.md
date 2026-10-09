@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01 done); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01, B-02 done); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `ee4bde2` fix(careers): B-01 one failing extraction no longer blocks the AI queue. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
+- **Last commit:** `a0603c7` fix(careers): B-02 a shared page can no longer vouch for its own company and apply link. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 477 passed (23 files).
+- **Tests:** `npm test` → 499 passed (24 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -53,7 +53,7 @@
 | Review / sources / ops API | `controllers/careers/adminReviewController.js`, `adminSourcesController.js`, `adminOpsController.js`; logic in `services/careers/postings/{editPosting,reviewService}.js`, `services/careers/ops/{alerts,llmStatus}.js` | routes in `routes/careersAdmin.js` |
 | Review UI | `client-acc/src/pages/admin/careers/{ReviewQueue,ReviewCandidates,ReviewLinks,PostingEditor,ManualPosting}.jsx`, `components/{PostingFields,UncertainField,ConfidenceMeter,CompanyPicker}.jsx`, `components/postingForm.js` | routes `/admin/careers/review`, `/admin/careers/new`; sidebar "Jobs Review" |
 | Sources / ops UI | `client-acc/src/pages/admin/careers/{Sources,AddSourceDialog,Operations,FlagsCard}.jsx`, `components/{HealthBadge,StatCard}.jsx` | routes `/admin/careers/sources`, `/admin/careers/ops` |
-| Student links | `services/careers/links/{ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission,recheckLiveness}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
+| Student links | `services/careers/links/{linkTrust,ipGuard,canonicalUrl,blockedDomains,atsLink,jsonLd,safeFetch,processSubmission,recheckLiveness}.js`, `controllers/careers/submissionsController.js`, `middlewares/careers/submissionRateLimit.js` | worker job `linksAndExtraction` (*/10), CLI `npm run careers:job -- links` |
 | LLM extraction | `services/careers/extract/{schema,prompt,callModel,providerStatus,verify,outcome,llmError,pricing,budget,runExtractions,applyExtraction}.js`, `extract/providers/ollama.js`, `postings/branchCodes.js` | runs in the `linksAndExtraction` job after processSubmissions |
 | Eligibility / CPI | `services/careers/postings/eligibility.js` (`eligibilityProfile`, `postingEligibility`, `cpiBody`, `toCpi`), `controllers/careers/eligibilityController.js`; migration `20261002042222_careers_user_cpi` | CPI hidden by the global omit in `config/db.js` |
 | Student postings API | `services/careers/postings/query.js` (`postingsQuery`, `compensationWhere`, `eligibilityWhere`, `baseWhere`, `withEligibility`, `orderByFor`), `controllers/careers/postingsController.js` (`listPostings`, `getPosting`), `controllers/careers/companiesController.js` (`searchCompanies`) | routes in `routes/careers.js`; `/careers/companies/search` has no flag gate |
@@ -482,3 +482,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Checks + actual results: new tests first run **2 failed** (the thrown errors escaped `runExtractions`: "Error: Unexpected token < in JSON at position 0", "Error: Could not tell which company"); after the fix **2 passed**; `npm test` → **23 files, 477 passed**.
 - Not verified live: extraction is off locally (`careers.llmEnabled` false) and no real page reliably triggers the failure; covered by the unit tests.
 - Commit: `ee4bde2` (code). Next: B-02.
+
+### 2026-10-09, B-02: shared page can't vouch for its own company / apply link (backlog fix, C-83)
+- Did: `links/linkTrust.js` (pure `siteOf`, `linkTrust`); `processSubmission.js`: pure `linkPostingData` (used by `savePosting`; trust check only for JSON-LD, i.e. when `pageUrl` is passed), `companyFor` returns `fromHost` + `website`; `applyExtraction.js` `extractionPostingData` runs `linkTrust`; `buildPostingData` takes extra `uncertain` fields; admin posting detail selects `company.website`. Client: `components/applyLink.js` (`applyLinkCheck`), `PostingFields` `linkCheck` prop (Unsure ring on `applyUrl`, "Goes to <site>", red warning for link tiers), `PostingEditor` passes it (company website only while the original company is selected).
+- Checks + actual results: new tests first run → `linkTrust.js` missing and the phishing extraction test failed (`expected 'https://login-google.evil.example/app…' to be 'https://jobs-portal.example/google'`); after the fix linkTrust + extract **61 passed**. JSON-LD test (`linkPostingData`) fails with the trust step switched off (`× page JSON-LD naming Google…`), passes with it on. `npm test` → **24 files, 499 passed**. Client: changed files lint 0; `npx eslint src` → 36 errors (baseline); build ✓. `applyLinkCheck` in Node: evil.example warn true; careers.google.com with website google.com warn false; lever.co false; STRUCTURED tier false; bad URL null. Real dev DB (`scratchpad/b02_companyFor.mjs`): `companyFor('Google', jobs-portal.example)` → `{companyId:1, uncertain:false, fromHost:false, website:null}`; no name + careers.stripe.com → Stripe, `fromHost:true`; JSON-LD phishing raw → applyUrl = page URL, `uncertainFields ["company","applyUrl"]`, confidence 0.7.
+- Existing test changed: the `extractionPostingData` "Acme on careers.acme.example" case now passes the company website (`https://acme.example`), since without one the company is (correctly) flagged.
+- Not verified in a browser: the editor warning (agent can't log in). The user should open a link posting in Jobs Review once.
+- Consequence: seeded companies have no website, so every link posting that names a company lands in Flagged; set websites in Companies to stop that.
+- Commit: `a0603c7` (code). Next: B-03.
