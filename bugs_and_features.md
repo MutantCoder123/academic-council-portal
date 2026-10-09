@@ -82,24 +82,28 @@
 - **What goes wrong:** when a company re-posts a role under a new job id within 120 days, the new observation matches the old posting and `statusWhenSeen` (with `observationWasLive = false`) turns an EXPIRED-but-once-approved posting back to LIVE, with its old description and old `deadlineStated`. That includes postings an admin expired by hand.
 - **Fix:** keep an `expiredBy` marker (🗄️ nullable column, e.g. `expiredReason: 'BOARD' | 'ADMIN' | 'DEADLINE'`) and only auto-revive `BOARD`; for a match against an EXPIRED posting, refresh its description/deadline from the new observation and send it back to PENDING_REVIEW instead of straight to LIVE.
 - **Effort:** M 🗄️
+- **Status:** ✅ Fixed 9 Oct (`43130ba`): expiry reason column; only BOARD revives; re-post of an expired posting goes to review (C-87).
 
 #### B-08 A link that failed once can never be shared again, and re-sharers can't see it
 - **Where:** `controllers/careers/submissionsController.js` (`submitLink` returns the first submission for the canonical URL, whatever its status); no retry anywhere (admin UI or API).
 - **What goes wrong:** a page that was down for five minutes becomes FAILED forever: every later share gets "already shared". A student who re-shares an existing link also never sees it under "My submissions" (the row belongs to the first sharer).
 - **Fix:** if the existing submission is FAILED (or STORED_ONLY older than N days), create a new one; record re-shares (🗄️ small `LinkShare` table or a `shareCount`) so the second student sees it in their list; add an admin **Retry** button (F-09).
 - **Effort:** M 🗄️
+- **Status:** ✅ Fixed 9 Oct (`f436164`): FAILED / old store-only links are processed again; re-shares recorded in `LinkShare` and shown in My submissions (C-88). Admin Retry button = F-09, not built.
 
 #### B-09 AI check doesn't verify study years, and CPI matching is too loose
 - **Where:** `extract/verify.js`.
 - **What goes wrong:** `eligibility.years` are only range-checked (1–5), never grounded in the page, so the model can invent "3rd and 4th year" and hide a posting from 2nd-years under "Eligible for me". `min_cpi` counts as grounded if the digit appears anywhere ("7 days" grounds a CPI of 7).
 - **Fix:** ground years against patterns ("3rd year", "pre-final", "2027 graduates", "batch of 2027"); ground CPI only next to `CGPA|CPI|GPA` within ~30 characters.
 - **Effort:** S
+- **Status:** ✅ Fixed 9 Oct (`c755a57`): years and CPI grounded against the page (C-89).
 
 #### B-10 A LIVE posting can end up under a hidden company
 - **Where:** `postings/reviewService.js` (`editPosting` has no `companyMustBeActive`), `companies/mergeService.js` (merging *into* a CANDIDATE is allowed).
 - **What goes wrong:** editing a LIVE posting's company to a CANDIDATE/MERGED one, or merging an ACTIVE company into a CANDIDATE, leaves LIVE postings whose company page returns 404 and that link from the job page to nowhere.
 - **Fix:** `editPosting` runs `companyMustBeActive` when the posting is LIVE and `companyId` changes; `mergeCompanies` refuses a CANDIDATE target (or approves it in the same transaction, with a confirm in the UI).
 - **Effort:** S
+- **Status:** ✅ Fixed 9 Oct (`3cb9d43`): company change on LIVE needs ACTIVE; ACTIVE → CANDIDATE merge refused (C-90).
 
 ### Low
 
