@@ -8,17 +8,17 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01, B-02 done); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** (B-01–B-03 done); then P1-T10b, then P4-T2.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Both pushed to `origin` on 29 Sep.
 - **LOCAL-ONLY MODE (user, 30 Sep): commit locally, do NOT push or merge anything until the user explicitly says so.** The 30 Sep history rewrite has since been pushed by the user: on 9 Oct both branches were only *ahead* of origin (not diverged), so a normal push works. Backups of the old history: branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `a0603c7` fix(careers): B-02 a shared page can no longer vouch for its own company and apply link. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
+- **Last commit:** `eff87d3` fix(careers): B-03 read eligibility stated in job-board descriptions. Local only: **not pushed** (`48e1fa5` and later; user, 8 Oct: commit, don't push).
 - **Commit author (user, 8 Oct): Shrut Gautam <shrut890@gmail.com>**, set per commit with `git -c user.name="Shrut Gautam" -c user.email=shrut890@gmail.com commit` (repo config unchanged). AI_Rules §2 still names Indranil Saha; this instruction overrides it for this machine.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 499 passed (24 files).
+- **Tests:** `npm test` → 520 passed (25 files).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -44,7 +44,7 @@
 | Admin company API | `controllers/careers/adminCompaniesController.js`, `adminMergeController.js`; routes in `routes/careersAdmin.js` | |
 | Admin UI | `client-acc/src/pages/admin/careers/` (`Companies.jsx` + dialogs), `client-acc/src/api/careersApi.js` | Route `/admin/careers/companies`; sidebar "Companies" |
 | Ingestion schema | `prisma/migrations/20260930021750_careers_ingestion/` | Source, SourceRun, Posting, PostingSource, PostingReview, LinkSubmission, Extraction, LlmUsage |
-| Processors | `services/careers/text/compensation.js`, `fingerprint.js`, `skills.js` + `skillsDictionary.js`, `workMode.js`, `relevance.js` + `relevanceRules.js` | all pure |
+| Processors | `services/careers/text/compensation.js`, `eligibility.js` (B-03), `fingerprint.js`, `skills.js` + `skillsDictionary.js`, `workMode.js`, `relevance.js` + `relevanceRules.js` | all pure |
 | ATS adapters | `services/careers/ingest/adapters/{greenhouse,lever,ashby,index}.js`, `ingest/http.js` | `fetchPostings(source)` → `{ postings, fetchedCount, skipped }` |
 | Board check | `scripts/careers/verifyBoard.js <kind> <token> [--save] [--raw]` | |
 | Ingest pipeline | `services/careers/ingest/{runSource,ingestAll,buildPosting,upsertPosting,dedup,health,liveness}.js` | pure: `buildPostingData`, `isSamePosting`, `findPossibleDuplicates`, `nextHealth`, `statusWhenSeen`, `shouldExpire` |
@@ -490,3 +490,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified in a browser: the editor warning (agent can't log in). The user should open a link posting in Jobs Review once.
 - Consequence: seeded companies have no website, so every link posting that names a company lands in Flagged; set websites in Companies to stop that.
 - Commit: `a0603c7` (code). Next: B-03.
+
+### 2026-10-09, B-03: eligibility read from job-board descriptions (backlog fix, C-84)
+- Did: pure `text/eligibility.js` (`parseEligibility(text, now)` → `{ minCpi, years, branches, mentioned }`, `CIRCUITAL_BRANCHES`); `buildPostingData` (new optional `now`) fills `eligibleBranches` / `eligibleYears` / `minCpi` and flags `eligibility` when mentioned; `planEdit` maps `eligible*` / `minCpi` edits to `eligibility`; `PostingFields` highlights branches / years / min CPI.
+- Checks + actual results: new tests first run → module missing, `minCpi` undefined (expected null), planEdit kept `eligibility` (3 failed). After the parser: 92 passed in the 3 files. Scan of all 53 dev postings (`scratchpad/b03_scan.mjs`) flagged 4; #42 ("collection targets of the assigned branches") was a false positive → new failing test, `MENTION` no longer matches bare "branches", `branches()` returns `listed` so "Branches: CSE, Biotechnology" still counts as mentioned → rescan flags 3: #16 and #17 (Rubrik, both state the criteria) → `{minCpi:8, years:[4,5], branches:[CS,EE,EC,MC,AI]}`, #47 ("final-year student or recent grad") → years [4,5]. `npm test` → **25 files, 520 passed**. Client: PostingFields lint 0; `npx eslint src` 36 (baseline); build ✓.
+- Not changed: existing dev postings (#16, #17 LIVE) keep "not stated"; upsert never overwrites a known posting. Edit them in the review editor if needed for the demo.
+- Not verified in a browser (agent can't log in).
+- Commit: `eff87d3` (code). Next: B-04.
