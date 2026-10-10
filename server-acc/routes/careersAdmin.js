@@ -7,7 +7,7 @@ import {
 } from '../controllers/careers/adminCompaniesController.js';
 import { merge, split, listMergeLog, undo } from '../controllers/careers/adminMergeController.js';
 import {
-    listReview, getReviewCounts, listAllPostings, getPosting, patchPosting, approve, reject, expire, reopen, takeDown, handlePostingReports, bulk, createManual, listSubmissions, retryLink, dismissLink,
+    listReview, getReviewCounts, listAllPostings, getPosting, patchPosting, approve, reject, expire, reopen, takeDown, handlePostingReports, bulk, bulkUndo, bulkRejectPostings, bulkExpirePostings, createManual, listSubmissions, retryLink, dismissLink,
 } from '../controllers/careers/adminReviewController.js';
 import {
     listSources, createSource, bulkCreateSources, updateSource, runSourceNow, runAllNow, listRuns,
@@ -39,6 +39,9 @@ router.post('/careers/admin/merge-log/:id/undo', ...admin, undo);
 router.get('/careers/admin/review', ...admin, listReview);
 router.get('/careers/admin/review/counts', ...admin, getReviewCounts);
 router.post('/careers/admin/postings/bulk-approve', ...admin, bulk);
+router.post('/careers/admin/postings/bulk-approve/undo', ...admin, bulkUndo);
+router.post('/careers/admin/postings/bulk-reject', ...admin, bulkRejectPostings);
+router.post('/careers/admin/postings/bulk-expire', ...admin, bulkExpirePostings);
 router.post('/careers/admin/postings', ...admin, createManual);
 router.get('/careers/admin/postings', ...admin, listAllPostings); // before /postings/:id
 router.get('/careers/admin/postings/:id', ...admin, getPosting);

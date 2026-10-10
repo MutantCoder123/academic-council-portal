@@ -71,7 +71,22 @@ export async function editPosting(id, edits, userId) {
 
 // Optional edits are applied first, then the posting goes LIVE. The reviewer has now vouched for
 // every field, so the uncertain markers are cleared.
-export async function approvePosting(id, edits, userId) {
+const iso = (d) => (d ? new Date(d).toISOString() : null);
+
+// Pure. What a bulk approve records in its APPROVE row (P6-T8), so Undo can put the posting back
+// exactly (bulkActions.undoPlan).
+export function approveTrail(before, now, userId) {
+    const publishedAt = before.publishedAt ?? now;
+    return {
+        status: { from: 'PENDING_REVIEW', to: 'LIVE' },
+        publishedAt: { from: iso(before.publishedAt), to: iso(publishedAt) },
+        reviewedById: { from: before.reviewedById ?? null, to: userId },
+        reviewedAt: { from: iso(before.reviewedAt), to: iso(now) },
+    };
+}
+
+// trail: record approveTrail in the APPROVE row (bulk approve only; bulk approves have no edits).
+export async function approvePosting(id, edits, userId, { trail = false } = {}) {
     return prisma.$transaction(async (tx) => {
         const posting = await load(tx, id);
         requireStatus(posting, ['PENDING_REVIEW'], 'approved');
@@ -82,7 +97,7 @@ export async function approvePosting(id, edits, userId) {
             where: { id },
             data: { ...data, status: 'LIVE', publishedAt: posting.publishedAt ?? now, reviewedById: userId, reviewedAt: now, uncertainFields: [], rejectReason: null },
         });
-        await review(tx, id, 'APPROVE', userId, changes);
+        await review(tx, id, 'APPROVE', userId, trail ? { ...changes, ...approveTrail(posting, now, userId) } : changes);
         return { posting: updated, changes };
     });
 }
@@ -147,7 +162,7 @@ export async function bulkApprove(ids, userId) {
             continue;
         }
         try {
-            await approvePosting(id, {}, userId);
+            await approvePosting(id, {}, userId, { trail: true });
             approved.push(id);
         } catch (err) {
             skipped.push({ id, reason: err.message });

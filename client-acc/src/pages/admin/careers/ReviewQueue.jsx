@@ -2,6 +2,7 @@
 // Pending and Flagged never overlap (the server decides). Bulk approve only publishes clean,
 // structured postings; the server skips the rest and says why.
 import ReportCount from "./components/ReportCount";
+import BulkActionDialog from "./components/BulkActionDialog";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Layers, ListChecks, Plus } from "lucide-react";
@@ -47,6 +48,7 @@ export default function ReviewQueue() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [bulkAction, setBulkAction] = useState(null); // "reject" | "expire"
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
   const closeEditor = useCallback(() => setOpenId(null), []);
@@ -82,6 +84,45 @@ export default function ReviewQueue() {
     setBusy(true);
     try {
       const res = await careersAdminApi.bulkApprove(selected);
+      const approved = res.data.approved;
+      // P6-T8: Undo for 30 seconds (the server accepts it for a minute).
+      if (approved.length) {
+        toast.success((t) => (
+          <span className="flex items-center gap-3">
+            <span>{res.message}</span>
+            <button type="button" className="font-bold underline cursor-pointer" onClick={() => { toast.dismiss(t.id); undoApprove(approved); }}>Undo</button>
+          </span>
+        ), { duration: 30_000 });
+      } else {
+        toast.success(res.message);
+      }
+      if (res.data.skipped.length) toast(`Skipped: ${res.data.skipped.map((s) => `#${s.id} (${s.reason})`).join("; ")}`, { duration: 8000 });
+      setSelected([]);
+      refresh();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const undoApprove = async (ids) => {
+    try {
+      const res = await careersAdminApi.undoBulkApprove(ids);
+      toast.success(res.message);
+      if (res.data.skipped.length) toast(`Not undone: ${res.data.skipped.map((s) => `#${s.id} (${s.reason})`).join("; ")}`, { duration: 8000 });
+      refresh();
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+
+  const runBulk = async (reason) => {
+    const kind = bulkAction;
+    setBulkAction(null);
+    setBusy(true);
+    try {
+      const res = kind === "reject" ? await careersAdminApi.bulkReject(selected, reason) : await careersAdminApi.bulkExpire(selected);
       toast.success(res.message);
       if (res.data.skipped.length) toast(`Skipped: ${res.data.skipped.map((s) => `#${s.id} (${s.reason})`).join("; ")}`, { duration: 8000 });
       setSelected([]);
@@ -122,13 +163,17 @@ export default function ReviewQueue() {
 
       {postingTab && (!list ? <Skeleton rows={6} /> : items.length === 0 ? <EmptyQueue tab={tab} /> : (
         <>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer">
               <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? [] : items.map((p) => p.id))} className="w-4 h-4 accent-[var(--color-primary)]" />
               Select page
             </label>
             {selected.length > 0 && (
-              <button type="button" className={primaryButton} onClick={() => setConfirming(true)} disabled={busy}>Approve {plural(selected.length, "selected posting")}</button>
+              <>
+                <button type="button" className={primaryButton} onClick={() => setConfirming(true)} disabled={busy}>Approve {plural(selected.length, "selected posting")}</button>
+                <button type="button" className={outlineButton} onClick={() => setBulkAction("reject")} disabled={busy}>Reject…</button>
+                <button type="button" className={outlineButton} onClick={() => setBulkAction("expire")} disabled={busy}>Mark expired</button>
+              </>
             )}
           </div>
           <div className={`${cardClass} overflow-hidden`}>
@@ -171,6 +216,7 @@ export default function ReviewQueue() {
 
       {openId && <PostingEditor postingId={openId} onClose={closeEditor} onChanged={refresh} />}
 
+      {bulkAction && <BulkActionDialog kind={bulkAction} count={selected.length} onCancel={() => setBulkAction(null)} onConfirm={runBulk} />}
       {confirming && (
         <BulkApproveDialog postings={items.filter((p) => selected.includes(p.id))} count={selected.length}
           onCancel={() => setConfirming(false)} onConfirm={bulkApprove} />

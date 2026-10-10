@@ -16,6 +16,7 @@ import { retrySubmission, dismissSubmission, dismissBody } from '../../services/
 import { aiTierUsable, needsPersonWhere } from '../../services/careers/links/waiting.js';
 import { reviewCounts } from '../../services/careers/postings/reviewCounts.js';
 import { reportsForAdmin, handleReports } from '../../services/careers/postings/reports.js';
+import { bulkBodies, undoBulkApprove, bulkReject, bulkExpire } from '../../services/careers/postings/bulkActions.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -154,6 +155,14 @@ export const takeDown = action(
 export const dismissLink = action((req) => dismissSubmission(parseId(req.params.id), dismissBody.parse(req.body ?? {}).reason, req.user.id), 'Dismissed. The student sees your reason.');
 export const retryLink = action((req) => retrySubmission(parseId(req.params.id)), 'Queued again. The next links run (every 10 minutes) will fetch it.');
 export const handlePostingReports = action((req) => handleReports(prisma, parseId(req.params.id), req.user.id), (n) => `${n} report${n === 1 ? '' : 's'} marked as handled; the "reported" flag is cleared.`);
+const summary = (verb, r, n = r.undone ?? r.done) => `${n.length} ${verb}${r.skipped.length ? `, ${r.skipped.length} skipped` : ''}.`;
+// P6-T8 (F-04): Undo a bulk approve within a minute; bulk reject / expire, one review row each.
+export const bulkUndo = action((req) => undoBulkApprove(bulkBodies.ids.parse(req.body).ids, req.user.id), (r) => summary('back in Pending', r));
+export const bulkRejectPostings = action((req) => {
+    const { ids, reason } = bulkBodies.reject.parse(req.body);
+    return bulkReject(ids, reason, req.user.id);
+}, (r) => summary('rejected', r));
+export const bulkExpirePostings = action((req) => bulkExpire(bulkBodies.ids.parse(req.body).ids, req.user.id), (r) => summary('marked as expired', r));
 export const bulk = action(
     (req) => bulkApprove(bulkBody.parse(req.body).ids, req.user.id),
     (r) => `Approved ${r.approved.length}; skipped ${r.skipped.length}.`,
