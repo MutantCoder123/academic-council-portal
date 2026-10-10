@@ -29,6 +29,8 @@ export const postingsQuery = z.object({
     eligibleOnly: bool(false),
     // "New this week" chip (P6-T3): published in the last N days.
     postedWithin: z.coerce.number().int().min(1).max(90).optional(),
+    // "Show hidden" (P6-T9): only the postings this student marked "Not for me".
+    showHidden: bool(false),
     sort: z.enum(['newest', 'lastSeen', 'deadline']).default('newest'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),

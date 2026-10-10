@@ -3,6 +3,7 @@
 // and only the ones "Eligible for me" lets through when the student has a roll number.
 import { z } from 'zod';
 import { CareersError } from '../errors.js';
+import { hiddenWhere } from './hidden.js';
 
 const SKEW_MS = 5 * 60 * 1000; // a browser clock a little ahead is fine
 
@@ -15,13 +16,14 @@ export function newCountQuery(query, now = Date.now()) {
     return { since: new Date(parsed.data.since) };
 }
 
-// Pure. eligibility: from eligibilityWhere(profile), or null.
-export function newSinceWhere(since, eligibility) {
+// Pure. eligibility: from eligibilityWhere(profile), or null. userId: leaves out what they hid (P6-T9).
+export function newSinceWhere(since, eligibility, userId) {
     return {
         AND: [
             { status: 'LIVE' },
             { OR: [{ publishedAt: { gt: since } }, { publishedAt: null, firstSeenAt: { gt: since } }] },
             ...(eligibility ? [eligibility] : []),
+            ...(userId ? [hiddenWhere(userId, false)] : []),
         ],
     };
 }

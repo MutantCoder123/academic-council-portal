@@ -34,6 +34,7 @@ model User {
   savedPostings       SavedPosting[] // careers P4-lite (relation only, no column)
   postingApplications PostingApplication[] // careers P4-lite (relation only, no column)
   postingReports      PostingReport[] // careers P6 (relation only, no column)
+  hiddenPostings      HiddenPosting[] // careers P6 (relation only, no column)
 }
 
 model Experience {
@@ -548,6 +549,7 @@ model Posting {
   saves                SavedPosting[]
   applications         PostingApplication[]
   reports              PostingReport[]
+  hiddenBy             HiddenPosting[]
 
   @@index([status, lastSeenLiveAt])
   @@index([status, publishedAt]) // "Newest first" (B-15)
@@ -720,4 +722,18 @@ model PostingReport {
 
   @@unique([userId, postingId])
   @@index([postingId, handledAt])
+}
+
+// "Not for me" (P6-T9, F-12): a posting a student hid from their own jobs list. Private to the
+// student; nobody else's list changes.
+model HiddenPosting {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postingId Int
+  posting   Posting  @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postingId])
+  @@index([postingId])
 }

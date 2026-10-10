@@ -37,6 +37,7 @@ export function apiParams(search) {
   if (lpa > 0) params.minCtc = Math.round(lpa * 100000);
   if (search.get("includeUndisclosed") === "false") params.includeUndisclosed = "false";
   if (search.get("eligibleOnly") === "true") params.eligibleOnly = "true";
+  if (search.get("showHidden") === "true") params.showHidden = "true"; // P6-T9: only the ones marked "Not for me"
   // Company filter (P6-T5): companyName is only the label shown in the picker.
   const companyId = Number(search.get("companyId"));
   if (Number.isInteger(companyId) && companyId > 0) params.companyId = companyId;

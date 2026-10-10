@@ -1,7 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { motion, useReducedMotion } from "framer-motion";
-import { Briefcase, ChevronLeft, ChevronRight, Info, Search, SearchX, Share2, SlidersHorizontal, X } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, EyeOff, Info, Search, SearchX, Share2, SlidersHorizontal, X } from "lucide-react";
 import AuthContext from "../../context/auth/authContext";
 import { careersApi, errorMessage } from "../../api/careersApi";
 import { useCareersStatus } from "../../hooks/useCareersStatus";
@@ -109,6 +110,37 @@ export default function JobsPage() {
   const clearAll = useCallback(() => setSearch((prev) => cleared(prev)), [setSearch]);
   const refresh = useCallback(() => setReload((n) => n + 1), []);
 
+  // "Not for me" (P6-T9): the card leaves the list at once; the toast can bring it back.
+  const dropCard = useCallback((id) => setResult((r) => (r ? {
+    ...r,
+    data: r.data.filter((p) => p.id !== id),
+    pagination: { ...r.pagination, total: r.pagination.total - 1 },
+    meta: { ...r.meta, hiddenByYou: r.meta.hiddenByYou + (r.meta.showHidden ? -1 : 1) },
+  } : r)), []);
+  const unhide = useCallback(async (id, again) => {
+    try {
+      await careersApi.unhidePosting(id);
+      if (again) refresh(); else dropCard(id);
+      toast.success("It is back in your list.");
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not show it again."));
+    }
+  }, [dropCard, refresh]);
+  const hide = useCallback(async (posting) => {
+    try {
+      await careersApi.hidePosting(posting.id);
+      dropCard(posting.id);
+      toast((t) => (
+        <span className="flex items-center gap-3">
+          <span>Hidden from your list.</span>
+          <button type="button" className="font-bold underline cursor-pointer" onClick={() => { toast.dismiss(t.id); unhide(posting.id, true); }}>Undo</button>
+        </span>
+      ), { duration: 8000 });
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not hide it."));
+    }
+  }, [dropCard, unhide]);
+
   if (status.loading) return <div className="space-y-6"><Header /><Skeleton /></div>;
   if (!status.enabled || error === "DISABLED") {
     return (
@@ -143,7 +175,9 @@ export default function JobsPage() {
   } else if (!result) {
     body = <Skeleton />;
   } else if (total === 0) {
-    if (meta.hiddenByEligibility > 0) {
+    if (meta.showHidden) {
+      body = <EmptyState icon={EyeOff} title="Nothing hidden." detail={'Openings you mark "Not for me" are listed here, so you can bring them back.'} action="Back to all openings" onAction={() => change({ showHidden: "" })} />;
+    } else if (meta.hiddenByEligibility > 0) {
       body = <EmptyState icon={SearchX} title="No openings match." detail={`${plural(meta.hiddenByEligibility, "is", "are")} hidden by "Eligible for me".`} action="Show all" onAction={() => change({ eligibleOnly: "" })} />;
     } else if (hasAnyFilter(search)) {
       body = <EmptyState icon={SearchX} title="No openings match these filters." detail="Try fewer filters or a different search." action="Clear filters" onAction={clearAll} />;
@@ -163,7 +197,8 @@ export default function JobsPage() {
             {search.get("sort") === "deadline" && !p.deadlineStated && (i === 0 || result.data[i - 1].deadlineStated) && (
               <p className="mb-3 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">No deadline stated</p>
             )}
-            <JobCard posting={p} isNew={isNewSince(p, baseline)} />
+            <JobCard posting={p} isNew={isNewSince(p, baseline)}
+              {...(meta?.showHidden ? { onUnhide: () => unhide(p.id) } : { onHide: () => hide(p) })} />
           </MotionLi>
         ))}
       </ul>
@@ -212,7 +247,21 @@ export default function JobsPage() {
               "Eligible for me" needs your roll number. Add it in your profile; until then all openings are shown.
             </p>
           )}
-          {summary && total > 0 && <p className="text-xs text-slate-500" aria-live="polite">{summary}</p>}
+          {meta?.showHidden ? (
+            <p className="flex flex-wrap items-center gap-2 text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded-xl px-3 py-2">
+              <EyeOff size={14} aria-hidden="true" /> Openings you marked "Not for me". Only you see this list.
+              <button type="button" onClick={() => change({ showHidden: "" })} className="font-semibold text-[var(--color-secondary)] hover:underline cursor-pointer">Back to all openings</button>
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {summary && total > 0 && <p className="text-xs text-slate-500" aria-live="polite">{summary}</p>}
+              {meta?.hiddenByYou > 0 && (
+                <button type="button" onClick={() => change({ showHidden: "true" })} className="text-xs font-semibold text-slate-500 hover:text-[var(--color-secondary)] hover:underline cursor-pointer">
+                  Show hidden ({meta.hiddenByYou})
+                </button>
+              )}
+            </div>
+          )}
 
           {body}
 

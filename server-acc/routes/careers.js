@@ -7,7 +7,7 @@ import { submitLink, mySubmissions, withdrawLink } from '../controllers/careers/
 import { getMyEligibility, updateMyCpi } from '../controllers/careers/eligibilityController.js';
 import { listPostings, newPostingsCount, getPosting, reportPosting } from '../controllers/careers/postingsController.js';
 import { searchCompanies, listCompanies, getCompanyPage } from '../controllers/careers/companiesController.js';
-import { savePosting, unsavePosting, setApplication, listSaved } from '../controllers/careers/trackingController.js';
+import { savePosting, unsavePosting, hidePosting, unhidePosting, setApplication, listSaved } from '../controllers/careers/trackingController.js';
 
 // Student-facing careers routes. requireCareersEnabled is applied per route (not router-wide)
 // because /careers/status and /careers/companies/search must answer even while the feature is hidden.
@@ -30,6 +30,8 @@ router.post('/careers/submissions/:id/withdraw', checkAuth, requireCareersEnable
 
 router.put('/careers/postings/:id/save', checkAuth, requireCareersEnabled, savePosting);
 router.delete('/careers/postings/:id/save', checkAuth, requireCareersEnabled, unsavePosting);
+router.put('/careers/postings/:id/hide', checkAuth, requireCareersEnabled, hidePosting);
+router.delete('/careers/postings/:id/hide', checkAuth, requireCareersEnabled, unhidePosting);
 router.put('/careers/postings/:id/application', checkAuth, requireCareersEnabled, setApplication);
 router.get('/careers/saved', checkAuth, requireCareersEnabled, listSaved);
 

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, Eye, EyeOff, MapPin } from "lucide-react";
 import CompensationBadge from "./CompensationBadge";
 import EligibilityBadge from "./EligibilityBadge";
 import FreshnessLine from "./FreshnessLine";
@@ -15,7 +15,8 @@ const chip = "inline-flex items-center px-2 py-0.5 rounded-md border text-[10px]
 
 // The whole card opens the posting (the title link is stretched over it); the Save button and the
 // application status sit above that link so they work on their own.
-export default function JobCard({ posting, isNew = false, showStatus = false, onChange }) {
+// onHide / onUnhide (P6-T9): "Not for me" on the jobs list, "Show again" in the hidden view.
+export default function JobCard({ posting, isNew = false, showStatus = false, onChange, onHide, onUnhide }) {
   const skills = posting.skills ?? [];
   const expired = posting.status === "EXPIRED";
   return (
@@ -44,7 +45,18 @@ export default function JobCard({ posting, isNew = false, showStatus = false, on
             </Link>
           </h2>
         </div>
-        <div className="relative z-10 shrink-0">
+        <div className="relative z-10 shrink-0 flex items-start gap-1">
+          {onHide && (
+            <button type="button" onClick={onHide} title="Not for me: hide it from your list" aria-label={`Not for me: hide ${posting.roleTitle}`}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer">
+              <EyeOff size={16} aria-hidden="true" />
+            </button>
+          )}
+          {onUnhide && (
+            <button type="button" onClick={onUnhide} className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--color-secondary)] hover:bg-sky-50 cursor-pointer">
+              <Eye size={14} aria-hidden="true" /> Show again
+            </button>
+          )}
           <SaveButton posting={posting} onChange={onChange} />
         </div>
       </div>

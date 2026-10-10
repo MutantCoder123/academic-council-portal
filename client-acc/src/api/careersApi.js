@@ -29,6 +29,8 @@ export const careersApi = {
   // Saved postings and application status (P4-lite)
   savePosting: (id) => api.put(`/careers/postings/${id}/save`).then((r) => r.data.data),
   unsavePosting: (id) => api.delete(`/careers/postings/${id}/save`).then((r) => r.data.data),
+  hidePosting: (id) => api.put(`/careers/postings/${id}/hide`).then((r) => r.data.data),
+  unhidePosting: (id) => api.delete(`/careers/postings/${id}/hide`).then((r) => r.data.data),
   setApplication: (id, status) => api.put(`/careers/postings/${id}/application`, { status }).then((r) => r.data.data),
   reportPosting: (id, body) => api.post(`/careers/postings/${id}/report`, body).then((r) => r.data),
   listSaved: () => api.get('/careers/saved').then((r) => r.data),

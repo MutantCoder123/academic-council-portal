@@ -42,6 +42,34 @@ export const savePosting = async (req, res) => {
     }
 };
 
+// "Not for me" (P6-T9, F-12): hides a LIVE posting from this student's jobs list only.
+export const hidePosting = async (req, res) => {
+    try {
+        const postingId = parseId(req.params.id);
+        const userId = req.user.id;
+        const posting = await prisma.posting.findUnique({ where: { id: postingId }, select: { status: true } });
+        if (posting?.status !== 'LIVE') throw new CareersError(404, 'NOT_FOUND', 'This posting is not available. It may have closed.');
+        await prisma.hiddenPosting.upsert({
+            where: { userId_postingId: { userId, postingId } },
+            create: { userId, postingId },
+            update: {},
+        });
+        return res.status(200).json({ success: true, data: { hidden: true } });
+    } catch (err) {
+        return sendError(res, err, 'hidePosting');
+    }
+};
+
+export const unhidePosting = async (req, res) => {
+    try {
+        const postingId = parseId(req.params.id);
+        await prisma.hiddenPosting.deleteMany({ where: { userId: req.user.id, postingId } });
+        return res.status(200).json({ success: true, data: { hidden: false } });
+    } catch (err) {
+        return sendError(res, err, 'unhidePosting');
+    }
+};
+
 export const unsavePosting = async (req, res) => {
     try {
         const postingId = parseId(req.params.id);

@@ -9,7 +9,7 @@ describe('postingsQuery', () => {
     it('applies defaults', () => {
         expect(parse({})).toEqual({
             q: undefined, type: undefined, workMode: undefined, location: undefined, skills: [], companyId: undefined,
-            minStipend: undefined, minCtc: undefined, includeUndisclosed: true, eligibleOnly: false,
+            minStipend: undefined, minCtc: undefined, includeUndisclosed: true, eligibleOnly: false, showHidden: false,
             sort: 'newest', page: 1, limit: 20,
         });
     });
