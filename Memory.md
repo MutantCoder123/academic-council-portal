@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 – T4 done; next P5-T5.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 – T5 done; next P5-T6.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `5ab4f95` feat(careers): P5-T4 F-09 student links: retry, create posting from a link, withdraw (local, not pushed)
+- **Last commit:** `9ba8fd1` feat(careers): P5-T5 F-18 shared links never wait forever (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 631 passed (35 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 637 passed (36 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -72,6 +72,7 @@
 | Take down (admin) | `server-acc/services/careers/postings/takeDown.js` (`takeDownPlan`, `takeDownPosting`); client `pages/admin/careers/components/TakeDownDialog.jsx` | from All postings and `PostingEditor` |
 | Admin bar (job page) | `server-acc/services/careers/postings/adminInfo.js` (used by `postingsController.getPosting`); client `pages/Careers/components/AdminBar.jsx` | career admins only |
 | Student-link actions | `server-acc/services/careers/links/submissionActions.js` (retry / withdraw / attach to a manual posting); migration `20261010061322_careers_link_dismiss` | admin `ReviewLinks.jsx`, `ManualPosting.jsx?fromLink=`, student `MySubmissions.jsx` |
+| Links waiting for a person | `server-acc/services/careers/links/waiting.js` (`aiTierUsable`, `waitingForAdmin`, `needsPersonWhere`, `needsPersonCounts`); dismiss in `links/submissionActions.js`; alert `LINKS_WAITING` in `ops/alerts.js` | admin Student links → "needs a person" filter + Dismiss dialog |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -137,6 +138,7 @@
 - Settings cache again: a script that turns the flag off at the end leaves the API answering CAREERS_DISABLED for 30 s, so wait before the next browser check.
 - (Linux machine, 9 Oct) The Playwright MCP's headed Chrome crashes at start (`GLib-GIO-ERROR … org.gnome.settings-daemon.plugins.xsettings does not contain a key named 'antialiasing'`, SIGTRAP). Use `playwright-core` from `~/.npm/_npx/9833c18b2d85bc59/node_modules/` with `executablePath: '/opt/google/chrome/chrome', headless: true, env: { ...process.env, GSETTINGS_BACKEND: 'memory' }`; run the script with `node --env-file=.env` from `server-acc/` so it fills the login form from `DEV_SEED_PASSWORD` itself (user-approved, 9 Oct; never printed). Helper: scratchpad `ui/lib.mjs`.
 - A dropdown inside a scrolling container (`overflow-y-auto`) is clipped by it on every side. Open it toward the free side and choose up/down from the room left inside the container (see `ApplicationStatusButton`).
+- `aiTierUsable()` caches the live provider check for 60 s in the API process (on top of the 30 s settings cache), so after turning `careers.llmEnabled` on or starting Ollama, students may see "Waiting for an ACC admin" for up to ~1.5 minutes more.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -605,3 +607,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (2 test links, removed afterwards): student Withdraw on the waiting link → "WITHDRAWN"; no Withdraw on the failed one; admin Student links: withdrawn row "Withdrawn by the student" with no buttons, failed row Retry → RECEIVED, Create posting from this link → `/admin/careers/new?fromLink=19&url=…` with the banner and the apply link prefilled. Fixed after the check: the Student links tab count ignored withdrawn rows; withdrawn rows show a WITHDRAWN / DISMISSED chip instead of their old status.
   - `npm test` → 631 passed (35 files); client build ✓; changed files lint 0.
 - Next step: P5-T5.
+
+### 2026-10-10, P5-T5: shared links never wait forever (F-18)
+- Did: `waiting.js` + dismiss in `submissionActions.js` + `LINKS_WAITING` alert (8 tests first), NEEDS_PERSON filter, dismiss endpoint, ops counts, student flag; admin UI (filter, hint, amber row note, Dismiss dialog with reasons shown to the student), student status "Waiting for an ACC admin" / "Not added · ACC: <reason>" (C-101).
+- Checks:
+  - API + pipeline (`http_p5t5.mjs`, 15/15; local Ollama `qwen2.5:7b` running; 3 test links, all rows removed afterwards, `careers.llmEnabled` restored to false): AI off → student `waitingForAdmin` true (store-only link false); Needs a person lists the 2 waiting + store-only links with `aiUsable` false; ops `{ needsPerson 4, waitingOver48h 2 }` and amber LINKS_WAITING; student dismiss 403, empty reason 400; admin dismiss 200 → queued extraction FAILED "Link dismissed by an admin", student sees the reason, gone from Needs a person, dismiss again 409, sharing the URL again → re-share (same id, not processed); AI on → `runExtractions` read the waiting link (116 s, called 1, applied 1) → posting PENDING_REVIEW, tier LLM_FAST.
+  - Browser (1 test link, removed): student "WAITING FOR AN ACC ADMIN" + explanation; admin "needs a person" filter with the hint, row note "Waiting for an admin: the AI step is off…", Create posting / Dismiss; Dismiss → "Not a job page" → gone from the filter, DISMISSED chip under All; student "NOT ADDED · ACC: Not a job page".
+  - `npm test` → 637 passed (36 files); client build ✓; changed files lint 0.
+- Next step: P5-T6.

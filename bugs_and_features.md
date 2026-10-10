@@ -253,6 +253,7 @@
 - **Problem:** a shared link that is neither an ATS link nor a page with JSON-LD waits for the AI step. With `careers.llmEnabled` off (the production default, Gemini not built, Ollama on the VM undecided) it stays `EXTRACTING` for good; the student sees "Being processed" and the admin has no action on it.
 - **Design:** while the AI tier is off (or the provider is unusable), such links get a student status "Waiting for an ACC admin" (not "Being processed") and appear in the Student links tab under "Needs a person", with **Create posting from this link** (F-09) and **Dismiss** (reason shown to the student, e.g. "Not a job page"). Ops alert (amber) when a link has waited > 48 h. When the AI tier is turned on later, the waiting rows are processed as today.
 - **Effort:** S–M
+- **Status:** ✅ Built 10 Oct (`9ba8fd1`, P5-T5, C-101): "Waiting for an ACC admin", **Needs a person** filter, **Dismiss** with a reason (row kept, queued extraction cancelled), amber ops alert after 48 h.
 
 #### F-19 Job alerts (saved searches + email digest) ⚖️
 - **Problem:** students only see new openings if they remember to visit; most won't.
