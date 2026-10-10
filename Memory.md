@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T3 done 10 Oct)**. Next: P7-T4. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T4 done 10 Oct)**. Next: P7-T5. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b4d82d7` feat(careers): P7-T3 F-25 internship season and duration (local, not pushed)
+- **Last commit:** `50a664e` feat(careers): P7-T4 F-30 usage numbers for ACC (aggregate only) (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 720 passed (46 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 728 passed (47 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -88,6 +88,7 @@
 | Job alerts (email) | `server-acc/services/careers/alerts/{savedSearch,digestMail,runAlerts}.js`, `services/careers/mail/careersMail.js`, `controllers/careers/alertsController.js`, job `alerts` in `services/careers/jobs.js`; migration `20261010122643_careers_saved_searches`; client `pages/Careers/components/JobAlertsDialog.jsx`, `pages/Careers/lib/alerts.js`, `pages/Careers/UnsubscribePage.jsx` | "Job alerts" on the jobs page; public `/alerts/unsubscribe?token=` |
 | Programme / graduation year | `server-acc/services/careers/postings/eligibility.js` (`PROGRAMMES`, `graduationInfo`, `programmeBody`), `eligibilityWhere` in `postings/query.js`, `PATCH /careers/me/programme`; migration `20261010124250_careers_graduation_year`; client `pages/Careers/components/EligibilityCard.jsx` | private like CPI (global omit in `config/db.js`) |
 | Internship season / length | `server-acc/services/careers/text/season.js` (`parseSeason`), `buildPostingData`, `season` / `minDurationMonths` in `postings/query.js`; migration `20261010125007_careers_internship_season`; client `seasonText` in `pages/Careers/lib/format.js`, `JobFilters.jsx`, `PostingFields.jsx` | |
+| Usage numbers | `server-acc/services/careers/usage/usage.js`, `GET /careers/admin/usage`, `POST /careers/postings/:id/apply-click`; migration `20261010125613_careers_usage_counts`; client `pages/admin/careers/components/UsageCard.jsx` | Operations page; All postings rows |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -113,6 +114,7 @@
 - Who reported a posting is never returned, not even to admins (P6-T7): the reason and note are enough to act on, and students report more freely.
 - Job-alert emails (P7-T1) only go out while `careers.visibleToStudents` and `careers.alertEmailsEnabled` are both on; the alert stores the API form of the filters (minCtc in rupees), and the email's "more" link converts back to the page form (minCtcLpa).
 - `User.programme` / `User.graduationYear` are private like CPI: global omit in `config/db.js`, read only through explicit selects (`loadProfile`, `/careers/me/*`, the alerts run). A stated batch (`eligibleGradYears`) decides before the year of study.
+- Usage numbers (P7-T4) never store a user id: weekly visitors are an HMAC of (user id, week) keyed from `SECRET_KEY`, Apply clicks are per-posting daily counters. Rotating `SECRET_KEY` only splits the current week's visitor count.
 
 ## Gotchas / things that surprised me
 
@@ -771,3 +773,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser: student Internship season = Winter → only the Rubrik Winter Intern with "Winter · from Jan 2027 · 5 months"; Length 6+ → only #86 "6 months" + note "Only openings whose source states it."; job page "Internship: Winter · from Jan 2027 · 5 months"; 375 px scrollWidth 375; admin editor shows Winter / January 2027 / 5. Reset after.
   - `npm test` → 720 passed (46 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Next step: P7-T4.
+
+### 2026-10-10, P7-T4: usage numbers for ACC (F-30) 🗄️
+- Did: 2 tables (`--create-only`, SQL read: 2 CREATE TABLE, 2 indexes, 1 FK; forbidden grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `usage/usage.js` (8 tests: IST week edges, keys per week / student / secret, no user id stored, admins not counted, no secret → nothing stored + log, click upsert on the IST day), visit recording in `listPostings`, apply-click route, admin usage route, `applyClicks` on All postings, `UsageCard` (C-118, D-12).
+- Checks:
+  - `http_p7t4.mjs` (12/12): two student list calls → +1 visitor; admin list → no row; stored row = weekStart + 64-hex key; 2 Apply clicks → +2 today; non-LIVE 404; student `/careers/admin/usage` 403; weeks=40 400; this week's API numbers equal independent SQL (visitors 1, clicks 2, live 28) and last week's (published 32); usage JSON has no userId / email / visitorKey / id; All postings shows the posting's 2 clicks and no per-student fields. Test rows removed.
+  - All 8 weeks of saves / tracking / applied / published equal SQL. Dev data has no saves or applications, so `http_p7t4b.mjs` (3/3) saved 3 postings and set 2 statuses (1 APPLIED) as the dev student: this week went 0/0/0 → 3/2/1 and All postings showed 1 save each and tracking on two; all removed after.
+  - Browser (admin): Operations → "Student use, last 8 weeks" table (this week, 28 Sept with 32 published, …), "28 live postings now"; 375 px scrollWidth 375 (table scrolls inside the card).
+  - `npm test` → 728 passed (47 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P7-T5.

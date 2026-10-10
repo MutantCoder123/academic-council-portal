@@ -323,6 +323,7 @@
 #### F-30 Usage numbers for ACC (aggregate only)
 - **Design:** on Sources & Ops: per week, LIVE postings, unique students who opened the jobs page, saves, application statuses set, Apply clicks; per posting (in F-01): saves / applied counts. Aggregate counts only, never which student did what. Lets ACC judge whether the feature helps and which sources are worth keeping. 🗄️ `PostingStat` daily counters (or computed from existing `SavedPosting` / `PostingApplication` + a click counter).
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`50a664e`, P7-T4, C-118, D-12): "Student use, last 8 weeks" on Operations (students visited, saves, tracking started, marked applied, Apply clicks, published; live now) and Apply clicks per posting in All postings. Visitors are stored as a per-week keyed hash, Apply clicks as per-posting daily counters; nothing per student.
 
 #### F-31 Review reminders for admins ⚖️
 - **Problem:** postings only help while fresh; a queue left for a week means students see stale roles.

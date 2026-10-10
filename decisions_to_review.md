@@ -97,3 +97,14 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 - **Why:** ACC decides when the first email goes out (off until switched on); one click to stop is
   what students expect, and a link scanner opening it can be undone by the student.
 - **Status:** Taken by the AI (10 Oct 2026); for the user to review.
+
+## D-12 What the usage numbers count, and how (P7-T4, C-118)
+- **What:** "Students visited" = students (not career admins) who opened the jobs list, once per IST
+  week (Monday – Sunday), stored only as a keyed hash of (user id, week). "Apply clicks" = clicks on
+  "Apply on the company site" per posting and day (a student clicking twice counts twice). Status
+  numbers are "tracking started" and "marked applied" rather than every status change. LIVE
+  postings are shown as the current count plus "published" per week. The card is on Operations
+  only (Sources keeps the per-board quality card).
+- **Why:** nothing that names a student is stored, so no endpoint can leak it; status changes have
+  no history table, and `updatedAt` also moves when a note is edited.
+- **Status:** Taken by the AI (10 Oct 2026); for the user to review.
