@@ -297,6 +297,7 @@
 #### F-25 Internship season and duration
 - **Design:** read "Summer 2027", "Winter", "6 months", "Jan – Jun 2027" from the title/description (deterministic, flagged for review like B-03) into season / start month / duration; filter "Summer internships", "Winter", "6-month"; shown as a chip on cards. 🗄️ nullable `season`, `startMonth`, `durationMonths` on `Posting`.
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`b4d82d7`, P7-T3, C-117): deterministic `text/season.js` reads season (only the words summer / winter), start month and length for internships, flagged `season` for the reviewer; filters "Internship season" and "Length" (only postings that state it), chip on cards and the job page, fields in the admin editor. Existing postings are not back-filled.
 
 #### F-26 "Did you apply?" nudge
 - **Design:** clicking **Apply** remembers the time (localStorage, per posting). The next time the student opens that posting or the Saved page: "You opened the application on 9 Oct. Mark as Applied?" one click → status APPLIED (and saved). Nothing is stored on the server until the student clicks.

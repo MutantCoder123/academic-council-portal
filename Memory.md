@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1, T2 done 10 Oct)**. Next: P7-T3. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T3 done 10 Oct)**. Next: P7-T4. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `1f7dc14` feat(careers): P7-T2 F-22 eligibility by graduation batch and programme (local, not pushed)
+- **Last commit:** `b4d82d7` feat(careers): P7-T3 F-25 internship season and duration (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 707 passed (45 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 720 passed (46 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -87,6 +87,7 @@
 | Edit / archive a source | `server-acc/services/careers/sources/archive.js`, `POST /careers/admin/sources/:id/archive` / `restore`, `PATCH /careers/admin/sources/:id`; migration `20261010120305_careers_source_archive`; client `pages/admin/careers/EditSourceDialog.jsx` | Sources page |
 | Job alerts (email) | `server-acc/services/careers/alerts/{savedSearch,digestMail,runAlerts}.js`, `services/careers/mail/careersMail.js`, `controllers/careers/alertsController.js`, job `alerts` in `services/careers/jobs.js`; migration `20261010122643_careers_saved_searches`; client `pages/Careers/components/JobAlertsDialog.jsx`, `pages/Careers/lib/alerts.js`, `pages/Careers/UnsubscribePage.jsx` | "Job alerts" on the jobs page; public `/alerts/unsubscribe?token=` |
 | Programme / graduation year | `server-acc/services/careers/postings/eligibility.js` (`PROGRAMMES`, `graduationInfo`, `programmeBody`), `eligibilityWhere` in `postings/query.js`, `PATCH /careers/me/programme`; migration `20261010124250_careers_graduation_year`; client `pages/Careers/components/EligibilityCard.jsx` | private like CPI (global omit in `config/db.js`) |
+| Internship season / length | `server-acc/services/careers/text/season.js` (`parseSeason`), `buildPostingData`, `season` / `minDurationMonths` in `postings/query.js`; migration `20261010125007_careers_internship_season`; client `seasonText` in `pages/Careers/lib/format.js`, `JobFilters.jsx`, `PostingFields.jsx` | |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -160,6 +161,7 @@
 - Tests must not compare fixed dates with real time windows: the B-11 test broke at 10 Oct 12:00 UTC because its rows were stamped 9 Oct 12:00 and the limit looks back 24 h from now.
 - nodemon on Windows sometimes leaves the old `node server.js` on :3000, and every restart then crashes with EADDRINUSE while the stale process serves old code. Kill the PID on :3000 and run `node server.js` directly while checking.
 - The upstream app layout already renders a `<main>`; public pages rendered inside it should use a `<div>`.
+- Dev postings have no season data until re-built: the parser only runs in `buildPostingData` (new postings). To try the filters, set the three columns on a posting by hand and reset them after.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -761,3 +763,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student): card shows "Programme Not set · Graduating 2028 · guessed from your roll number (4-year B.Tech)"; Correct it → Dual degree + 2027 → "entered by you"; 375 px filters drawer with the form open, scrollWidth 375.
   - `npm test` → 707 passed (45 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Next step: P7-T3.
+
+### 2026-10-10, P7-T3: internship season and duration (F-25) 🗄️
+- Did: pulled every season / length phrase from the 28 dev internships first, wrote 10 parser tests on them (Google #102 "Summer 2026 … start in May 2026 … 10-12 weeks" → SUMMER / 2026-05 / 3; Rubrik #64 "Winter Intern … January 2027 to May 2027" → WINTER / 2027-01 / 5; #63 same range but no season; #69 "3-month internship"; #86 "Duration: 6 months"; #103 "6 months programme"; #53 "6-month Apprenticeship … starting in Jan 2027"; #100 "Six month … Java, Spring"; traps #72 "6 months – 2 years experience", #101 "6 months ago"), then `text/season.js`; migration (`--create-only`, SQL read: one ALTER TABLE with 3 ADD COLUMN; forbidden grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`); `buildPostingData`, editor schema, card fields, query params, alert keys; client (C-117). 3 more tests (posting build, filter). Ran the parser over all 56 dev postings: matches only on those 9 internships (+ one full-time "summer" that is ignored because only internships are parsed).
+- Checks:
+  - `http_p7t3.mjs`: wrote the parser's values on the 5 LIVE internships that state something (#69, #86, #53, #63, #64), then season=WINTER → exactly [64]; minDurationMonths=6 → [53, 86]; minDurationMonths=2 → only postings with a stated length ≥ 2; season=SUMMER → none (the summer one is pending); season=SPRING 400; cards carry the fields; admin PATCH sets SUMMER / 2027-05 / 2 and refuses 30 months; an alert keeps season + length ("Winter · 2+ months"). 9/9; columns reset to NULL.
+  - Browser: student Internship season = Winter → only the Rubrik Winter Intern with "Winter · from Jan 2027 · 5 months"; Length 6+ → only #86 "6 months" + note "Only openings whose source states it."; job page "Internship: Winter · from Jan 2027 · 5 months"; 375 px scrollWidth 375; admin editor shows Winter / January 2027 / 5. Reset after.
+  - `npm test` → 720 passed (46 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P7-T4.
