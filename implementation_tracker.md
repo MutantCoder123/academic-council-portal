@@ -14,12 +14,12 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
-| P6 Student value | first month after launch | 11 | 7 | In progress |
+| P6 Student value | first month after launch | 11 | 8 | In progress |
 | P7 Depth | after P6 | 12 | 0 | Planned |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **42** | **66 %** |
+| **Total incl. P5 – P8** | | **64** | **43** | **67 %** |
 
-**Next task:** `P6-T8` (safer bulk actions: undo, bulk reject / expire, F-04). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** `P6-T9` (hide a posting, F-12, migration). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -96,7 +96,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P6-T5 | Sort by deadline, filter by company (F-14) | [x] | d98046d | API 6/6 with 3 temporary deadlines (+5/+12/+20 days → soonest first, then none newest first, total unchanged; company 37 → only Paytm, 15 = DB; search 'payt'); browser: sort select, deadline lines, 'No deadline stated' divider, no countdown words, company picker → URL companyId + companyName, reload keeps it; 375 px; deadlines cleared; 655 tests |
 | P6-T6 | Deadlines on the Saved page (F-20, in-app) | [x] | adf16f6 | Helper 4/4 (Node: only stated, upcoming by date with today upcoming, passed last, India date); browser: 3 rows 15 Oct, 30 Oct, 5 Oct (passed), saved posting without deadline not listed, no countdown words, 375 px; saves + deadlines removed; 655 tests |
 | P6-T7 | Report a problem (F-05) 🗄️ | [x] | f62f9ed | Migration careers_posting_reports (CREATE TABLE + 2 indexes + 2 FKs only); API 16/16 (once per student → 409, 3 users → 'reported' flag and still LIVE, admin sees reasons not who, Reported filter, amber alert, handled clears flag and keeps reports, history row); browser student dialog + admin panel, note shown as text, 375 px; test data removed; 662 tests |
-| P6-T8 | Safer bulk actions: undo, bulk reject/expire (F-04) | [ ] | | |
+| P6-T8 | Safer bulk actions: undo, bulk reject/expire (F-04) | [x] | dea0b25 | API 13/13 on 5 snapshotted postings (approve 5 → Undo → all Pending, publishedAt + reviewer restored exactly, history APPROVE + 'Bulk approve undone'; undo twice skipped; bulk reject 2 / expire 2 = 4 review rows; no reason 400; mixed → skipped not failed; student 403); browser toast Undo (Pending 1 → 0 → 1), Reject… needs a reason; 375 px; all restored; 667 tests |
 | P6-T9 | Hide a posting (F-12) 🗄️ | [ ] | | |
 | P6-T10 | Notes and dates on application tracking (F-13) 🗄️ | [ ] | | |
 | P6-T11 | Edit and archive a source (F-07) 🗄️ | [ ] | | Hard delete ⚖️, only if approved |

@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T7 done; next P6-T8.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T8 done; next P6-T9.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `f62f9ed` feat(careers): P6-T7 F-05 report a problem with a posting (local, not pushed)
+- **Last commit:** `dea0b25` feat(careers): P6-T8 F-04 undo bulk approve, bulk reject and bulk expire (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 662 passed (40 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 667 passed (41 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -81,6 +81,7 @@
 | "Did you apply?" nudge | client `pages/Careers/components/ApplyNudge.jsx`, `lib/applyNudge.js` | `JobDetailPage.jsx` (below the header), `SavedPage.jsx` (above the filters) |
 | Deadlines on Saved | client `pages/Careers/components/SavedDeadlines.jsx`, `lib/deadlines.js` | above the Saved filters |
 | Report a problem | `server-acc/services/careers/postings/reports.js`, `POST /careers/postings/:id/report`, `POST /careers/admin/postings/:id/reports/handled`; migration `20261010094447_careers_posting_reports`; client `pages/Careers/components/ReportProblemDialog.jsx`, `pages/admin/careers/components/{ReportCount,ReportsPanel}.jsx` | alert `POSTINGS_REPORTED` |
+| Bulk undo / reject / expire | `server-acc/services/careers/postings/bulkActions.js` (+ `approveTrail` in `reviewService.js`), `POST /careers/admin/postings/bulk-approve/undo`, `/bulk-reject`, `/bulk-expire`; client `pages/admin/careers/components/BulkActionDialog.jsx` | review queue selection bar + approve toast |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -698,3 +699,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser: student Send disabled until a reason (and a note for "Something else"); sent → "You reported a problem", same after reload; About panel shows "Something wrong with an opening?"; 375 px dialog scrollWidth 375. Admin: All postings → Reported by students → 1 row with "1 report" → editor "Student reports · 1 open of 1", note `<b>…</b>` shown as text (no `<b>` element) → Mark as handled → "0 open of 1". Report and history row removed afterwards.
   - `npm test` → 662 passed (40 files); client build ✓; changed files lint 0.
 - Next step: P6-T8.
+
+### 2026-10-10, P6-T8: safer bulk actions (F-04)
+- Did: `approveTrail` + `trail` option on approve, `bulkActions.js` (5 tests first), 3 routes, Undo toast and Reject… / Mark expired in `ReviewQueue.jsx`, `BulkActionDialog.jsx` (C-111).
+- Checks:
+  - `http_p6t8.mjs` (13/13): postings #47 – #51 snapshotted and made clean; bulk approve 5 → LIVE with publishedAt; student undo 403; undo → 5 back in Pending with `publishedAt` null, reviewer and review time equal to the snapshot; history per posting APPROVE then EDIT "Bulk approve undone"; undo again → 5 skipped ("status is PENDING_REVIEW"); bulk reject 2 (reason) + bulk expire 2 → exactly 4 new review rows, REJECTED with reason / EXPIRED `ADMIN`; reject without reason 400; expire of a REJECTED + a pending posting → 1 done, 1 skipped with the reason. All 5 restored from the snapshot, 15 review rows removed.
+  - Browser (admin, #47 snapshotted): Select page → bar shows Approve / Reject… / Mark expired; Reject dialog's button disabled without a reason; Publish 1 posting → toast "Approved 1; skipped 0. Undo", Pending 0 → Undo → "1 back in Pending.", Pending 1; 375 px scrollWidth 375. #47 restored (2 review rows removed).
+  - `npm test` → 667 passed (41 files); client build ✓; changed files lint 0.
+- Next step: P6-T9.

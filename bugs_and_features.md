@@ -173,6 +173,7 @@
 #### F-04 Safer bulk actions
 - **Design:** confirmation dialog for bulk approve (count + first 5 titles); **Undo** in the success toast for 30 s (moves the just-approved postings back to `PENDING_REVIEW`, clears `publishedAt` only if it was set by this action); bulk **reject** and bulk **expire** in the same selection bar.
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`dea0b25`, P6-T8, C-111): Undo in the bulk-approve toast (30 s; server 60 s, restores publishedAt / reviewer exactly), bulk Reject… (reason) and Mark expired in the selection bar; one history row per posting.
 
 #### F-05 Report a problem with a posting (students)
 - **Design:** "Report a problem" on the job page: closed / wrong pay / wrong eligibility / not a real job / other + optional note (text only). Reports show as a count badge in the review queue and in F-01; three reports auto-flag the posting (adds `reported` to `uncertainFields`, never auto-removes). 🗄️ `PostingReport` table (new, additive).
