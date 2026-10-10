@@ -3,7 +3,7 @@
 // structured postings; the server skips the rest and says why.
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ListChecks, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers, ListChecks, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import PostingEditor from "./PostingEditor";
@@ -97,6 +97,7 @@ export default function ReviewQueue() {
   return (
     <div className="space-y-6">
       <PageHeader icon={ListChecks} title="Jobs review" subtitle="Nothing reaches students until an admin approves it here.">
+        <Link to="/admin/careers/postings" className={outlineButton}><Layers size={14} /> All postings</Link>
         <Link to="/admin/careers/new" className={primaryButton}><Plus size={14} /> Add posting</Link>
       </PageHeader>
 

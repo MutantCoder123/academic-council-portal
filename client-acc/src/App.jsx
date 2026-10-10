@@ -48,6 +48,7 @@ import CareersManualPosting from "./pages/admin/careers/ManualPosting.jsx";
 import CareersSources from "./pages/admin/careers/Sources.jsx";
 import CareersOperations from "./pages/admin/careers/Operations.jsx";
 import CareersBackfill from "./pages/admin/careers/ExperienceBackfill.jsx";
+import CareersAllPostings from "./pages/admin/careers/AllPostings.jsx";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -247,6 +248,14 @@ const AppRoutes = () => {
   element={
     <ProtectedRoute roles={["SUPER_ADMIN", "FACULTY", "CAREER_ADMIN"]}>
       <CareersReviewQueue />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="careers/postings"
+  element={
+    <ProtectedRoute roles={["SUPER_ADMIN", "FACULTY", "CAREER_ADMIN"]}>
+      <CareersAllPostings />
     </ProtectedRoute>
   }
 />

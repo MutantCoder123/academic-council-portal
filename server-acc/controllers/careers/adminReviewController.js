@@ -8,6 +8,9 @@ import {
     editPosting, approvePosting, rejectPosting, expirePosting, reopenPosting, bulkApprove, createManualPosting, reviewWhere,
 } from '../../services/careers/postings/reviewService.js';
 import { likeSafe } from '../../services/careers/text/likeSafe.js';
+import {
+    adminPostingsQuery, adminPostingsWhere, adminPostingsOrder, adminListSelect, ADMIN_STATUSES,
+} from '../../services/careers/postings/adminList.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -57,6 +60,30 @@ export const listReview = async (req, res) => {
         });
     } catch (err) {
         return sendError(res, err, 'listReview');
+    }
+};
+
+// All postings in any status (P5-T1), with per-status counts for the same filters.
+export const listAllPostings = async (req, res) => {
+    try {
+        const params = adminPostingsQuery.parse(req.query);
+        const where = adminPostingsWhere(params);
+        const [items, total, byStatus] = await Promise.all([
+            prisma.posting.findMany({ where, select: adminListSelect, orderBy: adminPostingsOrder(params.sort), skip: (params.page - 1) * params.limit, take: params.limit }),
+            prisma.posting.count({ where }),
+            prisma.posting.groupBy({ by: ['status'], where: adminPostingsWhere(params, { withStatus: false }), _count: { _all: true } }),
+        ]);
+        const counts = Object.fromEntries(ADMIN_STATUSES.map((s) => [s, 0]));
+        for (const g of byStatus) counts[g.status] = g._count._all;
+        counts.ALL = ADMIN_STATUSES.reduce((n, s) => n + counts[s], 0);
+        return res.json({
+            success: true,
+            data: items,
+            pagination: { total, page: params.page, limit: params.limit, totalPages: Math.ceil(total / params.limit) },
+            counts,
+        });
+    } catch (err) {
+        return sendError(res, err, 'listAllPostings');
     }
 };
 
