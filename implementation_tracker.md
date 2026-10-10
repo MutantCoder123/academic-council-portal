@@ -13,13 +13,13 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
-| P5 Admin control | after 10 Oct, before go-live | 7 | 5 | In progress |
+| P5 Admin control | after 10 Oct, before go-live | 7 | 6 | In progress |
 | P6 Student value | first month after launch | 11 | 0 | Planned |
 | P7 Depth | after P6 | 12 | 0 | Planned |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **33** | **52 %** |
+| **Total incl. P5 – P8** | | **64** | **34** | **53 %** |
 
-**Next task:** `P5-T6` (review count in the admin sidebar, F-16). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** `P5-T7` ("About these openings" banner + panel, F-28). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Still open from the original plan: `P1-T10b` (Gemini provider; needs GEMINI_API_KEY), then `P4-T2` (demo readiness), `P4-T3` (final QA + PR draft).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
@@ -84,7 +84,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P5-T3 | Admin bar on the student job page (F-03) | [x] | d066afa | API 5/5: admin gets adminInfo (approvedBy = approving admin), student never (no adminInfo / approvedBy in the response), pending → 'not approved yet' for admin, 404 for student; browser: bar (status, 'Approved by … on …'), Edit in admin opens the editor in place, Take down from the bar → EXPIRED + 'last expired by …', student sees no bar, 375 px; 616 tests |
 | P5-T4 | Student links: retry, create posting, withdraw (F-09) 🗄️ | [x] | 5ab4f95 | Migration careers_link_dismiss (3 nullable ADD COLUMNs). API 18/18: owner-only withdraw (403 other, 409 twice / once processing), kept + never picked by the worker, re-share of a withdrawn link → new row; admin retry FAILED → RECEIVED (403 student, 409 not failed); posting from a link → link points at it, student sees it live after approval, 2nd posting from same link → 409 with nothing created; browser: Withdraw, Retry, Create posting prefill; 631 tests |
 | P5-T5 | Shared links never wait forever (F-18) | [x] | 9ba8fd1 | API + pipeline 15/15: AI off → student 'Waiting for an ACC admin', Needs a person lists waiting + store-only (aiUsable false), ops needsPerson/waitingOver48h + amber LINKS_WAITING; dismiss (403 student, 400 empty, 409 twice) cancels the queued extraction, reason shown to the student, re-share not processed; AI on → same kind of link extracted by local Qwen (116 s) into a PENDING_REVIEW posting; browser both sides; 637 tests |
-| P5-T6 | Review count in the admin sidebar (F-16) | [ ] | | Upstream DashboardLayout (AI_Rules §4) |
+| P5-T6 | Review count in the admin sidebar (F-16) | [x] | c33337a | API 3/3: counts = DB (pending 0, flagged 19, waiting 19), same numbers as the review tabs, student 403; browser: badge 19 → approve one → 18 after reload, no badge for students; upstream DashboardLayout +3/−2 lines; 638 tests |
 | P5-T7 | "About these openings" banner + panel (F-28) | [ ] | | Copy reviewed by the user |
 
 ## P6: Student value (first month)

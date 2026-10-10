@@ -237,6 +237,7 @@
 #### F-16 Pending-review count in the admin sidebar
 - **Design:** the "Jobs Review" sidebar item shows a badge with pending + flagged counts (one cached call to the existing counts).
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`c33337a`, P5-T6, C-102): `GET /careers/admin/review/counts` + `ReviewCountBadge` on "Jobs Review" in both admin sidebar blocks.
 
 #### F-17 Clear test data before go-live
 - **Design:** `npm run careers:job -- cleanup --dry-run` lists test companies (e.g. "Acme Robotics Test …"), example.com postings, failing test sources and test submissions; without `--dry-run` it removes them. Local and staging only (refuses when `NODE_ENV=production`).
