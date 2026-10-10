@@ -296,6 +296,7 @@
 #### F-27 Quick filter presets
 - **Design:** one-tap chips above the list: "For me" (eligible + my year), "Internships", "Remote", "New this week", plus the student's last-used filters. Each chip just sets URL params, so links stay shareable.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`0b27f13`, P6-T3, C-106): chips *For me* / *Internships* / *Remote* / *New this week* (new `postedWithin` API param) + *My last filters* above the jobs list; URL params only.
 
 #### F-28 Explain what these openings are
 - **Problem:** students may confuse this with the placement cell (TPC/CDC) process.

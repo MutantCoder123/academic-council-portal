@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T2 done; next P6-T3.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T3 done; next P6-T4.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `5b9d981` feat(careers): P6-T2 F-21 'New for you' count in the student sidebar (local, not pushed)
+- **Last commit:** `0b27f13` feat(careers): P6-T3 F-27 quick filter chips on the jobs page (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 651 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 653 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -77,6 +77,7 @@
 | About these openings | client `pages/Careers/components/AboutOpenings.jsx`, `lib/about.js` | banner + panel on the jobs page |
 | Board scan / bulk add / quality | `server-acc/scripts/careers/{scanBoards.js,boardCandidates.json}`, `services/careers/sources/{scan,bulkLines,addBoard,quality}.js`, `POST /careers/admin/sources/bulk`; client `pages/admin/careers/BulkAddSourcesDialog.jsx`, `components/SourceQualityCard.jsx` | `node scripts/careers/scanBoards.js [--kind lever] [--only name] [--all]` |
 | "New for you" count | `server-acc/services/careers/postings/newCount.js`, `GET /careers/postings/new-count`; client `pages/Careers/components/NewJobsBadge.jsx`, `lib/tracking.js` (`lastVisitAt`, `LAST_VISIT_EVENT`) | in the student "Jobs & Internships" label of upstream `DashboardLayout.jsx` |
+| Quick filter chips | client `pages/Careers/components/QuickFilters.jsx`, `lib/quickFilters.js`; server `postedWithin` in `services/careers/postings/query.js` | above the jobs list |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -653,3 +654,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student): no badge before a first visit; lastVisit set → sidebar "7"; click Jobs & Internships → 7 New badges and the sidebar badge is gone at once (first run showed it still there: fixed with the visit event); back on courses → still gone; 375 px badge visible in the menu, scrollWidth 375.
   - `npm test` → 651 passed (39 files); client build ✓; changed files lint 0.
 - Next step: P6-T3.
+
+### 2026-10-10, P6-T3: quick filter chips (F-27)
+- Did: `postedWithin` param (2 tests first), `lib/quickFilters.js`, `QuickFilters.jsx` on `JobsPage.jsx` (C-106).
+- Checks:
+  - `http_p6t3.mjs` (12/12): chip logic in Node (Internships sets exactly `type=INTERNSHIP` and drops `page`; chips combine; clicking an active chip removes only its params; storage missing → no throw; `apiParams` passes `postedWithin` 1 – 90 only); API Internships 17 = DB 17, Remote 0 = 0, New this week 0 = 0, For me = the Eligible checkbox's request (28, eligibility applied), `postedWithin=0` → 400. Extra: `postedWithin` 10 / 14 / 30 → 28 = DB (all dev postings were published 7 – 10 days ago).
+  - Browser (student): 4 chips; Internships → URL `type=INTERNSHIP`, "17 openings", `aria-pressed` true, same after reload; clicked again → no params; set, leave, come back → "My last filters" shown → restores `type=INTERNSHIP` and hides itself; 375 px scrollWidth 375 (chips scroll sideways inside their row).
+  - `npm test` → 653 passed (39 files); client build ✓; changed files lint 0.
+- Next step: P6-T4.
