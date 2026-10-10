@@ -5,6 +5,7 @@ import { Activity, AlertTriangle, Briefcase, Cpu, Link2, ListChecks, RefreshCw, 
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import FlagsCard from "./FlagsCard";
+import SourceQualityCard from "./components/SourceQualityCard";
 import StatCard from "./components/StatCard";
 import { PageHeader, Skeleton, outlineButton } from "./components/ui";
 
@@ -94,6 +95,8 @@ export default function Operations() {
               <p>{ops.postings.newLast24h} new in 24 h · {ops.postings.expiredLast7d} expired in 7 days</p>
             </StatCard>
           </div>
+
+          <SourceQualityCard sources={ops.sources.list} days={ops.sources.qualityDays} />
 
           <FlagsCard onChanged={load} />
         </>

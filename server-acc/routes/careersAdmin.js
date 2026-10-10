@@ -10,7 +10,7 @@ import {
     listReview, getReviewCounts, listAllPostings, getPosting, patchPosting, approve, reject, expire, reopen, takeDown, bulk, createManual, listSubmissions, retryLink, dismissLink,
 } from '../controllers/careers/adminReviewController.js';
 import {
-    listSources, createSource, updateSource, runSourceNow, runAllNow, listRuns,
+    listSources, createSource, bulkCreateSources, updateSource, runSourceNow, runAllNow, listRuns,
 } from '../controllers/careers/adminSourcesController.js';
 import { getOps } from '../controllers/careers/adminOpsController.js';
 import { listBackfill, applyBackfill, unlinkBackfill } from '../controllers/careers/adminBackfillController.js';
@@ -56,6 +56,7 @@ router.post('/careers/admin/submissions/:id/dismiss', ...admin, dismissLink);
 router.post('/careers/admin/sources/run-all', ...admin, runAllNow);
 router.get('/careers/admin/sources', ...admin, listSources);
 router.post('/careers/admin/sources', ...admin, createSource);
+router.post('/careers/admin/sources/bulk', ...admin, bulkCreateSources);
 router.patch('/careers/admin/sources/:id', ...admin, updateSource);
 router.post('/careers/admin/sources/:id/run', ...admin, runSourceNow);
 router.get('/careers/admin/sources/:id/runs', ...admin, listRuns);

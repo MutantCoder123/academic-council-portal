@@ -78,6 +78,7 @@ export const careersAdminApi = {
   // Sources and operations
   listSources: (params = {}) => api.get('/careers/admin/sources', { params }).then((r) => r.data),
   createSource: (body) => api.post('/careers/admin/sources', body).then((r) => r.data),
+  bulkCreateSources: (lines) => api.post('/careers/admin/sources/bulk', { lines }).then((r) => r.data),
   updateSource: (id, body) => api.patch(`/careers/admin/sources/${id}`, body).then((r) => r.data),
   runSource: (id) => api.post(`/careers/admin/sources/${id}/run`).then((r) => r.data),
   runAllSources: () => api.post('/careers/admin/sources/run-all').then((r) => r.data),

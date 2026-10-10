@@ -6,6 +6,7 @@ import { reviewWhere } from '../../services/careers/postings/reviewService.js';
 import { computeAlerts, workerStatus } from '../../services/careers/ops/alerts.js';
 import { llmStatus } from '../../services/careers/ops/llmStatus.js';
 import { needsPersonCounts } from '../../services/careers/links/waiting.js';
+import { sourceQuality, QUALITY_DAYS } from '../../services/careers/sources/quality.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,7 +23,11 @@ export const getOps = async (req, res) => {
         });
         const ats = list.filter((s) => s.boardToken !== null);
         const countHealth = (h) => ats.filter((s) => s.health === h).length;
-        const sources = { total: ats.length, ok: countHealth('OK'), failing: countHealth('FAILING'), zeroResults: countHealth('ZERO_RESULTS'), disabled: countHealth('DISABLED'), list: ats };
+        const quality = await sourceQuality(prisma, now);
+        const sources = {
+            total: ats.length, ok: countHealth('OK'), failing: countHealth('FAILING'), zeroResults: countHealth('ZERO_RESULTS'), disabled: countHealth('DISABLED'),
+            list: ats.map((s) => ({ ...s, quality: quality[s.id] ?? null })), qualityDays: QUALITY_DAYS,
+        };
 
         const submissionCount = (status) => prisma.linkSubmission.count({ where: { status } });
         const [pending, flagged, candidates, received, extracting, failed, storedOnly, live, expiredLast7d, newLast24h, llm] = await Promise.all([

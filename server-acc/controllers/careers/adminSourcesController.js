@@ -5,17 +5,21 @@ import prisma from '../../config/db.js';
 import { CareersError, sendError, parseId } from '../../services/careers/errors.js';
 import { getSetting, setSetting, clearSettingsCache } from '../../services/careers/settings.js';
 import { workerStatus } from '../../services/careers/ops/alerts.js';
-import { fetchPostings } from '../../services/careers/ingest/adapters/index.js';
 import { ATS_KINDS } from '../../services/careers/ingest/ingestAll.js';
-import { evaluateRelevance } from '../../services/careers/text/relevance.js';
+import { existingBoard, checkBoard, bulkAddBoards, bulkSummary, defaultSourceName } from '../../services/careers/sources/addBoard.js';
+import { parseBulkLines, MAX_BULK_LINES, BOARD_TOKEN } from '../../services/careers/sources/bulkLines.js';
+import { sourceQuality } from '../../services/careers/sources/quality.js';
+import { loadCompanyIndex } from '../../services/careers/companies/companyIndex.js';
 
 const createBody = z.object({
     kind: z.enum(ATS_KINDS),
     // Board tokens are path segments on the ATS APIs: letters, digits, - and _ only.
-    boardToken: z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9_-]{0,99}$/, 'Use the board token from the board URL (letters, digits, - or _).'),
+    boardToken: z.string().trim().toLowerCase().regex(BOARD_TOKEN, 'Use the board token from the board URL (letters, digits, - or _).'),
     companyId: z.number().int().positive(),
     name: z.string().trim().min(1).max(120).optional(),
 });
+
+const bulkBody = z.object({ lines: z.string().max(20_000) });
 
 const updateBody = z.object({
     isEnabled: z.boolean().optional(),
@@ -38,17 +42,18 @@ export const listSources = async (req, res) => {
         // ?runsSince=<requestedAt>: what the runs since a "Fetch now" found (B-17).
         const since = req.query?.runsSince ? new Date(String(req.query.runsSince)) : null;
         if (since && Number.isNaN(since.getTime())) throw new CareersError(400, 'VALIDATION_ERROR', 'runsSince must be a date.');
-        const [sources, pendingRequest, heartbeat] = await Promise.all([
+        const [sources, pendingRequest, heartbeat, quality] = await Promise.all([
             prisma.source.findMany({ select: sourceSelect, orderBy: [{ kind: 'asc' }, { id: 'asc' }] }),
             getSetting('careers.runRequest'),
             getSetting('careers.workerHeartbeat'),
+            sourceQuality(prisma),
         ]);
         const live = await prisma.postingSource.groupBy({ by: ['sourceId'], where: { isLive: true }, _count: { _all: true } });
         const liveBySource = new Map(live.map((r) => [r.sourceId, r._count._all]));
         const runs = since ? await prisma.sourceRun.findMany({ where: { startedAt: { gte: since } }, select: { status: true, newCount: true } }) : null;
         return res.json({
             success: true,
-            data: sources.map((s) => ({ ...s, liveObservations: liveBySource.get(s.id) ?? 0 })),
+            data: sources.map((s) => ({ ...s, liveObservations: liveBySource.get(s.id) ?? 0, quality: quality[s.id] ?? null })),
             pendingRequest,
             worker: workerStatus(heartbeat),
             ...(runs ? { runsSince: runsSummary(runs) } : {}),
@@ -77,29 +82,44 @@ export const createSource = async (req, res) => {
         if (!company) throw new CareersError(404, 'NOT_FOUND', `Company #${body.companyId} was not found.`);
         if (company.status === 'MERGED') throw new CareersError(409, 'COMPANY_MERGED', `${company.name} is merged into another company; pick that one.`);
 
-        const exists = await prisma.source.findUnique({ where: { kind_boardToken: { kind: body.kind, boardToken: body.boardToken } } });
+        const exists = await existingBoard(prisma, body.kind, body.boardToken);
         if (exists) throw new CareersError(409, 'SOURCE_EXISTS', `This board is already source #${exists.id} (${exists.name}).`, { sourceId: exists.id });
 
-        let check;
-        try {
-            check = await fetchPostings({ kind: body.kind, boardToken: body.boardToken });
-        } catch (err) {
-            throw new CareersError(400, 'BOARD_INVALID', `The ${body.kind.toLowerCase()} board "${body.boardToken}" could not be read: ${err.message}`);
-        }
-        const kept = check.postings.filter((p) => evaluateRelevance(p).keep).length;
-
+        const check = await checkBoard(body.kind, body.boardToken);
         const source = await prisma.source.create({
-            data: { kind: body.kind, boardToken: body.boardToken, companyId: company.id, name: body.name ?? `${company.name} (${body.kind.toLowerCase()})` },
+            data: { kind: body.kind, boardToken: body.boardToken, companyId: company.id, name: body.name ?? defaultSourceName(company.name, body.kind) },
             select: sourceSelect,
         });
         const request = await queueRun(source.id, req.user.id, 'createSource');
         return res.status(201).json({
             success: true,
-            message: `Board added: ${check.fetchedCount} jobs now, ${kept} look relevant (India, early career). ${request ? 'Queued for fetching; the worker starts it within seconds.' : 'It runs with the next scheduled ingest.'}`,
-            data: { source, check: { fetchedCount: check.fetchedCount, relevantNow: kept }, runRequest: request },
+            message: `Board added: ${check.fetchedCount} jobs now, ${check.relevantNow} look relevant (India, early career). ${request ? 'Queued for fetching; the worker starts it within seconds.' : 'It runs with the next scheduled ingest.'}`,
+            data: { source, check, runRequest: request },
         });
     } catch (err) {
         return sendError(res, err, 'createSource');
+    }
+};
+
+// "Add boards in bulk" (P6-T1, F-23): one `kind token company` per line, each checked like Add board.
+// One fetch of all sources is queued when at least one board was added.
+export const bulkCreateSources = async (req, res) => {
+    try {
+        const { lines } = bulkBody.parse(req.body);
+        const { entries, errors, tooMany } = parseBulkLines(lines);
+        if (tooMany) throw new CareersError(400, 'VALIDATION_ERROR', `Paste at most ${MAX_BULK_LINES} boards at a time (${entries.length} given).`);
+        if (!entries.length && !errors.length) throw new CareersError(400, 'VALIDATION_ERROR', 'Paste at least one line: kind token company.');
+        const index = await loadCompanyIndex(prisma);
+        const results = await bulkAddBoards(prisma, entries, { index });
+        const summary = bulkSummary(results, errors);
+        const request = summary.added ? await queueRun('ALL', req.user.id, 'bulkCreateSources') : null;
+        return res.status(summary.added ? 201 : 200).json({
+            success: true,
+            message: `${summary.added} added, ${summary.skipped} already there, ${summary.failed} failed.${request ? ' New boards are queued for fetching.' : ''}`,
+            data: { summary, results, lineErrors: errors, runRequest: request },
+        });
+    } catch (err) {
+        return sendError(res, err, 'bulkCreateSources');
     }
 };
 

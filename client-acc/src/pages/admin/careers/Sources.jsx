@@ -2,10 +2,12 @@
 // While a fetch is queued the page polls, so the admin sees it finish without reloading.
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, AlertTriangle, ChevronDown, ChevronUp, Link2, Play, Plus, RefreshCw } from "lucide-react";
+import { Activity, AlertTriangle, ChevronDown, ChevronUp, Link2, ListPlus, Play, Plus, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import AddSourceDialog from "./AddSourceDialog";
+import BulkAddSourcesDialog from "./BulkAddSourcesDialog";
+import { qualityText } from "./components/format";
 import HealthBadge from "./components/HealthBadge";
 import { fetchFinishedMessage } from "./components/format";
 import { PageHeader, Skeleton, cardClass, outlineButton, primaryButton } from "./components/ui";
@@ -38,6 +40,7 @@ export default function Sources() {
   const [data, setData] = useState(null);
   const [openRuns, setOpenRuns] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [bulkAdding, setBulkAdding] = useState(false);
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
@@ -95,6 +98,7 @@ export default function Sources() {
         <button type="button" className={outlineButton} disabled={busyId === "all" || pending?.sourceId === "ALL"} onClick={() => act("all", careersAdminApi.runAllSources)}>
           {pending?.sourceId === "ALL" ? <><RefreshCw size={14} className="animate-spin" /> Fetching all…</> : <><Play size={14} /> Fetch all now</>}
         </button>
+        <button type="button" className={outlineButton} onClick={() => setBulkAdding(true)}><ListPlus size={14} /> Add boards in bulk</button>
         <button type="button" className={primaryButton} onClick={() => setAdding(true)}><Plus size={14} /> Add board</button>
       </PageHeader>
 
@@ -131,6 +135,7 @@ export default function Sources() {
                       {s.kind.toLowerCase()} / {s.boardToken} · {s.company?.name ?? "no company"} · last run {when(s.lastRunAt)}
                       {s.lastFetchedCount !== null && ` · ${s.lastFetchedCount} fetched, ${s.lastKeptCount} relevant`} · {s.liveObservations} live
                     </p>
+                    <p className="text-xs text-slate-500">Last 30 days: {qualityText(s.quality)}</p>
                     {s.health === "FAILING" && s.lastError && (
                       <p className="mt-1 text-xs text-rose-700 bg-rose-50 border border-rose-100 rounded-lg px-2 py-1 break-words">
                         {s.lastError} ({s.consecutiveFailures} failed run{s.consecutiveFailures === 1 ? "" : "s"} in a row)
@@ -158,6 +163,7 @@ export default function Sources() {
         </div>
       )}
 
+      {bulkAdding && <BulkAddSourcesDialog onClose={() => setBulkAdding(false)} onDone={load} />}
       {adding && <AddSourceDialog onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}
     </div>
   );
