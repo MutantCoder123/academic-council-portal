@@ -192,6 +192,7 @@
   - **Edit** dialog: name, company (picker). Board token stays fixed (a different token is a different source).
   - **Delete:** allowed only for sources with no observations (e.g. a board added by mistake that never kept a job) → hard delete with its `SourceRun` rows. A source with observations offers **Archive** instead: disabled and hidden from the list (🗄️ nullable `archivedAt`), its postings keep their history; archived sources are listed under "Show archived" and can be restored.
 - **Effort:** M 🗄️
+- **Status:** ✅ Built 10 Oct (`731ca0a`, P6-T11, C-114): Edit (name, company; token fixed) and Archive / Restore on Sources (`Source.archivedAt`); archived boards are hidden, disabled and skipped by the worker. Hard delete (⚖️) not built.
 
 #### F-08 Per-source include / exclude keywords
 - **Problem:** some boards are mostly noise (Paytm: tele-callers, sales).

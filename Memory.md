@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T10 done; next P6-T11.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); **P6 (student value) done 10 Oct (11/11)**. Next: P7 when the user starts it. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-07 – D-10 are new in P6).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `97d02a9` feat(careers): P6-T10 F-13 notes and applied date on application tracking (local, not pushed)
+- **Last commit:** `731ca0a` feat(careers): P6-T11 F-07 edit and archive a source (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 674 passed (42 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 678 passed (43 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -84,6 +84,7 @@
 | Bulk undo / reject / expire | `server-acc/services/careers/postings/bulkActions.js` (+ `approveTrail` in `reviewService.js`), `POST /careers/admin/postings/bulk-approve/undo`, `/bulk-reject`, `/bulk-expire`; client `pages/admin/careers/components/BulkActionDialog.jsx` | review queue selection bar + approve toast |
 | Hide a posting | `server-acc/services/careers/postings/hidden.js`, `PUT/DELETE /careers/postings/:id/hide` (`trackingController.js`); migration `20261010115347_careers_hidden_postings`; client `JobCard.jsx` (`onHide` / `onUnhide`), `JobsPage.jsx` | `?showHidden=true` view |
 | Application notes / applied date | `server-acc/services/careers/postings/tracking.js` (`noteBody`, `appliedAtFor`), `PUT /careers/postings/:id/application/note`; migration `20261010115823_careers_application_notes`; client `pages/Careers/components/ApplicationNote.jsx` | job page rail + Saved cards |
+| Edit / archive a source | `server-acc/services/careers/sources/archive.js`, `POST /careers/admin/sources/:id/archive` / `restore`, `PATCH /careers/admin/sources/:id`; migration `20261010120305_careers_source_archive`; client `pages/admin/careers/EditSourceDialog.jsx` | Sources page |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -152,6 +153,7 @@
 - A dropdown inside a scrolling container (`overflow-y-auto`) is clipped by it on every side. Open it toward the free side and choose up/down from the room left inside the container (see `ApplicationStatusButton`).
 - `aiTierUsable()` caches the live provider check for 60 s in the API process (on top of the 30 s settings cache), so after turning `careers.llmEnabled` on or starting Ollama, students may see "Waiting for an ACC admin" for up to ~1.5 minutes more.
 - Commits are GPG-signed (global `commit.gpgsign`); when the passphrase cache expires, `git commit` waits for pinentry until the human enters it. Never bypass signing.
+- Tests must not compare fixed dates with real time windows: the B-11 test broke at 10 Oct 12:00 UTC because its rows were stamped 9 Oct 12:00 and the limit looks back 24 h from now.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -725,3 +727,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student, #59): no "Add a note" before a status; Track → Applied → "Applied on 10 Oct 2026"; note saved, shown as text (0 `img` elements), same after reload; Saved card shows date and note (0 `img`); Clear status → confirm "Clearing the status also deletes your note on this application. Clear it?" (dismissed, still Applied); 375 px scrollWidth 375. Row removed afterwards.
   - `npm test` → 674 passed; client build ✓; changed files lint 0.
 - Next step: P6-T11.
+
+### 2026-10-10, P6-T11: edit and archive a source (F-07) 🗄️ — P6 complete
+- Did: `Source.archivedAt` (`--create-only`, SQL read: one ALTER TABLE … ADD COLUMN; forbidden-SQL grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `archive.js` (4 tests first), archive / restore routes, list / update / worker / ops changes, `EditSourceDialog.jsx` and Sources buttons (C-114). Fixed the time-dependent B-11 test found by the full run.
+- Checks:
+  - `http_p6t11.mjs` on source #6 Groww (snapshotted, 16/16): rename persists; MERGED company 409; unknown company 404; `boardToken` in the body 400; student 403; archive → archivedAt, disabled, DISABLED; not in the default list, in `?archived=include`, `archivedCount` ≥ 1; not in ops; enable → 409 `SOURCE_ARCHIVED`; with `isEnabled` forced true in the DB, `ingestAll({ sourceId })` skips it and records no run; Fetch now 409; archive twice 409; restore → back in the list, disabled; restore twice 409; MANUAL source 409. Source #6 and the run request restored.
+  - Browser (admin): Edit → "greenhouse / groww (fixed; …)", rename saved; Archive… → "Nothing is deleted: …" → Archive board → row gone (a first check matched the toast text, re-checked on list rows: 0), "Show archived (1)" → Archived row → Restore → back with DISABLED, Enabled unchecked; 375 px dialog and list scrollWidth 375. Source #6 reset to its snapshot.
+  - `npm test` → 678 passed (43 files); client build ✓; `npx eslint src` 36 errors (baseline).
+- **P6 summary:** 11/11 tasks (P6-T1 – T11, commits e713b8a … 731ca0a), tests 638 → 678; upstream files touched in P6: `DashboardLayout.jsx` +2/−1 (New-for-you badge), `schema.prisma` +40 (additions only: 3 new tables `PostingReport`, `HiddenPosting`, relations; nullable columns `PostingApplication.note` / `appliedAt`, `Source.archivedAt`); migrations `careers_posting_reports`, `careers_hidden_postings`, `careers_application_notes`, `careers_source_archive`; no new dependencies; commits GPG-signed as the user, no AI attribution. All test data created by the checks was removed or restored. New decisions for the user to review: D-07 – D-10.
+- Next step: wait for the user to start P7 (or P4-T3 / L-01 – L-07).

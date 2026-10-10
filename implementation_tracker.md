@@ -14,12 +14,12 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
-| P6 Student value | first month after launch | 11 | 10 | In progress |
+| P6 Student value | first month after launch | 11 | 11 | **Done** |
 | P7 Depth | after P6 | 12 | 0 | Planned |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **45** | **70 %** |
+| **Total incl. P5 – P8** | | **64** | **46** | **72 %** |
 
-**Next task:** `P6-T11` (edit and archive a source, F-07, migration; hard delete ⚖️ not built). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P6 done (11/11).** Next: P7 when the user starts it (P7-T1 F-19 email alerts and P7-T5's email part need the user's OK first). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -99,7 +99,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P6-T8 | Safer bulk actions: undo, bulk reject/expire (F-04) | [x] | dea0b25 | API 13/13 on 5 snapshotted postings (approve 5 → Undo → all Pending, publishedAt + reviewer restored exactly, history APPROVE + 'Bulk approve undone'; undo twice skipped; bulk reject 2 / expire 2 = 4 review rows; no reason 400; mixed → skipped not failed; student 403); browser toast Undo (Pending 1 → 0 → 1), Reject… needs a reason; 375 px; all restored; 667 tests |
 | P6-T9 | Hide a posting (F-12) 🗄️ | [x] | 8bf813c | Migration careers_hidden_postings (CREATE TABLE + 2 indexes + 2 FKs); API 12/12 (hidden only from that student, showHidden lists it alone, hiddenByYou follows filters, New-for-you count skips it, non-LIVE 404, cascade on delete in a rolled-back transaction, unhide); browser hide → 27 openings + 'Show hidden (1)' → Show again → 28; 'Nothing hidden.' empty view; 375 px; 671 tests |
 | P6-T10 | Notes and dates on application tracking (F-13) 🗄️ | [x] | 97d02a9 | Migration careers_application_notes (ADD COLUMN ×2, nullable); API 11/11 (note needs a status 409, appliedAt set once and never moves, note + date on job page and Saved, never another user's, 501 → 400, blank clears); browser: Applied on 10 Oct 2026, '<img onerror>' note stays text (0 img), Saved card, clear-status warning, 375 px; rows removed; 674 tests |
-| P6-T11 | Edit and archive a source (F-07) 🗄️ | [ ] | | Hard delete ⚖️, only if approved |
+| P6-T11 | Edit and archive a source (F-07) 🗄️ | [x] | 731ca0a | Migration careers_source_archive (ADD COLUMN, nullable); API 16/16 (edit persists, merged / unknown company refused, token fixed, archive hides + disables + leaves ops numbers, enable refused, worker skips it even if enabled in the DB, restore disabled, MANUAL refused); browser edit / archive confirm / Show archived (1) / Restore, 375 px; source reset; also fixed a time-dependent B-11 test; 678 tests |
 
 ## P7: Depth
 | ID | Task | Status | Commit | Notes |

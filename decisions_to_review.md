@@ -54,6 +54,31 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 - **Status:** Taken by the AI under the user's "I am ok with your decisions" (10 Oct 2026); for
   the user to review.
 
+## D-08 Nobody sees who reported a posting, not even admins (P6-T7, C-110)
+- **What:** "Report a problem" stores the reporter (so each student reports a posting once), but no
+  endpoint returns it: admins see the reason, the note and the date only.
+- **Why:** the reason and note are enough to act on, and students report more freely. Alternative:
+  show admins the reporter's name to deal with abuse.
+- **Status:** Taken by the AI under the user's "I am ok with your decisions" (10 Oct 2026); for
+  the user to review.
+
+## D-09 Reports clear with "Mark as handled"; the flag never hides a posting (P6-T7, C-110)
+- **What:** 3 open reports add a "reported" flag and an amber ops alert; the posting stays LIVE.
+  "Mark as handled" closes the open reports (kept, with `handledAt`) and clears the flag; 3 new
+  reports flag it again. Added a nullable `handledAt` and the alert, which the plan didn't list.
+- **Why:** PRD §6: nothing is auto-published or auto-removed; an admin decides. Live postings are
+  not in the review queue, so the alert is what makes a reported one visible.
+- **Status:** Taken by the AI (10 Oct 2026); for the user to review.
+
+## D-10 Archive / restore of sources, and notes on applications (P6-T10 / T11, C-113, C-114)
+- **What:** a restored source comes back **disabled** (an admin enables it); an archived source
+  cannot be enabled until restored. Clearing an application status still deletes the application
+  row, and now asks first when it has a note. `appliedAt` is also set when the status jumps
+  straight to In progress / Offer / Rejected, and is never moved afterwards.
+- **Why:** no surprise fetches after a restore; the status column is NOT NULL, so keeping the note
+  without a status would need a schema change outside AI_Rules §3.
+- **Status:** Taken by the AI (10 Oct 2026); for the user to review.
+
 ## D-06 Items that still need an answer
 - **What:** F-19 job-alert emails (P7-T1), the e-mail part of F-31 review reminders (P7-T5),
   permanent deletes (P8-T2, F-17 / P8-T3, F-07 source delete, F-11 candidate delete), F-29 (P8-T1).
