@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 done; next P5-T2.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1, P5-T2 done; next P5-T3.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `168870f` feat(careers): P5-T1 F-01 all-postings admin page (local, not pushed)
+- **Last commit:** `b4e68fe` feat(careers): P5-T2 F-02 take down a live posting (reversible) (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 610 passed (32 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 614 passed (33 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -69,6 +69,7 @@
 | Experience company field | `server-acc/services/careers/companies/experienceCompany.js` (used by upstream `addpost`/`editPost`); client `pages/Careers/components/CompanyPicker.jsx` | picker in `CreatePostView` of `CareerVaultuser/index.jsx`, flag-gated |
 | Saved + application tracking | `server-acc/services/careers/postings/tracking.js` (`withTracking`, `trackedBy`, `applicationBody`), `controllers/careers/trackingController.js`; migration `20261002185258_careers_tracking`; client `pages/Careers/SavedPage.jsx`, `components/{SaveButton,ApplicationStatusButton}.jsx`, `lib/tracking.js` (statuses, `visitBaseline`, `isNewSince`) | route `/dashboard/career-vault/saved`, Saved tab |
 | All postings (admin) | `server-acc/services/careers/postings/adminList.js`, `adminReviewController.listAllPostings`; client `pages/admin/careers/AllPostings.jsx`, `components/PostingStatusChip.jsx` | `/admin/careers/postings`; button on Jobs review |
+| Take down (admin) | `server-acc/services/careers/postings/takeDown.js` (`takeDownPlan`, `takeDownPosting`); client `pages/admin/careers/components/TakeDownDialog.jsx` | from All postings and `PostingEditor` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -578,3 +579,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (Playwright MCP, admin, 1280 px): Jobs review → All postings; tabs "Live 28 · Waiting for review 19 · Expired 8 · Rejected 1 · All 56"; search "Paytm" → 15 rows, all Paytm; Expired tab + search survive a reload (`?q=Paytm&status=EXPIRED`); a row opens the editor with Reject / Mark expired / Save; 375 px scrollWidth 375.
   - `npm test` → 610 passed (32 files); client build ✓; changed files lint 0; `npx eslint src` 36.
 - Next step: P5-T2.
+
+### 2026-10-10, P5-T2: take down a live posting (F-02 level 1)
+- Did: `takeDown.js` (4 tests first), endpoint, `_count` on the admin detail, `TakeDownDialog`, editor button swap for LIVE (C-98, D-02).
+- Checks:
+  - API (`http_p5t2.mjs`, 15/15, posting #53 saved by the dev student, restored afterwards): admin detail `_count` {saves 1}; student 403; OTHER without details 400; pending posting 409; CLOSED → EXPIRED, the student who saved it still opens it and sees it in Saved, review note "Taken down: closed (role filled)" by the admin, listed under Expired (expiredReason ADMIN), reopen → LIVE; SPAM → REJECTED "Taken down: spam or not a real opening", student 404 and gone from Saved, listed under Rejected, reopen → PENDING_REVIEW. #53 restored to LIVE with its 1 original review row.
+  - Browser (admin): row "Take down" opens the dialog; button reads "Mark as closed" for Closed and "Take down" otherwise; Other without a reason → toast "Say why.", dialog stays; Escape closes; editor of a LIVE posting shows Change / Take down / Save and opens the same dialog; 375 px dialog full width. Copy fixed for postings nobody saved.
+  - `npm test` → 614 passed (33 files); client build ✓; changed files lint 0; `npx eslint src` 36.
+- Next step: P5-T3.

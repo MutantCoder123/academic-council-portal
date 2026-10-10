@@ -163,6 +163,7 @@
   2. **Delete permanently** (career admin, for spam and test data): confirm dialog showing what goes with it ("3 students saved this, 1 is tracking an application"); deletes the posting, its observations, reviews, saves and applications (FKs already cascade for saves/applications). Logged in a small audit row (🗄️ or the ops log) with title + who + when, since the `PostingReview` rows go with it.
 - **Also:** the student link that created it is set to `postingId = null` with status `REJECTED`-like so "My submissions" stays truthful.
 - **Effort:** M ⚖️ (hard delete of rows is a new destructive feature; AI_Rules §3 says rows are changed only by explicit features, so this needs the user's OK)
+- **Status:** ✅ Level 1 built 10 Oct (`b4e68fe`, P5-T2, C-98, decision D-02): `POST /careers/admin/postings/:id/take-down`; Closed → expired, other reasons → rejected; dialog from All postings and the editor. Level 2 (permanent delete) is P8-T2.
 
 #### F-03 Admin shortcuts on the student job page
 - **Design:** when the viewer is a career admin, the job detail page shows a small bar: "Edit in admin", "Take down", "Status: LIVE · approved by X on …". Uses `useCareersStatus().isCareerAdmin`.
