@@ -8,6 +8,7 @@ import CareerVaultTabs from "./components/CareerVaultTabs";
 import EmptyState from "./components/EmptyState";
 import ApplyNudge from "./components/ApplyNudge";
 import { applyNudgeAt } from "./lib/applyNudge";
+import SavedDeadlines from "./components/SavedDeadlines";
 import JobCard from "./components/JobCard";
 import PageTitle from "./components/PageTitle";
 import { APPLICATION_STATUSES } from "./lib/tracking";
@@ -100,6 +101,7 @@ export default function SavedPage() {
           ))}
         </div>
       )}
+      {items?.length > 0 && <SavedDeadlines items={items} />}
       {items?.length > 0 && (
         <div role="group" aria-label="Filter saved postings" className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
