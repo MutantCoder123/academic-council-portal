@@ -292,6 +292,7 @@
 #### F-26 "Did you apply?" nudge
 - **Design:** clicking **Apply** remembers the time (localStorage, per posting). The next time the student opens that posting or the Saved page: "You opened the application on 9 Oct. Mark as Applied?" one click → status APPLIED (and saved). Nothing is stored on the server until the student clicks.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`820d3b2`, P6-T4, C-107): Apply click remembered in localStorage; "You opened the application on … Did you apply?" on the job page and Saved; Mark as Applied (status + save) / Dismiss.
 
 #### F-27 Quick filter presets
 - **Design:** one-tap chips above the list: "For me" (eligible + my year), "Internships", "Remote", "New this week", plus the student's last-used filters. Each chip just sets URL params, so links stay shareable.
