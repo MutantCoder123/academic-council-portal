@@ -20,7 +20,6 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Total incl. P5 – P8** | | **64** | **35** | **55 %** |
 
 **Next task:** **P5 done.** Next: `P6-T1` (more boards, F-23) once the user starts P6. Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
-Still open from the original plan: `P1-T10b` (Gemini provider; needs GEMINI_API_KEY), then `P4-T2` (demo readiness), `P4-T3` (final QA + PR draft).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
