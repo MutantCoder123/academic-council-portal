@@ -2,11 +2,12 @@
 // While a fetch is queued the page polls, so the admin sees it finish without reloading.
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Activity, AlertTriangle, ChevronDown, ChevronUp, Link2, ListPlus, Play, Plus, RefreshCw } from "lucide-react";
+import { Activity, AlertTriangle, Archive, ChevronDown, ChevronUp, Link2, ListPlus, Pencil, Play, Plus, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import AddSourceDialog from "./AddSourceDialog";
 import BulkAddSourcesDialog from "./BulkAddSourcesDialog";
+import EditSourceDialog from "./EditSourceDialog";
 import { qualityText } from "./components/format";
 import HealthBadge from "./components/HealthBadge";
 import { fetchFinishedMessage } from "./components/format";
@@ -41,15 +42,17 @@ export default function Sources() {
   const [openRuns, setOpenRuns] = useState(null);
   const [adding, setAdding] = useState(false);
   const [bulkAdding, setBulkAdding] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      setData(await careersAdminApi.listSources());
+      setData(await careersAdminApi.listSources(showArchived ? { archived: "include" } : {}));
     } catch (err) {
       toast.error(errorMessage(err, "Could not load sources."));
     }
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => {
     load();
@@ -128,7 +131,7 @@ export default function Sources() {
                 <li className="px-4 py-3 flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <HealthBadge health={s.health} />
+                      {s.archivedAt ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600 text-[10px] font-bold uppercase"><Archive size={11} /> Archived</span> : <HealthBadge health={s.health} />}
                       <span className="text-sm font-semibold text-slate-800 truncate">{s.name}</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -142,7 +145,13 @@ export default function Sources() {
                       </p>
                     )}
                   </div>
+                  {s.archivedAt ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className={outlineButton} disabled={busyId === s.id} onClick={() => act(s.id, () => careersAdminApi.restoreSource(s.id))}>Restore</button>
+                    </div>
+                  ) : (
                   <div className="flex flex-wrap gap-2">
+                    <button type="button" className={outlineButton} onClick={() => setEditing(s)} aria-label={`Edit ${s.name}`}><Pencil size={14} /> Edit</button>
                     <button type="button" className={outlineButton} onClick={() => setOpenRuns(openRuns === s.id ? null : s.id)} aria-expanded={openRuns === s.id}>
                       Runs {openRuns === s.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
@@ -155,6 +164,7 @@ export default function Sources() {
                       Enabled
                     </label>
                   </div>
+                  )}
                 </li>
                 {openRuns === s.id && <li className="px-4 py-3 bg-slate-50/70"><Runs sourceId={s.id} /></li>}
               </Fragment>
@@ -163,6 +173,13 @@ export default function Sources() {
         </div>
       )}
 
+      {data?.archivedCount > 0 && (
+        <button type="button" onClick={() => setShowArchived((v) => !v)} className="text-xs font-semibold text-slate-600 hover:text-[var(--color-primary)] hover:underline cursor-pointer">
+          {showArchived ? "Hide archived boards" : `Show archived (${data.archivedCount})`}
+        </button>
+      )}
+
+      {editing && <EditSourceDialog source={editing} onClose={() => setEditing(null)} onDone={() => { setEditing(null); load(); }} />}
       {bulkAdding && <BulkAddSourcesDialog onClose={() => setBulkAdding(false)} onDone={load} />}
       {adding && <AddSourceDialog onClose={() => setAdding(false)} onDone={() => { setAdding(false); load(); }} />}
     </div>

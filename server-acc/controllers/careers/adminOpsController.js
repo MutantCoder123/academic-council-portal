@@ -17,7 +17,9 @@ export const getOps = async (req, res) => {
         const [heartbeat, threshold] = await Promise.all([getSetting('careers.workerHeartbeat'), getSetting('careers.confidenceThreshold')]);
         const worker = workerStatus(heartbeat, now);
 
+        // Archived sources (P6-T11) are not part of the health numbers.
         const list = await prisma.source.findMany({
+            where: { archivedAt: null },
             select: { id: true, name: true, kind: true, boardToken: true, isEnabled: true, health: true, lastRunAt: true, lastSuccessAt: true, lastFetchedCount: true, lastKeptCount: true, lastError: true },
             orderBy: { id: 'asc' },
         });

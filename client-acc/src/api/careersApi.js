@@ -89,6 +89,8 @@ export const careersAdminApi = {
   createSource: (body) => api.post('/careers/admin/sources', body).then((r) => r.data),
   bulkCreateSources: (lines) => api.post('/careers/admin/sources/bulk', { lines }).then((r) => r.data),
   updateSource: (id, body) => api.patch(`/careers/admin/sources/${id}`, body).then((r) => r.data),
+  archiveSource: (id) => api.post(`/careers/admin/sources/${id}/archive`).then((r) => r.data),
+  restoreSource: (id) => api.post(`/careers/admin/sources/${id}/restore`).then((r) => r.data),
   runSource: (id) => api.post(`/careers/admin/sources/${id}/run`).then((r) => r.data),
   runAllSources: () => api.post('/careers/admin/sources/run-all').then((r) => r.data),
   listRuns: (id, limit = 20) => api.get(`/careers/admin/sources/${id}/runs`, { params: { limit } }).then((r) => r.data.data),

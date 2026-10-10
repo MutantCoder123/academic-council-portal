@@ -21,11 +21,12 @@ export async function ingestAll({ sourceId = null } = {}) {
     });
 
     const sources = await prisma.source.findMany({
-        where: { kind: { in: ATS_KINDS }, ...(sourceId ? { id: sourceId } : { isEnabled: true }) },
+        // Archived sources (P6-T11) are never fetched, even if someone enabled one in the database.
+        where: { kind: { in: ATS_KINDS }, archivedAt: null, ...(sourceId ? { id: sourceId } : { isEnabled: true }) },
         orderBy: { id: 'asc' },
     });
     if (sourceId) {
-        if (!sources.length) return { skipped: `source #${sourceId} is not an ATS source`, results: [] };
+        if (!sources.length) return { skipped: `source #${sourceId} is not an ATS source, or it is archived`, results: [] };
         if (!sources[0].isEnabled) return { skipped: `source #${sourceId} is disabled`, results: [] };
     }
 

@@ -481,6 +481,7 @@ model Source {
   lastError           String?         @db.Text
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  archivedAt          DateTime? // P6-T11: archived = disabled and hidden on Sources; its postings keep their history
   runs                SourceRun[]
   observations        PostingSource[]
 

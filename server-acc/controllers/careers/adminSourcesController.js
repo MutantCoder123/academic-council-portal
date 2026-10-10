@@ -10,6 +10,7 @@ import { existingBoard, checkBoard, bulkAddBoards, bulkSummary, defaultSourceNam
 import { parseBulkLines, MAX_BULK_LINES, BOARD_TOKEN } from '../../services/careers/sources/bulkLines.js';
 import { sourceQuality } from '../../services/careers/sources/quality.js';
 import { loadCompanyIndex } from '../../services/careers/companies/companyIndex.js';
+import { archiveProblem, archiveData, restoreData, enableProblem } from '../../services/careers/sources/archive.js';
 
 const createBody = z.object({
     kind: z.enum(ATS_KINDS),
@@ -31,7 +32,7 @@ const runsQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).defa
 
 const sourceSelect = {
     id: true, name: true, kind: true, boardToken: true, isEnabled: true, health: true, lastRunAt: true, lastSuccessAt: true,
-    lastFetchedCount: true, lastKeptCount: true, consecutiveFailures: true, lastError: true, createdAt: true,
+    lastFetchedCount: true, lastKeptCount: true, consecutiveFailures: true, lastError: true, createdAt: true, archivedAt: true,
     company: { select: { id: true, name: true, slug: true, status: true } },
     _count: { select: { observations: true } },
 };
@@ -43,7 +44,8 @@ export const listSources = async (req, res) => {
         const since = req.query?.runsSince ? new Date(String(req.query.runsSince)) : null;
         if (since && Number.isNaN(since.getTime())) throw new CareersError(400, 'VALIDATION_ERROR', 'runsSince must be a date.');
         const [sources, pendingRequest, heartbeat, quality] = await Promise.all([
-            prisma.source.findMany({ select: sourceSelect, orderBy: [{ kind: 'asc' }, { id: 'asc' }] }),
+            // Archived sources (P6-T11) only with ?archived=include ("Show archived").
+            prisma.source.findMany({ where: req.query?.archived === 'include' ? {} : { archivedAt: null }, select: sourceSelect, orderBy: [{ kind: 'asc' }, { id: 'asc' }] }),
             getSetting('careers.runRequest'),
             getSetting('careers.workerHeartbeat'),
             sourceQuality(prisma),
@@ -51,9 +53,11 @@ export const listSources = async (req, res) => {
         const live = await prisma.postingSource.groupBy({ by: ['sourceId'], where: { isLive: true }, _count: { _all: true } });
         const liveBySource = new Map(live.map((r) => [r.sourceId, r._count._all]));
         const runs = since ? await prisma.sourceRun.findMany({ where: { startedAt: { gte: since } }, select: { status: true, newCount: true } }) : null;
+        const archivedCount = await prisma.source.count({ where: { archivedAt: { not: null } } });
         return res.json({
             success: true,
             data: sources.map((s) => ({ ...s, liveObservations: liveBySource.get(s.id) ?? 0, quality: quality[s.id] ?? null })),
+            archivedCount,
             pendingRequest,
             worker: workerStatus(heartbeat),
             ...(runs ? { runsSince: runsSummary(runs) } : {}),
@@ -132,6 +136,14 @@ export const updateSource = async (req, res) => {
         if (!ATS_KINDS.includes(source.kind) && body.isEnabled === false) {
             throw new CareersError(400, 'VALIDATION_ERROR', 'The MANUAL and STUDENT_LINK system sources cannot be disabled.');
         }
+        const archived = enableProblem(source, body);
+        if (archived) throw new CareersError(409, 'SOURCE_ARCHIVED', archived);
+        // Edit (P6-T11): the company must exist and not be merged away, as on Add board.
+        if (body.companyId !== undefined) {
+            const company = await prisma.company.findUnique({ where: { id: body.companyId }, select: { name: true, status: true } });
+            if (!company) throw new CareersError(404, 'NOT_FOUND', `Company #${body.companyId} was not found.`);
+            if (company.status === 'MERGED') throw new CareersError(409, 'COMPANY_MERGED', `${company.name} is merged into another company; pick that one.`);
+        }
         const data = { ...body };
         // Health follows the switch at once; a re-enabled source is UNKNOWN until its next run.
         if (body.isEnabled === false) data.health = 'DISABLED';
@@ -141,6 +153,34 @@ export const updateSource = async (req, res) => {
         return res.json({ success: true, message: request ? 'Source enabled and queued for fetching.' : 'Source updated.', data: updated });
     } catch (err) {
         return sendError(res, err, 'updateSource');
+    }
+};
+
+// P6-T11 (F-07): archive = disabled and hidden, history kept; restore = back in the list, disabled.
+export const archiveSource = async (req, res) => {
+    try {
+        const id = parseId(req.params.id);
+        const source = await prisma.source.findUnique({ where: { id } });
+        if (!source) throw new CareersError(404, 'NOT_FOUND', `Source #${id} was not found.`);
+        const problem = archiveProblem(source);
+        if (problem) throw new CareersError(409, 'INVALID_STATE', problem);
+        const updated = await prisma.source.update({ where: { id }, data: archiveData(), select: sourceSelect });
+        return res.json({ success: true, message: `${source.name} archived. It is no longer fetched; its postings keep their history.`, data: updated });
+    } catch (err) {
+        return sendError(res, err, 'archiveSource');
+    }
+};
+
+export const restoreSource = async (req, res) => {
+    try {
+        const id = parseId(req.params.id);
+        const source = await prisma.source.findUnique({ where: { id } });
+        if (!source) throw new CareersError(404, 'NOT_FOUND', `Source #${id} was not found.`);
+        if (!source.archivedAt) throw new CareersError(409, 'INVALID_STATE', 'This source is not archived.');
+        const updated = await prisma.source.update({ where: { id }, data: restoreData(), select: sourceSelect });
+        return res.json({ success: true, message: `${source.name} restored. It stays disabled until you enable it.`, data: updated });
+    } catch (err) {
+        return sendError(res, err, 'restoreSource');
     }
 };
 

@@ -98,7 +98,7 @@ describe('submitLink / mySubmissions (B-08)', () => {
 
 describe('daily limit inside the insert (B-11)', () => {
     it('counts under a per-student lock in the same transaction and refuses the 6th link', async () => {
-        for (let i = 0; i < 5; i++) submissions.push({ id: 100 + i, canonicalUrl: `https://x.example/${i}`, submittedById: 30, status: 'FAILED', createdAt: now });
+        for (let i = 0; i < 5; i++) submissions.push({ id: 100 + i, canonicalUrl: `https://x.example/${i}`, submittedById: 30, status: 'FAILED', createdAt: new Date() }); // recent in real time: the limit counts the last 24 h from now
         const r = res();
         await submitLink({ body: { url: 'https://jobs.example.com/new-one' }, user: { id: 30, role: 'STUDENT' } }, r);
         expect(db.$executeRaw).toHaveBeenCalled();
