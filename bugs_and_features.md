@@ -226,6 +226,7 @@
 #### F-13 Notes and dates on application tracking
 - **Design:** the Saved page shows "Applied on 3 Oct" (from the status change time) and an optional private note per application (text, max 500). 🗄️ nullable `note`, `appliedAt` on `PostingApplication`.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`97d02a9`, P6-T10, C-113): nullable `PostingApplication.note` / `appliedAt`; "Applied on …" and an editable plain-text note on the job page and Saved cards.
 
 #### F-14 Sort by deadline, filter by company
 - **Design:** "Deadline soonest" sort (postings without a deadline last, labelled "No deadline stated"); company filter on the jobs page (the API already accepts `companyId`).

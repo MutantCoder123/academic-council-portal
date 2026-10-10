@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T9 done; next P6-T10.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T10 done; next P6-T11.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `8bf813c` feat(careers): P6-T9 F-12 hide a posting ('Not for me') (local, not pushed)
+- **Last commit:** `97d02a9` feat(careers): P6-T10 F-13 notes and applied date on application tracking (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 671 passed (42 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 674 passed (42 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -83,6 +83,7 @@
 | Report a problem | `server-acc/services/careers/postings/reports.js`, `POST /careers/postings/:id/report`, `POST /careers/admin/postings/:id/reports/handled`; migration `20261010094447_careers_posting_reports`; client `pages/Careers/components/ReportProblemDialog.jsx`, `pages/admin/careers/components/{ReportCount,ReportsPanel}.jsx` | alert `POSTINGS_REPORTED` |
 | Bulk undo / reject / expire | `server-acc/services/careers/postings/bulkActions.js` (+ `approveTrail` in `reviewService.js`), `POST /careers/admin/postings/bulk-approve/undo`, `/bulk-reject`, `/bulk-expire`; client `pages/admin/careers/components/BulkActionDialog.jsx` | review queue selection bar + approve toast |
 | Hide a posting | `server-acc/services/careers/postings/hidden.js`, `PUT/DELETE /careers/postings/:id/hide` (`trackingController.js`); migration `20261010115347_careers_hidden_postings`; client `JobCard.jsx` (`onHide` / `onUnhide`), `JobsPage.jsx` | `?showHidden=true` view |
+| Application notes / applied date | `server-acc/services/careers/postings/tracking.js` (`noteBody`, `appliedAtFor`), `PUT /careers/postings/:id/application/note`; migration `20261010115823_careers_application_notes`; client `pages/Careers/components/ApplicationNote.jsx` | job page rail + Saved cards |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -716,3 +717,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student): 28 openings → eye-off on the first card → "Hidden from your list. Undo", 27 openings, "Show hidden (1)"; reload → Show hidden → URL `showHidden=true`, only that card; Show again → "It is back in your list.", empty view "Nothing hidden." (added after the first run showed the generic "No openings right now"); back to 28; 375 px scrollWidth 375. No hidden rows left.
   - `npm test` → 671 passed (42 files); client build ✓; changed files lint 0.
 - Next step: P6-T10.
+
+### 2026-10-10, P6-T10: notes and dates on application tracking (F-13) 🗄️
+- Did: 2 nullable columns (`--create-only`, SQL read: one ALTER TABLE … ADD COLUMN ×2; forbidden-SQL grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `noteBody` / `appliedAtFor` (3 tests first), note route, `ApplicationNote.jsx`, clear-status warning (C-113).
+- Checks:
+  - `http_p6t10.mjs` on #59 (11/11): note before a status 409; Interested → `appliedAt` null; note with a newline and `<img src=x onerror=alert(1)>` stored as typed; Applied → `appliedAt` set, note kept; In progress then Interested → `appliedAt` unchanged; job page and Saved return both; the admin's view of #59 has neither; 501 characters 400; blank note → null. Row and save removed.
+  - Browser (student, #59): no "Add a note" before a status; Track → Applied → "Applied on 10 Oct 2026"; note saved, shown as text (0 `img` elements), same after reload; Saved card shows date and note (0 `img`); Clear status → confirm "Clearing the status also deletes your note on this application. Clear it?" (dismissed, still Applied); 375 px scrollWidth 375. Row removed afterwards.
+  - `npm test` → 674 passed; client build ✓; changed files lint 0.
+- Next step: P6-T11.
