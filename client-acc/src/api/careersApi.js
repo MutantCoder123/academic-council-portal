@@ -60,6 +60,7 @@ export const careersAdminApi = {
 
   // Review queue and postings
   listReview: (params) => api.get('/careers/admin/review', { params }).then((r) => r.data),
+  reviewCounts: () => api.get('/careers/admin/review/counts').then((r) => r.data.data),
   listAllPostings: (params) => api.get('/careers/admin/postings', { params }).then((r) => r.data),
   getPosting: (id) => api.get(`/careers/admin/postings/${id}`).then((r) => r.data.data),
   updatePosting: (id, edits) => api.patch(`/careers/admin/postings/${id}`, edits).then((r) => r.data),

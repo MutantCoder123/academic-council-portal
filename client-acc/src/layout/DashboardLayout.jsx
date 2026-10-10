@@ -21,6 +21,7 @@ import { useContext, useEffect, useState } from "react";
 import AuthContext from "../context/auth/authContext";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useCareersStatus } from "../hooks/useCareersStatus";
+import ReviewCountBadge from "../pages/admin/careers/components/ReviewCountBadge";
 
 export default function DashboardLayout() {
   const { user, logout } = useContext(AuthContext);
@@ -274,7 +275,7 @@ export default function DashboardLayout() {
                   to="/admin/careers/review"
                   icon={<ListChecks size={16} />}
                   iconColor="text-teal-600 bg-teal-50 border-teal-100"
-                  label="Jobs Review"
+                  label={<>Jobs Review<ReviewCountBadge /></>}
                   onClick={() => setOpen(false)}
                 />
               )}
@@ -322,7 +323,7 @@ export default function DashboardLayout() {
                 to="/admin/careers/review"
                 icon={<ListChecks size={16} />}
                 iconColor="text-teal-600 bg-teal-50 border-teal-100"
-                label="Jobs Review"
+                label={<>Jobs Review<ReviewCountBadge /></>}
                 onClick={() => setOpen(false)}
               />
               <SidebarItem

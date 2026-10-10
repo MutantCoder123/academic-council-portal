@@ -14,6 +14,7 @@ import {
 import { takeDownBody, takeDownPosting } from '../../services/careers/postings/takeDown.js';
 import { retrySubmission, dismissSubmission, dismissBody } from '../../services/careers/links/submissionActions.js';
 import { aiTierUsable, needsPersonWhere } from '../../services/careers/links/waiting.js';
+import { reviewCounts } from '../../services/careers/postings/reviewCounts.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -47,23 +48,29 @@ export const listReview = async (req, res) => {
         const threshold = await getSetting('careers.confidenceThreshold');
         const search = q ? { OR: [{ roleTitle: { contains: likeSafe(q), mode: 'insensitive' } }, { company: { name: { contains: likeSafe(q), mode: 'insensitive' } } }] } : {};
         const where = { AND: [reviewWhere(tab, threshold), search] };
-        const [items, total, pendingCount, flaggedCount, candidateCount, submissionCount] = await Promise.all([
+        const [items, total, counts] = await Promise.all([
             prisma.posting.findMany({ where, select: listSelect, orderBy: [{ firstSeenAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * limit, take: limit }),
             prisma.posting.count({ where }),
-            prisma.posting.count({ where: reviewWhere('pending', threshold) }),
-            prisma.posting.count({ where: reviewWhere('flagged', threshold) }),
-            prisma.company.count({ where: { status: 'CANDIDATE' } }),
-            prisma.linkSubmission.count({ where: { status: { in: ['RECEIVED', 'PROCESSING', 'EXTRACTING', 'FAILED'] }, dismissedAt: null } }),
+            reviewCounts(threshold),
         ]);
         return res.json({
             success: true,
             data: items,
             pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
-            counts: { pending: pendingCount, flagged: flaggedCount, candidates: candidateCount, submissions: submissionCount },
+            counts: { pending: counts.pending, flagged: counts.flagged, candidates: counts.candidates, submissions: counts.links },
             threshold,
         });
     } catch (err) {
         return sendError(res, err, 'listReview');
+    }
+};
+
+// The sidebar badge (P5-T6, F-16): how much is waiting for review.
+export const getReviewCounts = async (req, res) => {
+    try {
+        return res.json({ success: true, data: await reviewCounts(await getSetting('careers.confidenceThreshold')) });
+    } catch (err) {
+        return sendError(res, err, 'getReviewCounts');
     }
 };
 
