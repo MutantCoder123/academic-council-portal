@@ -52,6 +52,7 @@
   - **Deterministic parser** (preferred, free): look for `CGPA|CPI|GPA <number> (and above|or above|+)` → `minCpi`; branch words (CSE, ECE, "circuital", EE, ME…) → codes via `postings/branchCodes.js`; graduation year "2027 graduates" → year of study for the current academic year. Every value found is added to `uncertainFields: ['eligibility']` so a reviewer confirms it.
   - Or at least: when the description contains eligibility keywords, add `eligibility` to `uncertainFields` so the posting lands in Flagged instead of Pending.
 - **Effort:** M
+- **Status:** ✅ Fixed 9 Oct (`eff87d3`, C-84): deterministic parser `text/eligibility.js`, values flagged for review; 20 new tests.
 
 #### B-04 Irrelevant roles reach the Pending tab with confidence 1.00, and bulk approve publishes them in one click
 - **Where:** `text/relevance.js` + `relevanceRules.js` (what counts as "early career"), `buildPosting.js` (confidence only measures *field* certainty), `ReviewQueue.jsx` (bulk approve).
@@ -62,7 +63,6 @@
   3. Bulk approve: confirmation dialog listing the count and the first titles; see F-04 for undo.
 - **Effort:** M
 - **Status:** ✅ Fixed 9 Oct (`49bae6f`, C-85): experience titles dropped, non-campus / description-only flagged `relevance`, bulk-approve confirmation; 16 new tests. Undo is still F-04.
-- **Status:** ✅ Fixed 9 Oct (`eff87d3`, C-84): deterministic parser `text/eligibility.js`, values flagged for review; 20 new tests.
 
 ### Medium
 
