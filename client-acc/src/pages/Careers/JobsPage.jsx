@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { Briefcase, ChevronLeft, ChevronRight, Search, SearchX, Share2, SlidersHorizontal, X } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, Info, Search, SearchX, Share2, SlidersHorizontal, X } from "lucide-react";
 import AuthContext from "../../context/auth/authContext";
 import { careersApi, errorMessage } from "../../api/careersApi";
 import { useCareersStatus } from "../../hooks/useCareersStatus";
@@ -13,6 +13,7 @@ import EligibilityCard from "./components/EligibilityCard";
 import EmptyState from "./components/EmptyState";
 import SubmitLinkModal from "./components/SubmitLinkModal";
 import DraftInput from "./components/DraftInput";
+import { AboutBanner, AboutPanel } from "./components/AboutOpenings";
 import { apiParams, withChanges, activeFilterCount, hasAnyFilter, cleared } from "./lib/filters";
 import { plural } from "./lib/format";
 
@@ -35,7 +36,7 @@ function Skeleton() {
   );
 }
 
-function Header({ onShare }) {
+function Header({ onShare, onAbout }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
@@ -43,7 +44,14 @@ function Header({ onShare }) {
           <div className="w-[3px] h-6 bg-[var(--color-secondary)] rounded-full shadow-[0_0_8px_var(--color-secondary)]" />
           <h1 className="text-2xl md:text-3xl font-extrabold text-[var(--color-primary)] tracking-tight">Jobs & Internships</h1>
         </div>
-        <p className="text-slate-500 text-sm ml-4">Approved openings, collected from company career pages and links shared by students.</p>
+        <p className="text-slate-500 text-sm ml-4">
+          Approved openings, collected from company career pages and links shared by students.
+          {onAbout && (
+            <button type="button" onClick={onAbout} className="ml-1.5 inline-flex items-center gap-1 font-semibold text-[var(--color-secondary)] hover:underline cursor-pointer">
+              <Info size={13} aria-hidden="true" /> About these openings
+            </button>
+          )}
+        </p>
       </div>
       {onShare && (
         <button
@@ -68,6 +76,7 @@ export default function JobsPage() {
   const [reload, setReload] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [about, setAbout] = useState(false);
   const isDesktop = useIsDesktop();
   const reduceMotion = useReducedMotion();
   // Previous visit, for the "New" badges (read once per browser session; only while the feature is on).
@@ -159,8 +168,9 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <Header onShare={() => setSharing(true)} />
+      <Header onShare={() => setSharing(true)} onAbout={() => setAbout(true)} />
       <CareerVaultTabs />
+      <AboutBanner onOpen={() => setAbout(true)} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {isDesktop && <aside className="space-y-4 lg:sticky lg:top-4 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:-mx-1 lg:px-1 lg:pb-1">{sidebar}</aside>}
@@ -215,6 +225,7 @@ export default function JobsPage() {
       </div>
 
       {sharing && <SubmitLinkModal onClose={() => setSharing(false)} />}
+      {about && <AboutPanel onClose={() => setAbout(false)} />}
 
       {!isDesktop && drawerOpen && (
         <div className="fixed inset-0 z-[70] flex justify-end bg-black/30" role="dialog" aria-modal="true" aria-label="Filters" onClick={() => setDrawerOpen(false)}>
