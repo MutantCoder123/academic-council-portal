@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). Bugs B-01 – B-21 fixed (Shrut, 9 Oct). **10 Oct: features F-01 – F-32 planned as P5 – P8 in `Phases.md` (33 tasks, tracker updated, C-96). Next: P5-T1 (All postings admin page, F-01) once the user confirms the start of P5.** Still open: P1-T10b, P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 done; next P5-T2.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `3dace0b` fix(careers): B-21 read pay stated in the description; explain the pay filter. Everything up to it is **on origin** (Shrut pushed on 10 Oct as collaborator `omega-sus67`: `feat/jobs-fetcher` c4f9720..3dace0b, `planning-docs` up to fa55fc4). Reviewed on Indranil's machine on 10 Oct: rules respected, 603 tests ✓, build ✓, lint 36, API smoke ✓ (session log).
+- **Last commit:** `168870f` feat(careers): P5-T1 F-01 all-postings admin page (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 603 passed (31 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 610 passed (32 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -68,6 +68,7 @@
 | Cross-links | `server-acc/services/careers/companies/openRoles.js` (used by upstream `getAllPosts`); client `pages/Careers/components/{OpenRolesChip,ExperiencePanel}.jsx` | chip + tabs in `CareerVaultuser/index.jsx`, panel on `JobDetailPage.jsx` |
 | Experience company field | `server-acc/services/careers/companies/experienceCompany.js` (used by upstream `addpost`/`editPost`); client `pages/Careers/components/CompanyPicker.jsx` | picker in `CreatePostView` of `CareerVaultuser/index.jsx`, flag-gated |
 | Saved + application tracking | `server-acc/services/careers/postings/tracking.js` (`withTracking`, `trackedBy`, `applicationBody`), `controllers/careers/trackingController.js`; migration `20261002185258_careers_tracking`; client `pages/Careers/SavedPage.jsx`, `components/{SaveButton,ApplicationStatusButton}.jsx`, `lib/tracking.js` (statuses, `visitBaseline`, `isNewSince`) | route `/dashboard/career-vault/saved`, Saved tab |
+| All postings (admin) | `server-acc/services/careers/postings/adminList.js`, `adminReviewController.listAllPostings`; client `pages/admin/careers/AllPostings.jsx`, `components/PostingStatusChip.jsx` | `/admin/careers/postings`; button on Jobs review |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -569,3 +570,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - User: break the backlog features into phases in `Phases.md`, keep all planning docs in step, then ask before implementing.
 - Did: `Phases.md` P5 Admin control (7 tasks: F-01, F-02 L1, F-03, F-09, F-18, F-16, F-28), P6 Student value (11), P7 Depth (12), P8 Needs a decision (3), each with build notes and "Done when"; overview table updated; stretch item 2 points at P7-T1. `implementation_tracker.md`: P5 – P8 tables (64 tasks in all, 28 done = 44 %), next = P5-T1. `change_specsheet.md` C-96 (order, dismiss-not-delete, take-down mapping, no enum values, F-29 → P8). `bugs_and_features.md` §3 feature → task map. `Architecture.md` §9.2/§9.3 planned P5 endpoints and route; `Design.md` §5 P5 components; `PRD.md` §5.2a; `AI_Rules.md` §2 commit author per person + two-person git rule.
 - Next step: wait for the user's go-ahead, then P5-T1.
+
+### 2026-10-10, P5-T1: All postings admin page (F-01)
+- Did: pure query builder `adminList.js` (7 tests first, then code), `listAllPostings` + route before `/postings/:id`, `AllPostings.jsx` (status tabs with counts, search, company / source / collection-method / deadline filters, sort, paging, all in the URL), button on Jobs review, shared `PostingStatusChip` (C-97).
+- Checks:
+  - API (`http_p5t1.mjs`, 16/16): default LIVE total 28 = DB; counts {LIVE 28, PENDING_REVIEW 19, EXPIRED 8, REJECTED 1, ALL 56} = DB groupBy; each status tab returns only that status; "Credit Risk Analyst" found by title and by "Paytm"; companyId filter; `q=%` → 0; sourceId count 16 = DB; hasDeadline=yes rows all have a deadline; lastSeen sort descending; bad status 400; student 403.
+  - Browser (Playwright MCP, admin, 1280 px): Jobs review → All postings; tabs "Live 28 · Waiting for review 19 · Expired 8 · Rejected 1 · All 56"; search "Paytm" → 15 rows, all Paytm; Expired tab + search survive a reload (`?q=Paytm&status=EXPIRED`); a row opens the editor with Reject / Mark expired / Save; 375 px scrollWidth 375.
+  - `npm test` → 610 passed (32 files); client build ✓; changed files lint 0; `npx eslint src` 36.
+- Next step: P5-T2.

@@ -155,6 +155,7 @@
 - **Problem:** once approved, a posting disappears from the admin side. The review queue only lists `PENDING_REVIEW`, and the editor (with Expire / Reject) only opens from there, so an admin can't find a LIVE posting to fix or take down.
 - **Design:** new tab or page `/admin/careers/postings`: search (title, company), filters (status LIVE / EXPIRED / REJECTED / PENDING, company, source, tier, has deadline), sort (newest, last seen), paging; each row opens the existing `PostingEditor`. API: extend `GET /careers/admin/review` or add `GET /careers/admin/postings` with a `status` filter.
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`168870f`, P5-T1, C-97): `GET /careers/admin/postings` + `/admin/careers/postings` (button on Jobs review).
 
 #### F-02 Remove a job
 - **Design, two levels:**

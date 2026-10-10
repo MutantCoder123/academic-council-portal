@@ -13,13 +13,13 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
-| P5 Admin control | after 10 Oct, before go-live | 7 | 0 | Planned (waiting for the user's go-ahead) |
+| P5 Admin control | after 10 Oct, before go-live | 7 | 1 | In progress |
 | P6 Student value | first month after launch | 11 | 0 | Planned |
 | P7 Depth | after P6 | 12 | 0 | Planned |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **28** | **44 %** |
+| **Total incl. P5 – P8** | | **64** | **29** | **45 %** |
 
-**Next task:** `P5-T1` (All postings admin page, F-01), once the user confirms the start of P5.
+**Next task:** `P5-T2` (take down a posting, F-02 level 1). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Still open from the original plan: `P1-T10b` (Gemini provider; needs GEMINI_API_KEY), then `P4-T2` (demo readiness), `P4-T3` (final QA + PR draft).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
@@ -79,7 +79,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 ## P5: Admin control (before go-live)
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P5-T1 | All postings admin page (F-01) | [ ] | | |
+| P5-T1 | All postings admin page (F-01) | [x] | 168870f | API 16/16: per-status counts = DB (28/19/8/1), each status filter only that status, title + company search, company/source/deadline filters, % → 0, student 403; browser: tabs with counts, search + filters kept in the URL across reload, row opens the editor, 375 px no sideways scroll; 610 tests |
 | P5-T2 | Take down a posting, reversible (F-02 level 1) | [ ] | | Closed → expire; other reasons → reject (C-96) |
 | P5-T3 | Admin bar on the student job page (F-03) | [ ] | | |
 | P5-T4 | Student links: retry, create posting, withdraw (F-09) 🗄️ | [ ] | | Hard delete replaced by dismiss (C-96) |
