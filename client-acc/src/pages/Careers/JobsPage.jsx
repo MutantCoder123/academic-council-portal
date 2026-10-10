@@ -9,6 +9,7 @@ import CareerVaultTabs from "./components/CareerVaultTabs";
 import JobCard from "./components/JobCard";
 import { isNewSince, visitBaseline } from "./lib/tracking";
 import JobFilters from "./components/JobFilters";
+import QuickFilters from "./components/QuickFilters";
 import EligibilityCard from "./components/EligibilityCard";
 import EmptyState from "./components/EmptyState";
 import SubmitLinkModal from "./components/SubmitLinkModal";
@@ -200,6 +201,8 @@ export default function JobsPage() {
               </button>
             )}
           </div>
+
+          <QuickFilters search={search} onChange={change} onReplace={(next) => setSearch(next)} />
 
           {meta?.eligibility?.reason === "NO_ROLL_NUMBER" && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">

@@ -27,6 +27,8 @@ export const postingsQuery = z.object({
     minCtc: amount,
     includeUndisclosed: bool(true),
     eligibleOnly: bool(false),
+    // "New this week" chip (P6-T3): published in the last N days.
+    postedWithin: z.coerce.number().int().min(1).max(90).optional(),
     sort: z.enum(['newest', 'lastSeen']).default('newest'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
@@ -77,7 +79,7 @@ export function eligibilityWhere(profile) {
 
 // Everything except eligibility, LIVE only. includeUndisclosed can be overridden to count how many
 // results came in only through the undisclosed branch.
-export function baseWhere(params, { includeUndisclosed = params.includeUndisclosed } = {}) {
+export function baseWhere(params, { includeUndisclosed = params.includeUndisclosed, now = new Date() } = {}) {
     const and = [{ status: 'LIVE' }];
     if (params.q) {
         const skill = canonicalSkillName(params.q);
@@ -101,6 +103,7 @@ export function baseWhere(params, { includeUndisclosed = params.includeUndisclos
     if (params.companyId) and.push({ companyId: params.companyId });
     if (params.minStipend !== undefined) and.push(compensationWhere('stipend', params.minStipend, includeUndisclosed));
     if (params.minCtc !== undefined) and.push(compensationWhere('ctc', params.minCtc, includeUndisclosed));
+    if (params.postedWithin) and.push({ publishedAt: { gte: new Date(now.getTime() - params.postedWithin * 24 * 60 * 60 * 1000) } });
     return { AND: and };
 }
 

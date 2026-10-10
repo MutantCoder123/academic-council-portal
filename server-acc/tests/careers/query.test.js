@@ -123,3 +123,18 @@ describe('orderByFor / hasPayFilter', () => {
         expect(hasPayFilter(parse({ minCtc: '500000' }))).toBe(true);
     });
 });
+
+describe('postedWithin ("New this week" chip, F-27)', () => {
+    it('accepts 1 – 90 days and nothing else', () => {
+        expect(postingsQuery.parse({ postedWithin: '7' }).postedWithin).toBe(7);
+        expect(postingsQuery.parse({}).postedWithin).toBeUndefined();
+        expect(() => postingsQuery.parse({ postedWithin: '0' })).toThrow();
+        expect(() => postingsQuery.parse({ postedWithin: '91' })).toThrow();
+    });
+    it('keeps postings published in the last N days', () => {
+        const now = new Date('2026-10-10T12:00:00Z');
+        const where = baseWhere(postingsQuery.parse({ postedWithin: '7' }), { now });
+        expect(where.AND).toContainEqual({ publishedAt: { gte: new Date('2026-10-03T12:00:00Z') } });
+        expect(baseWhere(postingsQuery.parse({}), { now }).AND).toEqual([{ status: 'LIVE' }]);
+    });
+});

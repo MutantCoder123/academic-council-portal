@@ -19,7 +19,7 @@ export const SORTS = [
 export const PAGE_SIZE = 20;
 
 // Keys that narrow the results (counted on the mobile "Filters (n)" button).
-const FILTER_KEYS = ["type", "workMode", "location", "skills", "minStipend", "minCtc", "eligibleOnly"];
+const FILTER_KEYS = ["type", "workMode", "location", "skills", "minStipend", "minCtc", "eligibleOnly", "postedWithin"];
 
 // URLSearchParams -> params for GET /careers/postings.
 export function apiParams(search) {
@@ -36,6 +36,8 @@ export function apiParams(search) {
   if (lpa > 0) params.minCtc = Math.round(lpa * 100000);
   if (search.get("includeUndisclosed") === "false") params.includeUndisclosed = "false";
   if (search.get("eligibleOnly") === "true") params.eligibleOnly = "true";
+  const days = Number(search.get("postedWithin"));
+  if (Number.isInteger(days) && days >= 1 && days <= 90) params.postedWithin = days;
   return params;
 }
 
