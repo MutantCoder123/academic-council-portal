@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import DraftInput from "./DraftInput";
+import CompanyPicker from "./CompanyPicker";
 import { TYPES, WORK_MODES, SORTS, hasAnyFilter } from "../lib/filters";
 
 const label = "block text-xs font-semibold text-slate-600 mb-1.5";
@@ -57,6 +58,13 @@ export default function JobFilters({ search, onChange, meta, onClear }) {
         <select id="f-workmode" value={get("workMode")} onChange={(e) => onChange({ workMode: e.target.value })} className={select}>
           {WORK_MODES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
+      </div>
+
+      <div>
+        <label htmlFor="f-company" className={label}>Company</label>
+        <CompanyPicker inputId="f-company" noMatchText="No company matches."
+          value={get("companyId") ? { value: Number(get("companyId")), label: get("companyName") || "Selected company" } : null}
+          onChange={(o) => onChange({ companyId: o?.value ?? "", companyName: o?.label ?? "" })} />
       </div>
 
       <div>

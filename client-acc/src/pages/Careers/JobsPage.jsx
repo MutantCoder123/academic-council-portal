@@ -160,6 +160,9 @@ export default function JobsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: Math.min(i, 8) * 0.02, ease: [0.16, 1, 0.3, 1] }}
           >
+            {search.get("sort") === "deadline" && !p.deadlineStated && (i === 0 || result.data[i - 1].deadlineStated) && (
+              <p className="mb-3 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">No deadline stated</p>
+            )}
             <JobCard posting={p} isNew={isNewSince(p, baseline)} />
           </MotionLi>
         ))}

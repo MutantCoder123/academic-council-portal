@@ -138,3 +138,12 @@ describe('postedWithin ("New this week" chip, F-27)', () => {
         expect(baseWhere(postingsQuery.parse({}), { now }).AND).toEqual([{ status: 'LIVE' }]);
     });
 });
+
+describe('sort=deadline (F-14)', () => {
+    it('is accepted', () => {
+        expect(postingsQuery.parse({ sort: 'deadline' }).sort).toBe('deadline');
+    });
+    it('puts stated deadlines first, soonest first, then the rest newest first', () => {
+        expect(orderByFor('deadline')).toEqual([{ deadlineStated: { sort: 'asc', nulls: 'last' } }, { publishedAt: 'desc' }, { id: 'desc' }]);
+    });
+});

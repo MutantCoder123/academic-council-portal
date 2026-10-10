@@ -9,7 +9,7 @@ export const cardFields = {
     compCurrency: true, stipendMin: true, stipendMax: true, stipendDisclosure: true,
     ctcMin: true, ctcMax: true, ctcDisclosure: true,
     eligibleBranches: true, eligibleYears: true, minCpi: true,
-    firstSeenAt: true, lastSeenLiveAt: true, publishedAt: true,
+    firstSeenAt: true, lastSeenLiveAt: true, publishedAt: true, deadlineStated: true,
     company: { select: { id: true, name: true, slug: true } },
 };
 

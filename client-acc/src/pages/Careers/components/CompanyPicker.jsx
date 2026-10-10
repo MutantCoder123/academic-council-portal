@@ -2,7 +2,8 @@ import { useRef } from "react";
 import AsyncSelect from "react-select/async";
 import { careersApi } from "../../../api/careersApi";
 
-// Optional company field on the Career Vault experience form. Searches ACTIVE companies by name or
+// Company search: the optional company field on the Career Vault experience form and the jobs
+// page company filter (P6-T5). Searches ACTIVE companies by name or
 // alias; the value is { value: id, label: name } or null.
 const styles = {
   control: (base, state) => ({
@@ -26,7 +27,7 @@ const styles = {
   }),
 };
 
-export default function CompanyPicker({ inputId, value, onChange }) {
+export default function CompanyPicker({ inputId, value, onChange, noMatchText = "No company matches. Leave it empty." }) {
   const timer = useRef(null);
 
   // Debounced so typing doesn't send a request per key.
@@ -53,7 +54,7 @@ export default function CompanyPicker({ inputId, value, onChange }) {
       onChange={onChange}
       loadOptions={loadOptions}
       placeholder="Search company…"
-      noOptionsMessage={({ inputValue }) => (inputValue ? "No company matches. Leave it empty." : "Type to search")}
+      noOptionsMessage={({ inputValue }) => (inputValue ? noMatchText : "Type to search")}
       loadingMessage={() => "Searching…"}
       styles={styles}
     />

@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { CalendarDays, MapPin } from "lucide-react";
 import CompensationBadge from "./CompensationBadge";
 import EligibilityBadge from "./EligibilityBadge";
 import FreshnessLine from "./FreshnessLine";
 import SaveButton from "./SaveButton";
 import ApplicationStatusButton from "./ApplicationStatusButton";
+import { formatDate } from "../lib/format";
 
 const TYPE_LABELS = { INTERNSHIP: "Internship", FULL_TIME: "Full-time" };
 const MODE_LABELS = { ONSITE: "On-site", HYBRID: "Hybrid", REMOTE: "Remote" };
@@ -55,6 +56,12 @@ export default function JobCard({ posting, isNew = false, showStatus = false, on
         </span>
         <CompensationBadge posting={posting} />
         <EligibilityBadge eligibility={posting.eligibility} />
+        {posting.deadlineStated && (
+          <span className="inline-flex items-center gap-1 text-slate-600">
+            <CalendarDays size={14} className="text-slate-400" aria-hidden="true" />
+            Deadline stated by source: {formatDate(posting.deadlineStated, { utc: true })}
+          </span>
+        )}
       </div>
 
       <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

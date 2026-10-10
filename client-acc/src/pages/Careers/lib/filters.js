@@ -15,11 +15,12 @@ export const WORK_MODES = [
 export const SORTS = [
   { value: "newest", label: "Newest first" },
   { value: "lastSeen", label: "Recently confirmed live" },
+  { value: "deadline", label: "Deadline stated, soonest first" },
 ];
 export const PAGE_SIZE = 20;
 
 // Keys that narrow the results (counted on the mobile "Filters (n)" button).
-const FILTER_KEYS = ["type", "workMode", "location", "skills", "minStipend", "minCtc", "eligibleOnly", "postedWithin"];
+const FILTER_KEYS = ["type", "workMode", "location", "skills", "minStipend", "minCtc", "eligibleOnly", "postedWithin", "companyId"];
 
 // URLSearchParams -> params for GET /careers/postings.
 export function apiParams(search) {
@@ -36,6 +37,9 @@ export function apiParams(search) {
   if (lpa > 0) params.minCtc = Math.round(lpa * 100000);
   if (search.get("includeUndisclosed") === "false") params.includeUndisclosed = "false";
   if (search.get("eligibleOnly") === "true") params.eligibleOnly = "true";
+  // Company filter (P6-T5): companyName is only the label shown in the picker.
+  const companyId = Number(search.get("companyId"));
+  if (Number.isInteger(companyId) && companyId > 0) params.companyId = companyId;
   const days = Number(search.get("postedWithin"));
   if (Number.isInteger(days) && days >= 1 && days <= 90) params.postedWithin = days;
   return params;

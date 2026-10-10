@@ -29,7 +29,7 @@ export const postingsQuery = z.object({
     eligibleOnly: bool(false),
     // "New this week" chip (P6-T3): published in the last N days.
     postedWithin: z.coerce.number().int().min(1).max(90).optional(),
-    sort: z.enum(['newest', 'lastSeen']).default('newest'),
+    sort: z.enum(['newest', 'lastSeen', 'deadline']).default('newest'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
 });
@@ -109,8 +109,12 @@ export function baseWhere(params, { includeUndisclosed = params.includeUndisclos
 
 export const withEligibility = (where, eligibility) => (eligibility ? { AND: [...where.AND, eligibility] } : where);
 
-export const orderByFor = (sort) => (sort === 'lastSeen'
-    ? [{ lastSeenLiveAt: 'desc' }, { id: 'desc' }]
-    : [{ publishedAt: 'desc' }, { id: 'desc' }]);
+// deadline (P6-T5): stated deadlines first, soonest first (passed ones are expired by the deadlines
+// job, so they are not LIVE), then the postings with no stated deadline, newest first.
+export function orderByFor(sort) {
+    if (sort === 'lastSeen') return [{ lastSeenLiveAt: 'desc' }, { id: 'desc' }];
+    if (sort === 'deadline') return [{ deadlineStated: { sort: 'asc', nulls: 'last' } }, { publishedAt: 'desc' }, { id: 'desc' }];
+    return [{ publishedAt: 'desc' }, { id: 'desc' }];
+}
 
 export const hasPayFilter = (params) => params.minStipend !== undefined || params.minCtc !== undefined;
