@@ -336,6 +336,7 @@
 - **Effort:** S
 
 **Rules note.** Hard deletes (F-02, F-07, F-09, F-11, F-17) are new destructive features. AI_Rules §3 says rows are only changed through explicit features, so each needs the user's go-ahead before it is built, and each must: confirm in the UI, show what else is removed, and leave an audit line. Every 🗄️ item is an additive migration (new table or nullable column), reviewed with `--create-only` first.
+- **Status:** ✅ Built 10 Oct (`3aa3460`, P7-T6, C-120): "Copy link" (portal URL; the reader logs in) and "Share on WhatsApp" (title + company + URL via wa.me) on the job page of a LIVE posting.
 
 ---
 

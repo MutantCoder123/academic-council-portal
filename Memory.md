@@ -8,13 +8,13 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T5 done 10 Oct)**. Next: P7-T6. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T6 done 10 Oct)**. Next: P7-T7. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `fb5aa51` feat(careers): P7-T5 F-31 review reminders (ops alert, daily admin email) (local, not pushed)
+- **Last commit:** `3aa3460` feat(careers): P7-T6 F-32 share a posting (copy link, WhatsApp) (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -90,6 +90,7 @@
 | Internship season / length | `server-acc/services/careers/text/season.js` (`parseSeason`), `buildPostingData`, `season` / `minDurationMonths` in `postings/query.js`; migration `20261010125007_careers_internship_season`; client `seasonText` in `pages/Careers/lib/format.js`, `JobFilters.jsx`, `PostingFields.jsx` | |
 | Usage numbers | `server-acc/services/careers/usage/usage.js`, `GET /careers/admin/usage`, `POST /careers/postings/:id/apply-click`; migration `20261010125613_careers_usage_counts`; client `pages/admin/careers/components/UsageCard.jsx` | Operations page; All postings rows |
 | Review reminders | `server-acc/services/careers/ops/reviewReminder.js`, job `reviewReminder` in `services/careers/jobs.js`, alerts `REVIEW_WAITING` / `REVIEW_REMINDER_FAILING` in `ops/alerts.js`; settings `careers.reviewReminderEmails`, `careers.reviewReminderStatus` | toggles in `FlagsCard.jsx` |
+| Share a posting | client `pages/Careers/components/SharePosting.jsx`, `pages/Careers/lib/share.js` | job page, LIVE postings |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -795,3 +796,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 735 passed (48 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Not verified: a real SMTP send (no SMTP locally).
 - Next step: P7-T6.
+
+### 2026-10-10, P7-T6: share a posting (F-32)
+- Did: `lib/share.js`, `SharePosting.jsx`, wired next to Save on `JobDetailPage.jsx` (C-120). No server change.
+- Checks (browser, with clipboard permission granted): job #64 → Copy link → button "Copied", `navigator.clipboard.readText()` = `http://localhost:5173/dashboard/career-vault/jobs/64`; "Share on WhatsApp" has `target=_blank` and decoded text "Software Engineer (CPD) - Winter Intern at Rubrik, on ACC Jobs & Internships: http://localhost:5173/dashboard/career-vault/jobs/64"; requesting the wa.me link ends at `api.whatsapp.com/send/?text=…` with that text (200); 375 px scrollWidth 375. Client build ✓; `npx eslint src` 36 (baseline); touched files 0 errors; `npm test` 735 passed.
+- Next step: P7-T7.

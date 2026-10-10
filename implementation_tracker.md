@@ -15,11 +15,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
-| P7 Depth | after P6 | 12 | 5 | In progress |
+| P7 Depth | after P6 | 12 | 6 | In progress |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **51** | **80 %** |
+| **Total incl. P5 – P8** | | **64** | **52** | **81 %** |
 
-**Next task:** **P7 in progress (5/12).** Next: `P7-T6` (share a posting). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P7 in progress (6/12).** Next: `P7-T7` (SmartRecruiters + Workable adapters; verify the APIs live first). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -109,7 +109,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P7-T3 | Internship season and duration (F-25) 🗄️ | [x] | b4d82d7 | Migration careers_internship_season (3 nullable ADD COLUMNs); parser 10 tests on dev titles/lines (incl. traps: experience, ago, Java Spring); API 9/9 (season=WINTER → only #64, minDurationMonths=6 → #53/#86, unstated lengths left out, admin edit, alert keeps them); browser chip / filters / job page / editor, 375 px; 720 tests |
 | P7-T4 | Usage numbers for ACC (F-30) 🗄️ | [x] | 50a664e | Migration careers_usage_counts (2 new tables); API 12/12 + 3/3 (student counted once a week, admins not; row = week + 64-hex key only; Apply clicks +2; this week and 8 weeks equal independent SQL; 3 saves / 2 tracking / 1 applied show up; no ids or emails in any response; students 403); Usage card 1280 / 375; 728 tests |
 | P7-T5 | Review reminders (F-31) ⚖️ | [x] | fb5aa51 | User OK'd the email 10 Oct. API 11/11 (REVIEW_WAITING = 19 postings > 48 h as in the DB; switch off / nothing > 24 h / no SMTP send nothing; one email per CAREER_ADMIN user with the DB numbers; once a day; failure alert set and cleared); browser flags + alert link; 735 tests |
-| P7-T6 | Share a posting (F-32) | [ ] | | |
+| P7-T6 | Share a posting (F-32) | [x] | 3aa3460 | Client only. Browser: Copy link → clipboard = portal URL of #64, button shows Copied; WhatsApp link (new tab) text "Software Engineer (CPD) - Winter Intern at Rubrik, on ACC Jobs & Internships: <url>", wa.me → api.whatsapp.com/send with that text (200); 375 px; 735 tests |
 | P7-T7 | SmartRecruiters + Workable adapters (F-24) | [ ] | | Verify APIs live first |
 | P7-T8 | Merge two postings by hand (F-06) | [ ] | | |
 | P7-T9 | Per-source keyword rules (F-08) 🗄️ | [ ] | | |
