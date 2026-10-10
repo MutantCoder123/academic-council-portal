@@ -137,6 +137,21 @@ confirmation dialog for `visibleToStudents`.
 a clear before/after summary ("3 aliases, 5 postings, 2 experiences will move from X to Y") and
 the primary action button labelled with the verb ("Merge into Google").
 
+**Planned in P5 (`Phases.md`):**
+- **Admin: All postings** (P5-T1): same table-in-card layout as the review queue; status chips
+  (LIVE emerald · PENDING blue · EXPIRED amber · REJECTED slate); a row menu with Open / Take down.
+- **Take-down dialog** (P5-T2): reason list as radio rows, "Other" reveals a text box; the primary
+  button names the result ("Mark as closed" for *Closed*, "Take down" otherwise) and says who is
+  affected ("2 students saved this").
+- **Admin bar on the student job page** (P5-T3): one slim row above the header, `bg-slate-50
+  border border-slate-200 rounded-xl text-xs`, status chip + "Approved by … on …" + two small
+  outline buttons. Never shown to students.
+- **Sidebar count badge** (P5-T6): `min-w-5 h-5 px-1.5 rounded-full bg-[var(--color-secondary)]
+  text-white text-[10px] font-bold`, hidden at 0, `aria-label="12 waiting for review"`.
+- **"About these openings"** (P5-T7): an info banner (`bg-[var(--color-secondary-light)]` with a
+  close button) and a modal panel in plain sentences (Voice §9).
+- Student link status "Waiting for an ACC admin" (P5-T5) uses the amber status tone.
+
 ## 6. Icons (lucide-react, size 14–16 in chips/meta, 18–20 in headers)
 
 Briefcase (jobs), Building2 (company), MapPin (location), Wallet (compensation), GraduationCap (eligibility), Clock (freshness), Link2 (sources), Bookmark / BookmarkCheck (save), ListChecks (review queue), GitMerge / Split (merge/split), Undo2 (undo), Activity (ops), AlertTriangle (alerts), ShieldAlert (blocked link), Sparkles (**never** used for AI extraction labels; say "Extracted automatically" in words).

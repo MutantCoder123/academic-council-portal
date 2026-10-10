@@ -12,9 +12,16 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
-| **Total** | | **31** | **28** | **90 %** |
+| **Plan to 10 Oct** | | **31** | **28** | **90 %** |
+| P5 Admin control | after 10 Oct, before go-live | 7 | 0 | Planned (waiting for the user's go-ahead) |
+| P6 Student value | first month after launch | 11 | 0 | Planned |
+| P7 Depth | after P6 | 12 | 0 | Planned |
+| P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
+| **Total incl. P5 – P8** | | **64** | **28** | **44 %** |
 
-**Next task:** `P1-T10b` (Gemini provider; needs GEMINI_API_KEY from the user), then `P4-T2` (demo readiness)
+**Next task:** `P5-T1` (All postings admin page, F-01), once the user confirms the start of P5.
+Still open from the original plan: `P1-T10b` (Gemini provider; needs GEMINI_API_KEY), then `P4-T2` (demo readiness), `P4-T3` (final QA + PR draft).
+Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
 
@@ -68,6 +75,55 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P4-T1 ◇ | Saved + application tracking | [x] | 30ed0ca | Migration careers_tracking (additive). Save + status persist across reload/new session; deleting a posting cascades its saves and applications (checked in a rolled-back transaction); API checks 25/25; browser: New badge on exactly the 3 postings published after lastVisit, status cycle + menu, Saved filters, expired saved posting, 375 px; 464 tests |
 | P4-T2 | Demo readiness + PRD §7 criteria run | [ ] | | |
 | P4-T3 | Final QA + PR draft | [ ] | | |
+
+## P5: Admin control (before go-live)
+| ID | Task | Status | Commit | Notes |
+|---|---|---|---|---|
+| P5-T1 | All postings admin page (F-01) | [ ] | | |
+| P5-T2 | Take down a posting, reversible (F-02 level 1) | [ ] | | Closed → expire; other reasons → reject (C-96) |
+| P5-T3 | Admin bar on the student job page (F-03) | [ ] | | |
+| P5-T4 | Student links: retry, create posting, withdraw (F-09) 🗄️ | [ ] | | Hard delete replaced by dismiss (C-96) |
+| P5-T5 | Shared links never wait forever (F-18) | [ ] | | Uses P5-T4 columns; after P5-T4 |
+| P5-T6 | Review count in the admin sidebar (F-16) | [ ] | | Upstream DashboardLayout (AI_Rules §4) |
+| P5-T7 | "About these openings" banner + panel (F-28) | [ ] | | Copy reviewed by the user |
+
+## P6: Student value (first month)
+| ID | Task | Status | Commit | Notes |
+|---|---|---|---|---|
+| P6-T1 | More boards: scan script, bulk add, source quality (F-23) | [ ] | | |
+| P6-T2 | "New for you" count in the student sidebar (F-21) | [ ] | | |
+| P6-T3 | Quick filter chips (F-27) | [ ] | | |
+| P6-T4 | "Did you apply?" nudge (F-26) | [ ] | | |
+| P6-T5 | Sort by deadline, filter by company (F-14) | [ ] | | |
+| P6-T6 | Deadlines on the Saved page (F-20, in-app) | [ ] | | |
+| P6-T7 | Report a problem (F-05) 🗄️ | [ ] | | |
+| P6-T8 | Safer bulk actions: undo, bulk reject/expire (F-04) | [ ] | | |
+| P6-T9 | Hide a posting (F-12) 🗄️ | [ ] | | |
+| P6-T10 | Notes and dates on application tracking (F-13) 🗄️ | [ ] | | |
+| P6-T11 | Edit and archive a source (F-07) 🗄️ | [ ] | | Hard delete ⚖️, only if approved |
+
+## P7: Depth
+| ID | Task | Status | Commit | Notes |
+|---|---|---|---|---|
+| P7-T1 | Job alerts by email (F-19) ⚖️ 🗄️ | [!] | | Needs the user's OK (email, PRD stretch) |
+| P7-T2 | Eligibility by graduation batch and programme (F-22) 🗄️ | [ ] | | |
+| P7-T3 | Internship season and duration (F-25) 🗄️ | [ ] | | |
+| P7-T4 | Usage numbers for ACC (F-30) 🗄️ | [ ] | | Aggregates only |
+| P7-T5 | Review reminders (F-31) ⚖️ | [ ] | | Alert part free; email part needs OK |
+| P7-T6 | Share a posting (F-32) | [ ] | | |
+| P7-T7 | SmartRecruiters + Workable adapters (F-24) | [ ] | | Verify APIs live first |
+| P7-T8 | Merge two postings by hand (F-06) | [ ] | | |
+| P7-T9 | Per-source keyword rules (F-08) 🗄️ | [ ] | | |
+| P7-T10 | Experience shortcuts on company pages (F-10) | [ ] | | Reuses existing delete/unlink |
+| P7-T11 | Candidate company cleanup (F-11) | [ ] | | Deleting the row ⚖️ |
+| P7-T12 | Admin activity log (F-15) | [ ] | | Read-only |
+
+## P8: Needs a decision
+| ID | Task | Status | Commit | Notes |
+|---|---|---|---|---|
+| P8-T1 | Seniors' reported stipend and process (F-29) ⚖️ 🗄️ | [!] | | Upstream experience form beyond AI_Rules §4 |
+| P8-T2 | Delete a posting permanently (F-02 level 2) ⚖️ | [!] | | |
+| P8-T3 | Clear test data before go-live (F-17) ⚖️ | [!] | | |
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). **Now (user, 9 Oct): fixing the bugs in `bugs_and_features.md` one by one** **all bugs B-01–B-21 fixed** (user, 9 Oct: "I have been assigned only the bug fixes"; F-xx features not in scope). **Go-live checklist L-01 – L-07 and student-usefulness features F-18 – F-32** are in `bugs_and_features.md` §2–3 (added 9 Oct, nothing built); then P1-T10b, then P4-T2.
+- **Phase / task:** P0, P2, P3 done; P4-T1 done; P1 done except **P1-T10b** (Gemini; waiting for GEMINI_API_KEY; REQUIRED before P4-T2). Bugs B-01 – B-21 fixed (Shrut, 9 Oct). **10 Oct: features F-01 – F-32 planned as P5 – P8 in `Phases.md` (33 tasks, tracker updated, C-96). Next: P5-T1 (All postings admin page, F-01) once the user confirms the start of P5.** Still open: P1-T10b, P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
@@ -89,6 +89,7 @@
 - `ExperienceCard` renders the description with the same `dangerouslySetInnerHTML` + classes as `CareerVaultuser/index.jsx` (AI_Rules §9: same rendering; no new client deps, so no DOMPurify). The underlying stored-XSS / self-publish issue is item 14 in the private security report (2 Oct). If the maintainers add a sanitiser, use it in ExperienceCard too.
 - `companyId` on `PATCH /posts/:id`: omitted = unchanged (the admin editor never sends it), `null` = unlink. Admins otherwise link/relink experiences through the backfill page (P3-T2).
 - Tracking data is per student and never shown to admins (no admin endpoint reads it). `GET /careers/saved` as an admin returns the admin's own list.
+- P5 – P8 (C-96): no hard deletes before the user OKs them; spam/unusable student links are **dismissed** (nullable `LinkSubmission.dismissedAt` / `dismissReason` / `dismissedById`), never deleted; take-down *Closed* → expire, other reasons → reject; never add enum values (not in AI_Rules §3), use nullable columns.
 
 ## Gotchas / things that surprised me
 
@@ -563,3 +564,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Checks: `prisma migrate deploy` applied the 3 migrations; `npm test` → 603 passed (31 files); client build ✓, `npx eslint src` 36; job-description checks on the 56 stored descriptions: 0 blank headings (Shrut's B-16 `|`-line rule works with the C-79 merge rule); API smoke (student + admin): status, postings (no `cpi`), detail, companies, saved, my submissions, `q=%` → 0 results, admin ops / review / sources 200, student → admin 403.
 - Doc fixes: Memory.md "Current state" (push state was contradictory; commit author is per machine; PR #154 note); B-03's status line had landed under B-04 in `bugs_and_features.md`.
 - Note: PR #154 against upstream was opened by mistake from `omega-sus67` and closed 33 s later, unmerged.
+
+### 2026-10-10, P5 – P8 planned from the feature backlog (no code)
+- User: break the backlog features into phases in `Phases.md`, keep all planning docs in step, then ask before implementing.
+- Did: `Phases.md` P5 Admin control (7 tasks: F-01, F-02 L1, F-03, F-09, F-18, F-16, F-28), P6 Student value (11), P7 Depth (12), P8 Needs a decision (3), each with build notes and "Done when"; overview table updated; stretch item 2 points at P7-T1. `implementation_tracker.md`: P5 – P8 tables (64 tasks in all, 28 done = 44 %), next = P5-T1. `change_specsheet.md` C-96 (order, dismiss-not-delete, take-down mapping, no enum values, F-29 → P8). `bugs_and_features.md` §3 feature → task map. `Architecture.md` §9.2/§9.3 planned P5 endpoints and route; `Design.md` §5 P5 components; `PRD.md` §5.2a; `AI_Rules.md` §2 commit author per person + two-person git rule.
+- Next step: wait for the user's go-ahead, then P5-T1.

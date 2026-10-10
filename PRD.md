@@ -124,6 +124,15 @@ email notifications, company discussion with experience-weighted ranking, OA/int
 guides, question bank, open-duration estimates, more ATS providers (Workday), Playwright-based
 career-page adapters.
 
+### 5.2a After 10 Oct: P5 – P8 (planned 10 Oct)
+
+Admin control before go-live (all postings, take down, admin bar on the job page, student-link
+retry / dismiss, review badge, an explainer for students), then student-value features (more
+boards, new-for-you count, quick filters, apply nudge, deadline sort, reports, hide, notes) and
+depth items. Full list in `bugs_and_features.md` §2, build order in `Phases.md` P5 – P8. Items that
+send email (F-19, F-31) are PRD stretch work and need the user's OK; no item adds countdowns or
+auto-publishing (§6 still applies).
+
 ### 5.3 Deferred (proposal §5)
 
 Alumni referral contact (reputational risk, no consent database). Batch selection statistics (data

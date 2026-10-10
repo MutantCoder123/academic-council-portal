@@ -12,6 +12,10 @@ Paths are relative to `academic-council-portal/`. Details live in `Architecture.
 | P2 Browsing | 5 – 6 Oct | Student job list, null-safe and eligibility filters, CPI, detail page, freshness, submit link |
 | P3 Linking | 7 – 8 Oct | Company pages, experience ↔ company links, backfill, picker on the experience form |
 | P4-lite + Buffer | 9 – 10 Oct | Saved and tracking, demo seed, QA pass, PR |
+| P5 Admin control | after 10 Oct (before go-live) | All postings page, take down, admin bar, student-link retry/dismiss, review badge, explainer (F-01 – F-03, F-09, F-16, F-18, F-28) |
+| P6 Student value | first month after launch | More boards, new-for-you count, quick filters, apply nudge, deadline sort, reports, safer bulk, hide, notes, source edit/archive |
+| P7 Depth | after P6 | Alerts ⚖️, graduation-batch eligibility, season/duration, usage numbers, more ATS types, admin tooling |
+| P8 Needs a decision | only with the user's OK | Seniors' stipend aggregates, permanent delete, test-data cleanup |
 
 **Rule for slippage:** if a phase runs over, cut from the end of *that* phase's optional tasks
 (marked ◇), never from P3. P3 is the proposal's core argument. P4-lite is dropped first.
@@ -247,9 +251,283 @@ Paths are relative to `academic-council-portal/`. Details live in `Architecture.
 
 ---
 
+## P5 – P8: Features after the 10 Oct plan (added 10 Oct; from `bugs_and_features.md`)
+
+The features below come from `bugs_and_features.md` §2 (F-01 – F-32), in its suggested order (§3).
+Each task names its backlog ID; the backlog has the full problem statement and design. This section
+adds what a coding session needs: where the work goes, decisions already taken, and "Done when".
+
+**Rules for these phases**
+- **One feature = one task = one session** (two small ones are combined where noted). Each task gets
+  its own commit(s): `feat(careers): P5-T1 F-01 all-postings admin page`.
+- Same workflow as P0 – P4: failing test first, full `npm test`, client build, lint 0 on every changed
+  client file and `npx eslint src` ≤ 36, real dev-DB check, browser check at 1280 and 375 px,
+  then Memory.md / tracker / change_specsheet / bugs_and_features (Status line) / commits.
+- 🗄️ = additive migration (`--create-only`, read the SQL, forbidden-SQL grep). Adding a value to an
+  existing enum (`ALTER TYPE … ADD VALUE`) is **not** in AI_Rules §3's allowed list, so tasks below use
+  nullable columns instead.
+- ⚖️ = needs the user's explicit OK before the task starts (emails, permanent deletes, PRD stretch
+  items, upstream files beyond AI_Rules §4). Those tasks are `[!]` in the tracker until approved.
+- Upstream files: only `App.jsx` and `DashboardLayout.jsx` (routes, sidebar) are touched in P5 – P7.
+- Nothing is auto-published; unknown stays unknown; no countdowns (PRD §6).
+- The go-live checklist (L-01 – L-07, `bugs_and_features.md` §3) is not a feature list; it runs
+  alongside, and P4-T2 / P4-T3 / P1-T10b stay open in P4 / P1.
+
+| Phase | Goal | Tasks |
+|---|---|---|
+| P5 Admin control (before go-live) | Admins can find, fix and take down any posting; shared links never get stuck; students know what the section is | 7 |
+| P6 Student value (first month) | More openings, faster to find, easier to track | 11 |
+| P7 Depth | Better eligibility, alerts, more boards, admin tooling | 12 |
+| P8 Needs a decision | Items the backlog parks until the user decides | 3 |
+
+---
+
+## P5: Admin control (before go-live)
+
+Order note: F-09 comes before F-18 (the backlog lists F-18 first) because F-18's "Needs a person"
+view uses F-09's **Create posting from this link** button.
+
+### P5-T1 All postings admin page (F-01)
+- API `GET /careers/admin/postings`: `q` (title or company, through `likeSafe`), `status`
+  (LIVE / PENDING_REVIEW / EXPIRED / REJECTED / ALL, default LIVE), `companyId`, `sourceId`,
+  `tier`, `hasDeadline`, `sort` (newest | lastSeen | deadline), `page`, `limit ≤ 50`. Rows: id,
+  title, company, status, tier, publishedAt, lastSeenLiveAt, deadlineStated, saves and applications
+  counts (`_count`, aggregate only). Lives in `adminReviewController.js` next to `listReview`
+  (query builder in `services/careers/postings/adminList.js`, pure + tested).
+- Client `pages/admin/careers/AllPostings.jsx` at `/admin/careers/postings` (App.jsx route; a tab
+  on the Jobs Review page and an entry in the admin sidebar). Clicking a row opens the existing
+  `PostingEditor` (already handles LIVE / EXPIRED: expire, reopen, reject).
+- **Done when:** a LIVE posting can be found by title and by company and opened in the editor;
+  each status filter returns only that status (counts match the DB); `%` search returns nothing;
+  student → 403; 375 px has no sideways scroll.
+
+### P5-T2 Take down a posting (F-02 level 1, reversible)
+- "Take down" from the All postings row menu and from the editor: a dialog with a reason list
+  (*Closed*, *Not for students*, *Duplicate*, *Spam*, *Wrong details*, *Other* + text).
+  **Closed → `expire`** (the posting stays in students' Saved as "No longer live", as today);
+  **every other reason → `reject`** with the reason text (it disappears from all student views,
+  including Saved, because wrong or spam data must not stay visible). Uses the existing
+  `/expire` and `/reject` endpoints; no schema change. Reopen stays available (existing `/reopen`).
+- **Done when:** taking down a LIVE posting as *Closed* shows it as "No longer live" to a student
+  who saved it; as *Spam* it 404s for students and leaves their Saved list; both are listed under
+  the matching status in All postings and can be reopened; the `PostingReview` row records the
+  admin and reason.
+
+### P5-T3 Admin bar on the student job page (F-03)
+- On `JobDetailPage.jsx`, when `useCareersStatus().isCareerAdmin`: a thin bar above the header:
+  status chip, "Approved by <displayName> on <date>" (from the latest APPROVE `PostingReview`;
+  `getPosting` adds `adminInfo` only for career admins), **Edit in admin** (opens the editor) and
+  **Take down** (P5-T2 dialog).
+- **Done when:** the bar shows for the career admin and never for a student (also absent from the
+  student's API response); Take down from the bar works; 375 px fine.
+
+### P5-T4 Student links: retry, create posting, withdraw (F-09, non-destructive part)
+- Admin Student links tab (`ReviewLinks.jsx`): **Retry** for FAILED (→ RECEIVED, picked up by the
+  next links run through the same SSRF path), **Create posting from this link** (opens Manual
+  posting with the URL prefilled; the new posting's observation links back to the submission and
+  sets its status to PENDING_REVIEW).
+- Students can **withdraw** their own link while it is RECEIVED (marked withdrawn, not deleted;
+  uses the P5-T5 columns, so P5-T4 adds them).
+- 🗄️ nullable `LinkSubmission.dismissedAt`, `dismissReason`, `dismissedById` (shared with P5-T5).
+- **Not built:** the backlog's hard **Delete** (⚖️). Spam links are **dismissed** instead (P5-T5).
+- **Done when:** a FAILED link retried by the admin is processed again on the next run; a link
+  turned into a manual posting shows the posting in the student's "My submissions"; a student can
+  withdraw only their own RECEIVED link (others → 403/409); a withdrawn link is never processed.
+
+### P5-T5 Shared links never wait forever (F-18)
+- While `careers.llmEnabled` is off or the provider is unusable (`llmStatus`), links that reach the
+  AI step are shown to the student as **"Waiting for an ACC admin"** (not "Being processed") and
+  appear under a new **Needs a person** filter in the Student links tab with **Create posting from
+  this link** (P5-T4) and **Dismiss** (reason picked or typed, shown to the student: e.g. "Not a job
+  page"). Dismissed links are never processed again and are not re-shareable for 30 days (B-08
+  logic respects `dismissedAt`).
+- Ops alert (amber) when a link has waited more than 48 h (`ops/alerts.js`).
+- When the AI tier is turned on later, waiting rows are processed as today.
+- **Done when:** with `llmEnabled` off a non-ATS, non-JSON-LD link shows "Waiting for an ACC admin"
+  to the student and appears under Needs a person; Dismiss shows the reason in My submissions; a
+  row older than 48 h raises the amber alert; with `llmEnabled` on the same row is extracted.
+
+### P5-T6 Review count in the admin sidebar (F-16)
+- `GET /careers/admin/review/counts` → `{ pending, flagged, candidates, links }` (the counts
+  `listReview` already computes, moved to a shared helper; cached 60 s in the client).
+- `DashboardLayout.jsx` (AI_Rules §4): a small count badge on "Jobs Review" in both admin blocks.
+- **Done when:** the badge equals pending + flagged in the DB, updates after an approve (on the
+  next refresh or within 60 s), is hidden at 0, and never renders for students.
+
+### P5-T7 "About these openings" (F-28)
+- A dismissible banner on the jobs page (dismissal in localStorage, try/catch) and an
+  **About these openings** panel (link in the page header): off-campus roles collected from company
+  job boards and student links, reviewed by ACC; apply on the company's site; ACC does not run the
+  hiring and this is not the placement cell's process; how to share a link; how to report a problem
+  (P6-T7, mentioned only once it exists). Text only.
+- **Done when:** the banner shows once, stays dismissed after reload, the panel opens from the
+  header and closes with Escape; copy reviewed by the user; 375 px fine.
+
+---
+
+## P6: Student value (first month after launch)
+
+### P6-T1 More boards (F-23)
+- `scripts/careers/scanBoards.js`: checks a candidate list (`scripts/careers/boardCandidates.json`,
+  ~150 companies that hire IIT students, Greenhouse / Lever / Ashby tokens) and prints which boards
+  exist and how many India early-career roles each would keep (dry run, no DB writes).
+- "Add boards in bulk" dialog on Sources (paste `kind token company` lines; each validated like
+  Add board; summary of added / skipped / failed).
+- Per-source quality on Sources & Ops: kept → approved → rejected over 30 days.
+- **Done when:** the scan runs against the live APIs and lists results; bulk add of 5 lines adds the
+  valid ones and reports the rest; quality numbers match the DB for 2 sources.
+
+### P6-T2 "New for you" count in the student sidebar (F-21)
+- `GET /careers/postings/new-count?since=<ms>` (LIVE, published after `since`, passing "Eligible
+  for me" when the student has a roll number). `DashboardLayout.jsx` shows the count on "Jobs &
+  Internships"; `since` = `careers.lastVisit` (the same value as the New badge); cached per session.
+- **Done when:** the count equals the number of New badges on the jobs page for the same student;
+  it disappears after visiting the jobs page; it is never shown while the feature is hidden.
+
+### P6-T3 Quick filter chips (F-27)
+- Chips above the list: *For me* (eligible only), *Internships*, *Remote*, *New this week*, and
+  *My last filters*; each only sets URL params (shareable). Last filters in localStorage.
+- **Done when:** each chip sets exactly its params and the results match the equivalent manual
+  filters; the URL survives reload.
+
+### P6-T4 "Did you apply?" nudge (F-26)
+- Clicking **Apply** stores the time per posting in localStorage. Next time the student opens that
+  posting or Saved: "You opened the application on 9 Oct. Mark as Applied?" → one click sets
+  APPLIED (and saves). Nothing reaches the server until the student clicks.
+- **Done when:** the nudge appears after an Apply click, Mark as Applied persists, Dismiss hides it
+  for that posting, and no request is made until a click.
+
+### P6-T5 Sort by deadline, filter by company (F-14)
+- `sort=deadline` in `postings/query.js` (stated deadlines first, soonest first; the rest after,
+  labelled "No deadline stated"); company filter (API already accepts `companyId`) with a company
+  search in `JobFilters.jsx`.
+- **Done when:** order is correct with mixed null / non-null deadlines (unit test); the company
+  filter returns only that company; no countdown text anywhere.
+
+### P6-T6 Deadlines on the Saved page (F-20, in-app)
+- A "Deadlines stated by source" section on Saved: only postings with `deadlineStated`, by date;
+  passed ones at the bottom. Plain dates ("Deadline stated by source: 15 Oct").
+- **Done when:** only stated deadlines are listed, in date order; no countdowns.
+
+### P6-T7 Report a problem (F-05) 🗄️
+- `PostingReport` (postingId, userId, reason enum-like string, note ≤ 500, createdAt; unique per
+  user + posting). "Report a problem" on the job page; count badge in the review queue and All
+  postings; 3 reports add `reported` to `uncertainFields` (never auto-remove).
+- **Done when:** a report is stored once per student; 3 reports from 3 students flag the posting;
+  admins see the reasons; students never see who reported.
+
+### P6-T8 Safer bulk actions (F-04)
+- Undo in the bulk-approve success toast for 30 s (back to PENDING_REVIEW; clears `publishedAt`
+  only when this action set it); bulk **reject** (reason) and bulk **expire** in the selection bar.
+- **Done when:** approve 5 → Undo → all 5 back in Pending with `publishedAt` restored; bulk reject
+  and expire write one `PostingReview` row each.
+
+### P6-T9 Hide a posting (F-12) 🗄️
+- `HiddenPosting` (userId, postingId, unique; cascades like `SavedPosting`); "Not for me" on cards;
+  "Show hidden (n)" toggle.
+- **Done when:** a hidden posting leaves only that student's list; toggle brings it back; deleting
+  the posting cascades.
+
+### P6-T10 Notes and dates on application tracking (F-13) 🗄️
+- Nullable `PostingApplication.note` (≤ 500, text only) and `appliedAt` (set when the status first
+  becomes APPLIED). Saved page shows "Applied on 3 Oct" and the note.
+- **Done when:** note and date persist; the note renders as plain text (`<img onerror>` stays text).
+
+### P6-T11 Edit and archive a source (F-07) 🗄️ (⚖️ only for hard delete)
+- Edit dialog (name, company; token fixed). **Archive** (nullable `Source.archivedAt`: disabled,
+  hidden by default, postings keep their history; "Show archived", Restore).
+- Hard **Delete** of a source with no observations is ⚖️: built only if the user approves.
+- **Done when:** edit persists; an archived source is skipped by the worker and hidden; restore
+  brings it back.
+
+---
+
+## P7: Depth
+
+### P7-T1 Job alerts by email (F-19) ⚖️ 🗄️
+- `SavedSearch` (userId, filters JSON, frequency, lastSentAt); opt-in, max 3 per student; digest
+  through the existing nodemailer transporter (never `notifyOnNewPost`); one-click unsubscribe;
+  never sent while the feature is hidden. PRD stretch item: **needs the user's OK**.
+- **Done when:** a digest lists only new LIVE postings matching the search, at most once per period,
+  and unsubscribe works without login.
+
+### P7-T2 Eligibility by graduation batch and programme (F-22) 🗄️
+- Nullable `User.programme`, `User.graduationYear` (global omit like `cpi`); nullable
+  `Posting.eligibleGradYears Int[]`; the eligibility card shows and lets the student correct them;
+  "Eligible for me" matches graduation year first.
+- **Done when:** a dual-degree student with a corrected graduation year sees a "2027 graduates"
+  posting as eligible; the new columns appear in no other response.
+
+### P7-T3 Internship season and duration (F-25) 🗄️
+- Deterministic parser (like B-03) for "Summer 2027", "Winter", "6 months", "Jan – Jun 2027" →
+  nullable `season`, `startMonth`, `durationMonths` (flagged for review); filter + card chip.
+- **Done when:** parser unit tests on real titles pass; the filter returns only matching postings.
+
+### P7-T4 Usage numbers for ACC (F-30) 🗄️
+- Aggregate counts on Sources & Ops (LIVE postings, unique student visitors per week, saves,
+  statuses, Apply clicks); per posting in All postings. Never per student.
+- **Done when:** numbers match the DB for one week of dev data; no endpoint exposes per-student data.
+
+### P7-T5 Review reminders (F-31) ⚖️
+- Amber ops alert when items wait > 48 h; optional daily email to career admins (⚖️ email).
+- **Done when:** the alert appears for an old pending item; the email (if approved) goes only to
+  career admins and only when something is waiting.
+
+### P7-T6 Share a posting (F-32)
+- "Copy link" (portal URL) and "Share on WhatsApp" (title + URL) on the job page.
+- **Done when:** copy puts the portal URL on the clipboard; the WhatsApp link opens with the text.
+
+### P7-T7 SmartRecruiters and Workable adapters (F-24)
+- Same `fetchPostings` contract as P1-T3, verified live first (AI_Rules §12), fixtures + tests.
+- **Done when:** one real board per adapter ingests and dedups like the existing three.
+
+### P7-T8 Merge two postings by hand (F-06)
+- From All postings: pick two → "Merge into…" (observations, saves, applications move; the other
+  becomes REJECTED "Duplicate of #N"); "Merge" button on the company-merge duplicate report.
+- **Done when:** after a merge, students who saved either see one posting; observations moved; one
+  `PostingReview` row per posting.
+
+### P7-T9 Per-source keyword rules (F-08) 🗄️
+- Nullable `Source.excludeTitleKeywords String[]`, `includeTitleKeywords String[]`, applied after
+  the global relevance rules; run summary "dropped by source rules".
+- **Done when:** a rule on one board drops only that board's matching titles (unit + live run).
+
+### P7-T10 Experience shortcuts on company pages (F-10)
+- For career admins on the company page: "Unlink from this company" (existing backfill unlink) and
+  "Delete experience…" (calls the existing upstream delete with its confirm). No new delete logic.
+- **Done when:** both actions work for a career admin and are absent for students.
+
+### P7-T11 Candidate company cleanup (F-11) (⚖️ for deleting the candidate)
+- Edit name / website before approving; **Reject** a candidate nothing LIVE uses: its postings go
+  to Flagged with `company` uncertain; deleting the candidate row is ⚖️ (otherwise mark it merged
+  into nothing / hidden).
+- **Done when:** a rejected candidate no longer appears and its postings are in Flagged.
+
+### P7-T12 Admin activity log (F-15)
+- Read-only page listing `PostingReview` and `CompanyMergeLog` rows, filterable by admin and action.
+- **Done when:** every approve / reject / expire / edit / create / merge from the dev session is listed
+  with admin and time.
+
+---
+
+## P8: Needs a decision (do not start without the user's OK)
+
+### P8-T1 Seniors' reported stipend and process (F-29) ⚖️ 🗄️
+- Optional structured fields on the experience form, aggregates on company pages only when ≥ 3
+  experiences report them. Touches the upstream experience form beyond AI_Rules §4's P3 allowance,
+  so it needs the user's OK (and a rules update) first.
+
+### P8-T2 Delete a posting permanently (F-02 level 2) ⚖️
+- Career admin only, for spam and test data; confirm dialog showing what goes with it; audit line.
+
+### P8-T3 Clear test data before go-live (F-17) ⚖️
+- `npm run careers:job -- cleanup [--dry-run]`; refuses with `NODE_ENV=production`.
+
+---
+
 ## Stretch backlog (after 10 Oct; do not start without the user's go-ahead)
 1. Resume match scoring: skill overlap (tier 1) → local embeddings via `@huggingface/transformers` `all-MiniLM-L6-v2` stored as `Float[]` with cosine in JS (tier 2) → on-demand explanation from the **local** model (tier 3; resumes are personal data, so never a free-tier cloud API). Consent + retention + delete.
-2. Weekly digest emails via the existing nodemailer transporter.
+2. Weekly digest emails via the existing nodemailer transporter. (now planned as P7-T1 / F-19, still ⚖️)
 3. Company discussion (nullable `companyId` on `Comment`, reusing `CommentSection`) with experience-weighted sorting.
 4. OA/interview pattern guide + structured fields on experience submission.
 5. Question bank (admin-reviewed).

@@ -2,7 +2,7 @@
 
 > Written 8 Oct 2026 after a full review of the job-fetcher code (server + client) and a browser
 > run as admin and student on the local dev stack. **Bugs B-01 – B-21: all fixed on 9 Oct** (status
-> under each bug). **Features F-01 – F-32: none built yet.** F-18 – F-32 and the go-live checklist
+> under each bug). **Features F-01 – F-32: none built yet; planned as P5 – P8 in `Phases.md` (10 Oct).** F-18 – F-32 and the go-live checklist
 > were added on 9 Oct after a completeness review: what the feature still needs to be truly useful to
 > students once it is live on the college website.
 > IDs are stable: refer to them in commits and in `change_specsheet.md` (e.g. "fixes B-01").
@@ -338,6 +338,21 @@ All bugs (B-01 – B-21) were fixed on 9 Oct, so this section now covers launch 
 2. **First month after launch (most value for students):** F-23, F-21, F-27, F-26, F-14, F-20 (in-app), F-05, F-04, F-12, F-13, F-07.
 3. **Next:** F-19 ⚖️, F-22, F-25, F-30, F-31 ⚖️, F-32, F-24, F-06, F-08, F-10, F-11, F-15.
 4. **Later / needs a decision:** F-29 ⚖️, F-02 level 2 (permanent delete), F-17.
+
+### Mapped to `Phases.md` (10 Oct, C-96)
+
+The order above is now planned as tasks P5 – P8 in `Phases.md` (design detail, "Done when") and
+tracked in `implementation_tracker.md`. When a feature is built, add its Status line here as for the bugs.
+
+| Phase | Tasks (feature) |
+|---|---|
+| P5 Admin control (before go-live) | P5-T1 F-01 · P5-T2 F-02 level 1 · P5-T3 F-03 · P5-T4 F-09 (retry, create posting, withdraw; **dismiss instead of delete**) · P5-T5 F-18 · P5-T6 F-16 · P5-T7 F-28 |
+| P6 Student value | P6-T1 F-23 · P6-T2 F-21 · P6-T3 F-27 · P6-T4 F-26 · P6-T5 F-14 · P6-T6 F-20 (in-app) · P6-T7 F-05 · P6-T8 F-04 · P6-T9 F-12 · P6-T10 F-13 · P6-T11 F-07 (hard delete ⚖️) |
+| P7 Depth | P7-T1 F-19 ⚖️ · P7-T2 F-22 · P7-T3 F-25 · P7-T4 F-30 · P7-T5 F-31 (email ⚖️) · P7-T6 F-32 · P7-T7 F-24 · P7-T8 F-06 · P7-T9 F-08 · P7-T10 F-10 · P7-T11 F-11 (row delete ⚖️) · P7-T12 F-15 |
+| P8 Needs a decision | P8-T1 F-29 ⚖️ · P8-T2 F-02 level 2 ⚖️ · P8-T3 F-17 ⚖️ |
+
+Changes from the order above: F-09 moved before F-18 (F-18 reuses F-09's "Create posting from this
+link"). Go-live checklist L-01 – L-07 is not a task list in `Phases.md`; it stays here.
 
 ## 4. Already works (checked on 8 Oct)
 

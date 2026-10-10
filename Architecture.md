@@ -867,6 +867,21 @@ If the user has no CPI, a posting with `minCpi` still passes, and the UI shows "
 | `GET /ops` | Summary for the operations page (§10) |
 | `GET /settings` · `PUT /settings` | Only the keys in §5; values validated with zod |
 
+**Planned in P5 (10 Oct plan, `Phases.md`; not built yet):**
+
+| Method & path | Task | Purpose |
+|---|---|---|
+| `GET /postings?q&status&companyId&sourceId&tier&hasDeadline&sort&page&limit` | P5-T1 | All postings for admins (default LIVE); rows carry save / application counts (aggregate only). Declare before `/postings/:id` |
+| `GET /review/counts` | P5-T6 | `{ pending, flagged, candidates, links }` for the sidebar badge |
+| `POST /submissions/:id/retry` | P5-T4 | FAILED → RECEIVED (same SSRF path on the next links run) |
+| `POST /submissions/:id/dismiss` | P5-T5 | `{ reason }` → `dismissedAt`, `dismissReason`, `dismissedById`; never processed again |
+| `POST /careers/submissions/:id/withdraw` (student router) | P5-T4 | The student's own RECEIVED link only |
+
+Take-down (P5-T2) reuses `POST /postings/:id/expire` (*Closed*) and `/reject` (other reasons). The
+student `GET /careers/postings/:id` adds `adminInfo` (status, last approver, date) **only for career
+admins** (P5-T3). Schema for P5: nullable `LinkSubmission.dismissedAt`, `dismissReason`,
+`dismissedById` (one additive migration in P5-T4). P6 – P7 endpoints are described per task in `Phases.md`.
+
 Validate every request body and query with **zod**. Return 400 `{ error: "VALIDATION_ERROR", message, details }`.
 
 **Route order matters (Express):** declare `/careers/companies/search` **before** `/careers/companies/:slug`, and `/careers/postings/bulk-approve`-style static paths before `/:id` paths.
@@ -878,7 +893,8 @@ Under `/dashboard` (existing `ProtectedRoute` + `DashboardLayout`):
 `career-vault/jobs`, `career-vault/jobs/:id`, `career-vault/companies`, `career-vault/companies/:slug`, `career-vault/saved`.
 
 Under `/admin` (wrap each in `ProtectedRoute roles={["SUPER_ADMIN","FACULTY","CAREER_ADMIN"]}`):
-`careers/review`, `careers/new`, `careers/companies`, `careers/backfill`, `careers/sources`, `careers/ops`.
+`careers/review`, `careers/new`, `careers/companies`, `careers/backfill`, `careers/sources`, `careers/ops`,
+and (planned, P5-T1) `careers/postings`.
 
 Sidebar (`DashboardLayout.jsx`):
 - In **both** existing admin blocks (general admin and career admin), add "Jobs Review", "Companies"
