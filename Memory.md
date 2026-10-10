@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); **P6 (student value) done 10 Oct (11/11)**. Next: P7 when the user starts it. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-07 – D-10 are new in P6).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (P7-T1 done 10 Oct)**. Next: P7-T2. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `731ca0a` feat(careers): P6-T11 F-07 edit and archive a source (pushed 10 Oct with the planning docs up to `9e6835f`)
+- **Last commit:** `f2d0b23` fix(careers): P7-T1 job alerts return emailFailed, not the raw send error (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 678 passed (43 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 695 passed (44 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -85,6 +85,7 @@
 | Hide a posting | `server-acc/services/careers/postings/hidden.js`, `PUT/DELETE /careers/postings/:id/hide` (`trackingController.js`); migration `20261010115347_careers_hidden_postings`; client `JobCard.jsx` (`onHide` / `onUnhide`), `JobsPage.jsx` | `?showHidden=true` view |
 | Application notes / applied date | `server-acc/services/careers/postings/tracking.js` (`noteBody`, `appliedAtFor`), `PUT /careers/postings/:id/application/note`; migration `20261010115823_careers_application_notes`; client `pages/Careers/components/ApplicationNote.jsx` | job page rail + Saved cards |
 | Edit / archive a source | `server-acc/services/careers/sources/archive.js`, `POST /careers/admin/sources/:id/archive` / `restore`, `PATCH /careers/admin/sources/:id`; migration `20261010120305_careers_source_archive`; client `pages/admin/careers/EditSourceDialog.jsx` | Sources page |
+| Job alerts (email) | `server-acc/services/careers/alerts/{savedSearch,digestMail,runAlerts}.js`, `services/careers/mail/careersMail.js`, `controllers/careers/alertsController.js`, job `alerts` in `services/careers/jobs.js`; migration `20261010122643_careers_saved_searches`; client `pages/Careers/components/JobAlertsDialog.jsx`, `pages/Careers/lib/alerts.js`, `pages/Careers/UnsubscribePage.jsx` | "Job alerts" on the jobs page; public `/alerts/unsubscribe?token=` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -108,6 +109,7 @@
 - Tracking data is per student and never shown to admins (no admin endpoint reads it). `GET /careers/saved` as an admin returns the admin's own list.
 - P5 – P8 (C-96): no hard deletes before the user OKs them; spam/unusable student links are **dismissed** (nullable `LinkSubmission.dismissedAt` / `dismissReason` / `dismissedById`), never deleted; take-down *Closed* → expire, other reasons → reject; never add enum values (not in AI_Rules §3), use nullable columns.
 - Who reported a posting is never returned, not even to admins (P6-T7): the reason and note are enough to act on, and students report more freely.
+- Job-alert emails (P7-T1) only go out while `careers.visibleToStudents` and `careers.alertEmailsEnabled` are both on; the alert stores the API form of the filters (minCtc in rupees), and the email's "more" link converts back to the page form (minCtcLpa).
 
 ## Gotchas / things that surprised me
 
@@ -154,6 +156,8 @@
 - `aiTierUsable()` caches the live provider check for 60 s in the API process (on top of the 30 s settings cache), so after turning `careers.llmEnabled` on or starting Ollama, students may see "Waiting for an ACC admin" for up to ~1.5 minutes more.
 - Commits are GPG-signed (global `commit.gpgsign`); when the passphrase cache expires, `git commit` waits for pinentry until the human enters it. Never bypass signing.
 - Tests must not compare fixed dates with real time windows: the B-11 test broke at 10 Oct 12:00 UTC because its rows were stamped 9 Oct 12:00 and the limit looks back 24 h from now.
+- nodemon on Windows sometimes leaves the old `node server.js` on :3000, and every restart then crashes with EADDRINUSE while the stale process serves old code. Kill the PID on :3000 and run `node server.js` directly while checking.
+- The upstream app layout already renders a `<main>`; public pages rendered inside it should use a `<div>`.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -736,3 +740,14 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 678 passed (43 files); client build ✓; `npx eslint src` 36 errors (baseline).
 - **P6 summary:** 11/11 tasks (P6-T1 – T11, commits e713b8a … 731ca0a), tests 638 → 678; upstream files touched in P6: `DashboardLayout.jsx` +2/−1 (New-for-you badge), `schema.prisma` +40 (additions only: 3 new tables `PostingReport`, `HiddenPosting`, relations; nullable columns `PostingApplication.note` / `appliedAt`, `Source.archivedAt`); migrations `careers_posting_reports`, `careers_hidden_postings`, `careers_application_notes`, `careers_source_archive`; no new dependencies; commits GPG-signed as the user, no AI attribution. All test data created by the checks was removed or restored. New decisions for the user to review: D-07 – D-10.
 - Next step: wait for the user to start P7 (or P4-T3 / L-01 – L-07).
+
+### 2026-10-10, P7-T1: job alerts by email (F-19) ⚖️ 🗄️ — the user OK'd both P7 emails
+- Asked first (⚖️): the user chose **build both emails** and, for P7-T11, **hide the candidate and note the decision** (D-06 updated, D-11 added).
+- Did: `SavedSearch` + `AlertFrequency` (`--create-only`, SQL read: CREATE TYPE, CREATE TABLE, 2 indexes, 1 FK; forbidden-SQL grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), pure `savedSearch.js` / `digestMail.js` with 17 tests, `runAlerts.js`, `careersMail.js`, controller + routes, setting, job + lock + CLI, ops alert, client dialog, unsubscribe page (C-115).
+- Checks:
+  - `http_p7t1.mjs` (25/25): empty list with max 3 and emailsOn false; invalid filters 400; create drops page / sort; token never returned; 4th alert 409; another user's PATCH / DELETE 404; with emails off → skipped; feature hidden → skipped; no SMTP → `lastError` on the alert, `lastRunAt` unchanged, Ops `ALERT_EMAILS_FAILING`; real run through nodemailer `jsonTransport` with a 60-day window: 1 email to the dev student, subject "17 new openings…", every listed posting LIVE + INTERNSHIP + published in the window, `List-Unsubscribe` header, counters set; an immediate second run: 0 due; next day with nothing new: no email; unsubscribe without a cookie pauses it; a paused alert is never due; resubscribe; unknown token 404; unsubscribe works while the feature is hidden while the list is flag-gated (404); delete own; pause + frequency. (A first run with a 3-day window had no new internships, so it only proved the empty path.) All alerts and settings restored.
+  - Browser (admin, 1280): Job alerts → amber "not switched on yet" note, summary "Internships · Remote", Daily, Save → listed 1/3, Pause → "Paused: no emails.", Resume; 375 px scrollWidth 375, "Open this search" keeps the filters. Logged-out context at 375 px: `/alerts/unsubscribe?token=…` → "Emails stopped" → Turn it back on → "Emails back on"; bad token → "This link is not valid any more". Test alert deleted.
+  - `npm test` → 695 passed (44 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Not verified: a real SMTP send (no SMTP settings locally); the email HTML was checked as text only.
+- Security fix (`f2d0b23`, from the background commit review): `GET/PATCH /careers/alerts` returned `lastError`, which can hold SMTP server details. Students now get `emailFailed: true/false`; the text stays in the row, the API log and the Ops alert. Checked 3/3 (`http_p7t1sec.mjs`).
+- Next step: P7-T2.

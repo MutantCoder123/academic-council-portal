@@ -15,11 +15,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
-| P7 Depth | after P6 | 12 | 0 | Planned |
+| P7 Depth | after P6 | 12 | 1 | In progress |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **46** | **72 %** |
+| **Total incl. P5 – P8** | | **64** | **47** | **73 %** |
 
-**Next task:** **P6 done (11/11).** Next: P7 when the user starts it (P7-T1 F-19 email alerts and P7-T5's email part need the user's OK first). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P7 in progress.** Next: `P7-T2` (eligibility by graduation batch). The user OK'd both P7 emails and chose hide-only for F-11 (D-06). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -104,7 +104,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 ## P7: Depth
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P7-T1 | Job alerts by email (F-19) ⚖️ 🗄️ | [!] | | Needs the user's OK (email, PRD stretch) |
+| P7-T1 | Job alerts by email (F-19) ⚖️ 🗄️ | [x] | e05f590 | User OK'd emails 10 Oct. Migration careers_saved_searches (new enum + table); API 25/25 (limit 3, owner-only, emails-off / hidden / no-SMTP send nothing, real digest of 17 LIVE internships via jsonTransport, once per period, unsubscribe + resubscribe without login, also while hidden); browser dialog 1280 / 375, unsubscribe page logged out; 695 tests |
 | P7-T2 | Eligibility by graduation batch and programme (F-22) 🗄️ | [ ] | | |
 | P7-T3 | Internship season and duration (F-25) 🗄️ | [ ] | | |
 | P7-T4 | Usage numbers for ACC (F-30) 🗄️ | [ ] | | Aggregates only |

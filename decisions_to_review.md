@@ -82,4 +82,18 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 ## D-06 Items that still need an answer
 - **What:** F-19 job-alert emails (P7-T1), the e-mail part of F-31 review reminders (P7-T5),
   permanent deletes (P8-T2, F-17 / P8-T3, F-07 source delete, F-11 candidate delete), F-29 (P8-T1).
-- **Status:** Open (the user can decide when P6 / P7 start).
+- **Status:** Partly answered by the user on 10 Oct 2026 when starting P7: **build both emails**
+  (F-19 job alerts, F-31 admin reminder email); **F-11 candidate cleanup hides the candidate,
+  never deletes the row** (see D-12). Still open: P8-T2, P8-T3 (F-17), F-07 source delete, F-29.
+
+## D-11 How job-alert emails work (P7-T1, C-115)
+- **What:** emails go out only while `careers.visibleToStudents` **and** a new admin switch
+  `careers.alertEmailsEnabled` (default **off**, in Settings) are on. The digest job runs daily at
+  09:00 IST; a daily alert is sent at most once per ~day, a weekly one at most once per ~week, and
+  only when there are new approved (LIVE) postings. Opening the "Stop these emails" link pauses the
+  alert immediately, without login; the page offers "Turn it back on". Students can delete their own
+  alerts (their own rows, like un-saving). Without SMTP settings the run records an error on each
+  waiting alert and Ops shows an amber `ALERT_EMAILS_FAILING`.
+- **Why:** ACC decides when the first email goes out (off until switched on); one click to stop is
+  what students expect, and a link scanner opening it can be undone by the student.
+- **Status:** Taken by the AI (10 Oct 2026); for the user to review.

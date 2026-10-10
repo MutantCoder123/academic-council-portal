@@ -266,6 +266,7 @@
 - **Problem:** students only see new openings if they remember to visit; most won't.
 - **Design:** "Get alerts for this search" on the jobs page saves the current filters (incl. "Eligible for me"); a weekly (or daily, student's choice) digest lists new LIVE postings matching each saved search, sent through the existing nodemailer transporter, with a one-click unsubscribe link. Opt-in only, max 3 saved searches per student, never sent while the feature is hidden. Must **not** reuse upstream `notifyOnNewPost` (emails every user). 🗄️ `SavedSearch` (userId, filters JSON, frequency, lastSentAt).
 - **Effort:** M–L (PRD lists digest email as stretch: needs the user's go-ahead)
+- **Status:** ✅ Built 10 Oct (`e05f590`, P7-T1, C-115, D-11): "Job alerts" on the jobs page (save the current search, Daily / Weekly, max 3, pause / delete), daily 09:00 IST digest of new LIVE postings through the existing transporter, no-login "Stop these emails" page; off until an admin turns on `careers.alertEmailsEnabled`.
 
 #### F-20 Deadlines for saved postings
 - **Design:** the Saved page gets a "Deadlines stated by source" section, sorted by date, only for postings whose source published a deadline ("Deadline stated by source: 15 Oct"); expired ones move to the bottom. Optional later: a reminder in the F-19 digest for saved postings whose stated deadline is within 3 days. Plain dates only: no countdown timers (PRD non-goal).
