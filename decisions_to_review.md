@@ -101,7 +101,8 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 ## D-12 What the usage numbers count, and how (P7-T4, C-118)
 - **What:** "Students visited" = students (not career admins) who opened the jobs list, once per IST
   week (Monday – Sunday), stored only as a keyed hash of (user id, week). "Apply clicks" = clicks on
-  "Apply on the company site" per posting and day (a student clicking twice counts twice). Status
+  "Apply on the company site" per posting and day, at most one per student, posting and day
+  (kept in memory, not in the database), and never for career admins. Status
   numbers are "tracking started" and "marked applied" rather than every status change. LIVE
   postings are shown as the current count plus "published" per week. The card is on Operations
   only (Sources keeps the per-board quality card).

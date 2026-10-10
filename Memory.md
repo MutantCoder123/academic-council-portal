@@ -14,12 +14,12 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `50a664e` feat(careers): P7-T4 F-30 usage numbers for ACC (aggregate only) (local, not pushed)
+- **Last commit:** `224b354` fix(careers): P7-T4 Apply clicks by career admins are not counted (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 728 passed (47 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 729 passed (47 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -781,4 +781,5 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - All 8 weeks of saves / tracking / applied / published equal SQL. Dev data has no saves or applications, so `http_p7t4b.mjs` (3/3) saved 3 postings and set 2 statuses (1 APPLIED) as the dev student: this week went 0/0/0 → 3/2/1 and All postings showed 1 save each and tracking on two; all removed after.
   - Browser (admin): Operations → "Student use, last 8 weeks" table (this week, 28 Sept with 32 published, …), "28 live postings now"; 375 px scrollWidth 375 (table scrolls inside the card).
   - `npm test` → 728 passed (47 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Security fix (`96b82e1`, from the background commit review: no rate limit on `apply-click`): one counted click per student, posting and IST day (`firstClickToday`, an in-memory set, so still nothing per student in the database); `224b354`: career admins' clicks are not counted (like visits). `http_p7t4c.mjs` 2/2: 5 clicks by the student → [true, false, false, false, false]; admin click not counted; +1 total. 729 tests.
 - Next step: P7-T5.
