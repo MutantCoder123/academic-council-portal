@@ -15,11 +15,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
-| P7 Depth | after P6 | 12 | 1 | In progress |
+| P7 Depth | after P6 | 12 | 2 | In progress |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **47** | **73 %** |
+| **Total incl. P5 – P8** | | **64** | **48** | **75 %** |
 
-**Next task:** **P7 in progress.** Next: `P7-T2` (eligibility by graduation batch). The user OK'd both P7 emails and chose hide-only for F-11 (D-06). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P7 in progress (2/12).** Next: `P7-T3` (internship season and duration). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -105,7 +105,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
 | P7-T1 | Job alerts by email (F-19) ⚖️ 🗄️ | [x] | e05f590 | User OK'd emails 10 Oct. Migration careers_saved_searches (new enum + table); API 25/25 (limit 3, owner-only, emails-off / hidden / no-SMTP send nothing, real digest of 17 LIVE internships via jsonTransport, once per period, unsubscribe + resubscribe without login, also while hidden); browser dialog 1280 / 375, unsubscribe page logged out; 695 tests |
-| P7-T2 | Eligibility by graduation batch and programme (F-22) 🗄️ | [ ] | | |
+| P7-T2 | Eligibility by graduation batch and programme (F-22) 🗄️ | [x] | 1f7dc14 | Migration careers_graduation_year (3 nullable ADD COLUMNs); API 14/14 (3rd-year CS student not eligible for a "2027 graduates" posting until they set Dual degree + 2027, then eligible on the job page and in Eligible for me; columns in no other response, default Prisma user queries omit them; admin edits batches); browser card edit 1280 / 375; 707 tests |
 | P7-T3 | Internship season and duration (F-25) 🗄️ | [ ] | | |
 | P7-T4 | Usage numbers for ACC (F-30) 🗄️ | [ ] | | Aggregates only |
 | P7-T5 | Review reminders (F-31) ⚖️ | [ ] | | Alert part free; email part needs OK |

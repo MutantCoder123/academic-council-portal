@@ -282,6 +282,7 @@
 - **Problem:** postings say "2027 graduates" or "final year", but a student's year is guessed from `admissionYear` assuming a 4-year B.Tech; dual-degree, M.Tech, M.Sc and PhD students are matched wrongly or not at all.
 - **Design:** the eligibility card shows the derived programme and **expected graduation year** and lets the student correct them (self-reported, like CPI, only visible to them). Postings store eligibility as graduation years when the source states a batch (B-03 parser already finds it), and "Eligible for me" matches on graduation year first, academic year second. 🗄️ nullable `User.programme`, `User.graduationYear` (additive, global omit like `cpi`); nullable `Posting.eligibleGradYears Int[]`.
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`1f7dc14`, P7-T2, C-116): "Programme" and "Graduating" on the eligibility card (self-reported, private like CPI; default = roll number + 4 years, labelled as a guess); postings keep stated batches in `eligibleGradYears` (parser, LLM tier, admin editor); "Eligible for me" and the badge check the batch first.
 
 #### F-23 Many more sources (coverage)
 - **Problem:** 13 boards, of which most kept postings come from 4 companies. Value for students scales with coverage.

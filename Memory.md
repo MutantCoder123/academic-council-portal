@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (P7-T1 done 10 Oct)**. Next: P7-T2. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1, T2 done 10 Oct)**. Next: P7-T3. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `f2d0b23` fix(careers): P7-T1 job alerts return emailFailed, not the raw send error (local, not pushed)
+- **Last commit:** `1f7dc14` feat(careers): P7-T2 F-22 eligibility by graduation batch and programme (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 695 passed (44 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 707 passed (45 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -86,6 +86,7 @@
 | Application notes / applied date | `server-acc/services/careers/postings/tracking.js` (`noteBody`, `appliedAtFor`), `PUT /careers/postings/:id/application/note`; migration `20261010115823_careers_application_notes`; client `pages/Careers/components/ApplicationNote.jsx` | job page rail + Saved cards |
 | Edit / archive a source | `server-acc/services/careers/sources/archive.js`, `POST /careers/admin/sources/:id/archive` / `restore`, `PATCH /careers/admin/sources/:id`; migration `20261010120305_careers_source_archive`; client `pages/admin/careers/EditSourceDialog.jsx` | Sources page |
 | Job alerts (email) | `server-acc/services/careers/alerts/{savedSearch,digestMail,runAlerts}.js`, `services/careers/mail/careersMail.js`, `controllers/careers/alertsController.js`, job `alerts` in `services/careers/jobs.js`; migration `20261010122643_careers_saved_searches`; client `pages/Careers/components/JobAlertsDialog.jsx`, `pages/Careers/lib/alerts.js`, `pages/Careers/UnsubscribePage.jsx` | "Job alerts" on the jobs page; public `/alerts/unsubscribe?token=` |
+| Programme / graduation year | `server-acc/services/careers/postings/eligibility.js` (`PROGRAMMES`, `graduationInfo`, `programmeBody`), `eligibilityWhere` in `postings/query.js`, `PATCH /careers/me/programme`; migration `20261010124250_careers_graduation_year`; client `pages/Careers/components/EligibilityCard.jsx` | private like CPI (global omit in `config/db.js`) |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -110,6 +111,7 @@
 - P5 – P8 (C-96): no hard deletes before the user OKs them; spam/unusable student links are **dismissed** (nullable `LinkSubmission.dismissedAt` / `dismissReason` / `dismissedById`), never deleted; take-down *Closed* → expire, other reasons → reject; never add enum values (not in AI_Rules §3), use nullable columns.
 - Who reported a posting is never returned, not even to admins (P6-T7): the reason and note are enough to act on, and students report more freely.
 - Job-alert emails (P7-T1) only go out while `careers.visibleToStudents` and `careers.alertEmailsEnabled` are both on; the alert stores the API form of the filters (minCtc in rupees), and the email's "more" link converts back to the page form (minCtcLpa).
+- `User.programme` / `User.graduationYear` are private like CPI: global omit in `config/db.js`, read only through explicit selects (`loadProfile`, `/careers/me/*`, the alerts run). A stated batch (`eligibleGradYears`) decides before the year of study.
 
 ## Gotchas / things that surprised me
 
@@ -751,3 +753,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Not verified: a real SMTP send (no SMTP settings locally); the email HTML was checked as text only.
 - Security fix (`f2d0b23`, from the background commit review): `GET/PATCH /careers/alerts` returned `lastError`, which can hold SMTP server details. Students now get `emailFailed: true/false`; the text stays in the row, the API log and the Ops alert. Checked 3/3 (`http_p7t1sec.mjs`).
 - Next step: P7-T2.
+
+### 2026-10-10, P7-T2: eligibility by graduation batch and programme (F-22) 🗄️
+- Did: 3 nullable columns (`--create-only`, SQL read: 2 ALTER TABLE … ADD COLUMN; forbidden-SQL grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), global omit, graduation-first matching in the profile, badge and filter, parser `gradYears` through all three tiers, `PATCH /careers/me/programme`, client card + job page + admin field (C-116). 12 new unit tests (`graduation.test.js`), 3 shape tests updated.
+- Checks:
+  - `http_p7t2.mjs` on posting #63 (eligibility set to years 4/5 + batch 2027, restored after) as the dev student (CS, admitted 2024): profile 3rd year, 2028 ASSUMED; job page NOT_ELIGIBLE with reason `gradYear`, not in Eligible for me; `BSC` 400, year 27 400; Dual degree + 2027 → SELF; job page ELIGIBLE and in Eligible for me; new-count OK; default `prisma.user.findUnique` has neither column; `/careers/postings`, `/:id`, `/saved`, `/status`, `/auth/me`, `/companies`, admin postings / ops / users responses contain neither key; clearing → 2028 ASSUMED; Dual alone → 2029 PROGRAMME; admin PATCH `eligibleGradYears` [2027, 2028] saved. 14/14. Posting and student reset.
+  - Browser (student): card shows "Programme Not set · Graduating 2028 · guessed from your roll number (4-year B.Tech)"; Correct it → Dual degree + 2027 → "entered by you"; 375 px filters drawer with the form open, scrollWidth 375.
+  - `npm test` → 707 passed (45 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P7-T3.
