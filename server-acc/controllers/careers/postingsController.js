@@ -7,6 +7,7 @@ import { isCareerAdmin } from '../../middlewares/careers/requireCareerAdmin.js';
 import { cardFields, loadProfile, toCard } from '../../services/careers/postings/cards.js';
 import { withTracking, TRACKABLE_STATUSES } from '../../services/careers/postings/tracking.js';
 import { adminInfo } from '../../services/careers/postings/adminInfo.js';
+import { newCountQuery, newSinceWhere } from '../../services/careers/postings/newCount.js';
 import {
     postingsQuery, baseWhere, eligibilityWhere, withEligibility, orderByFor, hasPayFilter,
 } from '../../services/careers/postings/query.js';
@@ -19,6 +20,19 @@ const detailFields = {
         orderBy: { firstSeenAt: 'asc' },
         select: { url: true, firstSeenAt: true, lastSeenAt: true, isLive: true, source: { select: { name: true, kind: true } } },
     },
+};
+
+// GET /careers/postings/new-count?since=<ms> (P6-T2, F-21): the sidebar's "New for you" count.
+export const newPostingsCount = async (req, res) => {
+    try {
+        const { since } = newCountQuery(req.query);
+        const profile = await loadProfile(req.user.id);
+        const eligibility = eligibilityWhere(profile);
+        const count = await prisma.posting.count({ where: newSinceWhere(since, eligibility) });
+        return res.json({ success: true, data: { count, eligibilityApplied: Boolean(eligibility) } });
+    } catch (err) {
+        return sendError(res, err, 'newPostingsCount');
+    }
 };
 
 export const listPostings = async (req, res) => {

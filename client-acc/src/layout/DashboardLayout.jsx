@@ -22,6 +22,7 @@ import AuthContext from "../context/auth/authContext";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useCareersStatus } from "../hooks/useCareersStatus";
 import ReviewCountBadge from "../pages/admin/careers/components/ReviewCountBadge";
+import NewJobsBadge from "../pages/Careers/components/NewJobsBadge";
 
 export default function DashboardLayout() {
   const { user, logout } = useContext(AuthContext);
@@ -186,7 +187,7 @@ export default function DashboardLayout() {
                     to="/dashboard/career-vault/jobs"
                     icon={<Search size={16} />}
                     iconColor="text-teal-600 bg-teal-50 border-teal-100"
-                    label="Jobs & Internships"
+                    label={<>Jobs & Internships<NewJobsBadge /></>}
                     onClick={() => setOpen(false)}
                   />
                 )}

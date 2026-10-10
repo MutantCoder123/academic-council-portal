@@ -21,6 +21,8 @@ export const nextStatus = (value) => NEXT[value ?? ""] ?? null;
 // clear the badges. Storage can be missing or blocked: then nothing is marked new.
 const LAST_VISIT = "careers.lastVisit";
 const BASELINE = "careers.visitBaseline";
+// Fired when the jobs page records a visit, so the sidebar count clears at once (P6-T2).
+export const LAST_VISIT_EVENT = "careers:lastVisit";
 
 export function visitBaseline(now = Date.now()) {
   try {
@@ -29,6 +31,7 @@ export function visitBaseline(now = Date.now()) {
     const previous = localStorage.getItem(LAST_VISIT);
     sessionStorage.setItem(BASELINE, previous ?? "");
     localStorage.setItem(LAST_VISIT, String(now));
+    window.dispatchEvent(new Event(LAST_VISIT_EVENT));
     return previous ? Number(previous) : null;
   } catch {
     return null;
@@ -38,4 +41,15 @@ export function visitBaseline(now = Date.now()) {
 export function isNewSince(posting, baseline) {
   const shown = posting.publishedAt ?? posting.firstSeenAt;
   return Boolean(baseline && shown && new Date(shown).getTime() > baseline);
+}
+
+// The latest visit to the jobs page (ms), for the sidebar's "New for you" count (P6-T2). Unlike
+// visitBaseline this is the newest value, so the count clears as soon as the jobs page is opened.
+export function lastVisitAt() {
+  try {
+    const v = Number(localStorage.getItem(LAST_VISIT));
+    return Number.isFinite(v) && v > 0 ? v : null;
+  } catch {
+    return null;
+  }
 }

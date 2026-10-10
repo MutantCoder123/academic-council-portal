@@ -5,7 +5,7 @@ import { requireCareersEnabled } from '../middlewares/careers/requireCareersEnab
 import { submissionRateLimit } from '../middlewares/careers/submissionRateLimit.js';
 import { submitLink, mySubmissions, withdrawLink } from '../controllers/careers/submissionsController.js';
 import { getMyEligibility, updateMyCpi } from '../controllers/careers/eligibilityController.js';
-import { listPostings, getPosting } from '../controllers/careers/postingsController.js';
+import { listPostings, newPostingsCount, getPosting } from '../controllers/careers/postingsController.js';
 import { searchCompanies, listCompanies, getCompanyPage } from '../controllers/careers/companiesController.js';
 import { savePosting, unsavePosting, setApplication, listSaved } from '../controllers/careers/trackingController.js';
 
@@ -20,6 +20,7 @@ router.get('/careers/companies', checkAuth, requireCareersEnabled, listCompanies
 router.get('/careers/companies/:slug', checkAuth, requireCareersEnabled, getCompanyPage); // after /search
 
 router.get('/careers/postings', checkAuth, requireCareersEnabled, listPostings);
+router.get('/careers/postings/new-count', checkAuth, requireCareersEnabled, newPostingsCount); // before /:id
 router.get('/careers/postings/:id', checkAuth, requireCareersEnabled, getPosting);
 
 router.post('/careers/submissions', checkAuth, requireCareersEnabled, submissionRateLimit, submitLink);

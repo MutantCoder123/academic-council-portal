@@ -16,6 +16,7 @@ export const careersApi = {
 
   // Postings (LIVE only for students)
   listPostings: (params, config) => api.get('/careers/postings', { params, ...config }).then((r) => r.data),
+  newPostingsCount: (since) => api.get('/careers/postings/new-count', { params: { since } }).then((r) => r.data.data),
   getPosting: (id) => api.get(`/careers/postings/${id}`).then((r) => r.data.data),
   searchCompanies: (q) => api.get('/careers/companies/search', { params: { q } }).then((r) => r.data.data),
   listCompanies: (params) => api.get('/careers/companies', { params }).then((r) => r.data),
