@@ -227,6 +227,7 @@
 #### F-14 Sort by deadline, filter by company
 - **Design:** "Deadline soonest" sort (postings without a deadline last, labelled "No deadline stated"); company filter on the jobs page (the API already accepts `companyId`).
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`d98046d`, P6-T5, C-108): `sort=deadline` (stated first, soonest first; then "No deadline stated") and a Company search filter on the jobs page; cards show "Deadline stated by source: …".
 
 ### Operations
 
@@ -264,6 +265,7 @@
 #### F-20 Deadlines for saved postings
 - **Design:** the Saved page gets a "Deadlines stated by source" section, sorted by date, only for postings whose source published a deadline ("Deadline stated by source: 15 Oct"); expired ones move to the bottom. Optional later: a reminder in the F-19 digest for saved postings whose stated deadline is within 3 days. Plain dates only: no countdown timers (PRD non-goal).
 - **Effort:** S (in-app), +S with F-19 ⚖️
+- **Status:** ✅ Built 10 Oct (`adf16f6`, P6-T6, C-109): "Deadlines stated by source" section on Saved (stated deadlines only, by date, passed ones last, plain dates). Email reminders stay with F-19 (⚖️).
 
 #### F-21 "New for you" badge in the student sidebar
 - **Design:** the "Jobs & Internships" sidebar item shows the number of LIVE postings published since the student's last visit (`careers.lastVisit`, already stored for the New badge) that pass "Eligible for me". One small count call, cached for the session.

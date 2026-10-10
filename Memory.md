@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T4 done; next P6-T5.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T6 done; next P6-T7.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `820d3b2` feat(careers): P6-T4 F-26 'Did you apply?' nudge (local, not pushed)
+- **Last commit:** `adf16f6` feat(careers): P6-T6 F-20 deadlines stated by source on the Saved page (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 653 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 655 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -79,6 +79,7 @@
 | "New for you" count | `server-acc/services/careers/postings/newCount.js`, `GET /careers/postings/new-count`; client `pages/Careers/components/NewJobsBadge.jsx`, `lib/tracking.js` (`lastVisitAt`, `LAST_VISIT_EVENT`) | in the student "Jobs & Internships" label of upstream `DashboardLayout.jsx` |
 | Quick filter chips | client `pages/Careers/components/QuickFilters.jsx`, `lib/quickFilters.js`; server `postedWithin` in `services/careers/postings/query.js` | above the jobs list |
 | "Did you apply?" nudge | client `pages/Careers/components/ApplyNudge.jsx`, `lib/applyNudge.js` | `JobDetailPage.jsx` (below the header), `SavedPage.jsx` (above the filters) |
+| Deadlines on Saved | client `pages/Careers/components/SavedDeadlines.jsx`, `lib/deadlines.js` | above the Saved filters |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -671,3 +672,19 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student, postings #59 and #53, both untracked before): #59 no nudge → Apply (popup) → reload → "You opened the application on 10 Oct 2026. Did you apply?"; **0** PUT application/save requests until a click; Dismiss → gone, still gone after reload; Apply again → asked again; Mark as Applied → exactly `PUT /careers/postings/59/application` + `PUT …/59/save`, rail shows Applied, Saved button on; after reload no nudge, still Applied. #53 saved + Apply → Saved page nudge "Operations Associate, Apprenticeship · Stripe" → Mark as Applied → Applied filter 2. 375 px scrollWidth 375. Rows for #53 / #59 removed afterwards; browser storage cleared.
   - `npm test` → 653 passed; client build ✓; changed files lint 0.
 - Next step: P6-T5.
+
+### 2026-10-10, P6-T5: sort by deadline, filter by company (F-14)
+- Did: `sort=deadline` (2 tests first), `deadlineStated` on cards, deadline line on `JobCard`, "No deadline stated" divider, Company filter (C-108).
+- Checks (no LIVE posting had a deadline: #59 / #63 / #53 got +5 / +12 / +20 days for the checks and were cleared afterwards):
+  - `http_p6t5.mjs` (6/6): `sort=deadline` → 59 (15 Oct), 63 (22 Oct), 53 (30 Oct), then 25 without a deadline, newest first; total = LIVE count; `companyId=37` → 15 postings, all Paytm = DB; `/careers/companies/search?q=payt` finds it.
+  - Browser (student): Sort "Deadline stated, soonest first" → first 3 cards "Deadline stated by source: 15 / 22 / 30 Oct 2026", one "No deadline stated" label, no countdown wording on the page; Company "payt" → Paytm → URL `sort=deadline&companyId=37&companyName=Paytm`, "15 openings", every card Paytm; reload keeps the picker and the count; 375 px scrollWidth 375.
+  - `npm test` → 655 passed; client build ✓; changed files lint 0.
+- Next step: P6-T6.
+
+### 2026-10-10, P6-T6: deadlines on the Saved page (F-20, in-app)
+- Did: `lib/deadlines.js`, `SavedDeadlines.jsx` on `SavedPage.jsx` (C-109).
+- Checks:
+  - `p6t6lib.mjs` (Node, 4/4): at 20:00 UTC on 10 Oct today in India is 11 Oct; only stated deadlines; order 11 Oct (today, upcoming), 15, 30, then passed 5 and 10 Oct; empty list.
+  - Browser (student saved #53, #59, #63, #85; deadlines #59 15 Oct, #53 30 Oct, #63 moved to 5 Oct, #85 none): rows "15 Oct 2026 · Software Engineer, Intern · Stripe", "30 Oct 2026 · Operations Associate, Apprenticeship · Stripe", "5 Oct 2026 (passed) · ENG Project/ Program - Intern · Rubrik"; #85 not listed; no countdown wording; 375 px scrollWidth 375. Afterwards: 4 saves removed, deadlines on #53 / #59 / #63 back to null.
+  - `npm test` → 655 passed; client build ✓; changed files lint 0.
+- Next step: P6-T7.

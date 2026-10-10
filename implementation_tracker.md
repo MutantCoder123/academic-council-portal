@@ -14,12 +14,12 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
-| P6 Student value | first month after launch | 11 | 4 | In progress |
+| P6 Student value | first month after launch | 11 | 6 | In progress |
 | P7 Depth | after P6 | 12 | 0 | Planned |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **39** | **61 %** |
+| **Total incl. P5 – P8** | | **64** | **41** | **64 %** |
 
-**Next task:** `P6-T5` (sort by deadline, filter by company, F-14). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** `P6-T7` (Report a problem, F-05, migration). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -93,8 +93,8 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P6-T2 | "New for you" count in the student sidebar (F-21) | [x] | 5b9d981 | API 6/6 (count 7 = 7 New badges with Eligible for me, ≤ all-openings badges, since=now → 0, bad/future/missing 400, hidden → 404); browser: badge 7 → jobs page 7 New badges → badge gone at once and after reload, none before a first visit, 375 px; upstream DashboardLayout +2/−1; 651 tests |
 | P6-T3 | Quick filter chips (F-27) | [x] | 0b27f13 | Checks 12/12 + 3 (chip params exact, combine, toggle off; Internships 17 = DB, For me = Eligible checkbox, postedWithin 10/14/30 = DB, 0 → 400); browser: chip → URL type=INTERNSHIP, survives reload, My last filters restores; 375 px; 653 tests |
 | P6-T4 | "Did you apply?" nudge (F-26) | [x] | 820d3b2 | Lib 9/9 (Node, fake storage); browser: no nudge before Apply, Apply → reload → nudge, 0 tracking requests until a click, Dismiss persists, new Apply asks again, Mark as Applied = PUT application + PUT save, Saved page nudge → Applied 2; 375 px; test rows removed; 653 tests |
-| P6-T5 | Sort by deadline, filter by company (F-14) | [ ] | | |
-| P6-T6 | Deadlines on the Saved page (F-20, in-app) | [ ] | | |
+| P6-T5 | Sort by deadline, filter by company (F-14) | [x] | d98046d | API 6/6 with 3 temporary deadlines (+5/+12/+20 days → soonest first, then none newest first, total unchanged; company 37 → only Paytm, 15 = DB; search 'payt'); browser: sort select, deadline lines, 'No deadline stated' divider, no countdown words, company picker → URL companyId + companyName, reload keeps it; 375 px; deadlines cleared; 655 tests |
+| P6-T6 | Deadlines on the Saved page (F-20, in-app) | [x] | adf16f6 | Helper 4/4 (Node: only stated, upcoming by date with today upcoming, passed last, India date); browser: 3 rows 15 Oct, 30 Oct, 5 Oct (passed), saved posting without deadline not listed, no countdown words, 375 px; saves + deadlines removed; 655 tests |
 | P6-T7 | Report a problem (F-05) 🗄️ | [ ] | | |
 | P6-T8 | Safer bulk actions: undo, bulk reject/expire (F-04) | [ ] | | |
 | P6-T9 | Hide a posting (F-12) 🗄️ | [ ] | | |
