@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; **P5 (admin control) done 10 Oct (7/7)**. Next: P6 when the user starts it. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3 (L-03 is now covered by P5-T1 – T3). Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T2 done; next P6-T3.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `97d19f8` feat(careers): P5-T7 F-28 'About these openings' banner and panel (local, not pushed)
+- **Last commit:** `5b9d981` feat(careers): P6-T2 F-21 'New for you' count in the student sidebar (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 638 passed (37 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 651 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -75,6 +75,8 @@
 | Links waiting for a person | `server-acc/services/careers/links/waiting.js` (`aiTierUsable`, `waitingForAdmin`, `needsPersonWhere`, `needsPersonCounts`); dismiss in `links/submissionActions.js`; alert `LINKS_WAITING` in `ops/alerts.js` | admin Student links → "needs a person" filter + Dismiss dialog |
 | Review count badge | `server-acc/services/careers/postings/reviewCounts.js`, `GET /careers/admin/review/counts`; client `pages/admin/careers/components/ReviewCountBadge.jsx` | in the "Jobs Review" label of upstream `DashboardLayout.jsx` |
 | About these openings | client `pages/Careers/components/AboutOpenings.jsx`, `lib/about.js` | banner + panel on the jobs page |
+| Board scan / bulk add / quality | `server-acc/scripts/careers/{scanBoards.js,boardCandidates.json}`, `services/careers/sources/{scan,bulkLines,addBoard,quality}.js`, `POST /careers/admin/sources/bulk`; client `pages/admin/careers/BulkAddSourcesDialog.jsx`, `components/SourceQualityCard.jsx` | `node scripts/careers/scanBoards.js [--kind lever] [--only name] [--all]` |
+| "New for you" count | `server-acc/services/careers/postings/newCount.js`, `GET /careers/postings/new-count`; client `pages/Careers/components/NewJobsBadge.jsx`, `lib/tracking.js` (`lastVisitAt`, `LAST_VISIT_EVENT`) | in the student "Jobs & Internships" label of upstream `DashboardLayout.jsx` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -141,6 +143,7 @@
 - (Linux machine, 9 Oct) The Playwright MCP's headed Chrome crashes at start (`GLib-GIO-ERROR … org.gnome.settings-daemon.plugins.xsettings does not contain a key named 'antialiasing'`, SIGTRAP). Use `playwright-core` from `~/.npm/_npx/9833c18b2d85bc59/node_modules/` with `executablePath: '/opt/google/chrome/chrome', headless: true, env: { ...process.env, GSETTINGS_BACKEND: 'memory' }`; run the script with `node --env-file=.env` from `server-acc/` so it fills the login form from `DEV_SEED_PASSWORD` itself (user-approved, 9 Oct; never printed). Helper: scratchpad `ui/lib.mjs`.
 - A dropdown inside a scrolling container (`overflow-y-auto`) is clipped by it on every side. Open it toward the free side and choose up/down from the room left inside the container (see `ApplicationStatusButton`).
 - `aiTierUsable()` caches the live provider check for 60 s in the API process (on top of the 30 s settings cache), so after turning `careers.llmEnabled` on or starting Ollama, students may see "Waiting for an ACC admin" for up to ~1.5 minutes more.
+- Commits are GPG-signed (global `commit.gpgsign`); when the passphrase cache expires, `git commit` waits for pinentry until the human enters it. Never bypass signing.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -632,3 +635,21 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Checks (browser, student): banner shows on a first visit; the header link and the banner's "More about these openings" open the panel (4 sections); Escape and Close close it; Dismiss hides the banner and it stays hidden after reload while the header link remains; 375 px scrollWidth 375, panel full width. `npm test` → 638 passed (37 files); client build ✓; changed files lint 0; `npx eslint src` 36.
 - **P5 summary:** 7/7 tasks (P5-T1 – T7, commits 168870f … 97d19f8), tests 610 → 638; upstream files touched: `App.jsx` +9, `DashboardLayout.jsx` +3/−2, `schema.prisma` +5 (nullable); migration `careers_link_dismiss` only; no new dependencies; no AI attribution. All test data created by the checks was removed or restored.
 - Next step: wait for the user to start P6 (or P4-T3 / L-01 – L-07).
+
+### 2026-10-10, P6-T1: more boards (F-23)
+- Did: scan script + candidate list, bulk add endpoint + dialog, per-board quality on Sources and Ops (C-104).
+- Checks:
+  - Scan against the live ATS APIs (55 s): 176 companies, 633 board URLs → 83 boards for 83 companies, 36 with relevant roles now; 28 new paste lines (top: Palantir 14, Robinhood 8, MongoDB 7, Squarepoint 7). No public board on these ATSs for most big Indian companies (Razorpay, Swiggy, Flipkart, PhonePe, …).
+  - API (`http_p6t1.mjs`, 12/12): 5 lines (squarepointcapital, hevodata, existing stripe, a 404 board, a `workday` line) → 2 added (both new CANDIDATE companies) / 1 already there / 2 failed; the 404 board created no company; one ALL run queued; 31 lines → 400; empty → 400; student 403; quality for Stripe `{kept 17, approved 3, rejected 0, pending 14}` and Paytm `{15, 15, 0, 0}` equal an independent SQL count; ops has `qualityDays 30`. Cleaned up: the 2 sources, 2 companies; `careers.runRequest` restored.
+  - Browser (admin): quality line on each Sources row; bulk dialog with an existing + 2 bad lines → per-line results; Ops "Board quality, last 30 days" table (Cloudflare 1 rejected = 50 % in red); 375 px: Sources, dialog and Ops scrollWidth 375.
+  - `npm test` → 647 passed (38 files); client build ✓; changed files lint 0.
+- Gotcha: the commit waited for the GPG passphrase (pinentry) until the user entered it.
+- Next step: P6-T2.
+
+### 2026-10-10, P6-T2: "New for you" count in the student sidebar (F-21)
+- Did: `newCount.js` (4 tests first), `GET /careers/postings/new-count`, `NewJobsBadge.jsx`, `lastVisitAt` + visit event, badge in the student sidebar (upstream `DashboardLayout.jsx` +2/−1) (C-105, D-07).
+- Checks:
+  - API (`http_p6t2.mjs`, 6/6): since = the 8th newest LIVE posting → `{ count 7, eligibilityApplied true }` = 7 New badges on `/careers/postings?eligibleOnly=true`; ≤ 7 on the all-openings list; since = now → 0; `abc` / +1 h / missing → 400; admin 200; `careers.visibleToStudents` false (31 s cache) → student 404; flag restored to true.
+  - Browser (student): no badge before a first visit; lastVisit set → sidebar "7"; click Jobs & Internships → 7 New badges and the sidebar badge is gone at once (first run showed it still there: fixed with the visit event); back on courses → still gone; 375 px badge visible in the menu, scrollWidth 375.
+  - `npm test` → 651 passed (39 files); client build ✓; changed files lint 0.
+- Next step: P6-T3.

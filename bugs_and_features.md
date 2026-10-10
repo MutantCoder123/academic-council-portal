@@ -268,6 +268,7 @@
 #### F-21 "New for you" badge in the student sidebar
 - **Design:** the "Jobs & Internships" sidebar item shows the number of LIVE postings published since the student's last visit (`careers.lastVisit`, already stored for the New badge) that pass "Eligible for me". One small count call, cached for the session.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`5b9d981`, P6-T2, C-105): `GET /careers/postings/new-count?since=` + `NewJobsBadge` on "Jobs & Internships" (eligible-only, see D-07).
 
 #### F-22 Eligibility by graduation batch and programme
 - **Problem:** postings say "2027 graduates" or "final year", but a student's year is guessed from `admissionYear` assuming a 4-year B.Tech; dual-degree, M.Tech, M.Sc and PhD students are matched wrongly or not at all.
@@ -278,6 +279,7 @@
 - **Problem:** 13 boards, of which most kept postings come from 4 companies. Value for students scales with coverage.
 - **Design:** (1) a script that checks a candidate list of ~150 companies known to hire IIT students (Greenhouse / Lever / Ashby tokens) and reports which boards exist and how many India early-career roles each keeps; (2) an "Add boards in bulk" dialog (paste `kind token company` lines, each validated like Add board); (3) per-source quality stats on Sources & Ops: kept → approved → rejected ratio over 30 days, so noisy boards can be disabled (see F-08).
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`e713b8a`, P6-T1, C-104): `scripts/careers/scanBoards.js` + `boardCandidates.json` (176 companies), "Add boards in bulk" on Sources (`POST /careers/admin/sources/bulk`, ≤ 30 lines), 30-day kept / approved / rejected / waiting per board on Sources and Ops.
 
 #### F-24 More job-board types
 - **Design:** adapters for ATSs with documented public JSON APIs that Indian companies use: SmartRecruiters (`/v1/companies/{id}/postings`) and Workable (`/api/v3/accounts/{subdomain}/jobs`), same `fetchPostings` contract, fixtures + tests like P1-T3. Workday stays in the stretch backlog (undocumented API).

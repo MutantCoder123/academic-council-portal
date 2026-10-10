@@ -44,6 +44,16 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   P3 (company picker only).
 - **Status:** Accepted by the user, 10 Oct 2026.
 
+## D-07 "New for you" counts only openings the student is eligible for (P6-T2, C-105)
+- **What:** the sidebar number on "Jobs & Internships" counts openings published since the last
+  visit that pass "Eligible for me" (branch, year, CPI when given). The jobs page itself shows all
+  openings by default, so the number can be lower than the "New" badges there, never higher.
+- **Why:** Phases.md P6-T2 says the count passes "Eligible for me" ("New for you"); a student is
+  not pulled to the page for roles they can't apply to. Alternative: count every new opening, so
+  the number always equals the badges on the default page.
+- **Status:** Taken by the AI under the user's "I am ok with your decisions" (10 Oct 2026); for
+  the user to review.
+
 ## D-06 Items that still need an answer
 - **What:** F-19 job-alert emails (P7-T1), the e-mail part of F-31 review reminders (P7-T5),
   permanent deletes (P8-T2, F-17 / P8-T3, F-07 source delete, F-11 candidate delete), F-29 (P8-T1).
