@@ -299,6 +299,7 @@
 - **Problem:** students may confuse this with the placement cell (TPC/CDC) process.
 - **Design:** a short dismissible banner and an "About these openings" panel: off-campus roles collected from company job boards and student links, reviewed by ACC before they appear; apply on the company's site; ACC does not run the hiring; how to share a link; how to report a problem (F-05). Text only, stored with the page.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`97d19f8`, P5-T7, C-103): dismissible banner + "About these openings" panel on the jobs page; copy to be reviewed by the user ("Report a problem" is added once P6-T7 exists).
 
 #### F-29 Seniors' reported stipend and process on company pages ⚖️
 - **Problem:** pay is almost never published (0 of 53 dev postings), and students care most about it.
@@ -332,7 +333,7 @@ All bugs (B-01 – B-21) were fixed on 9 Oct, so this section now covers launch 
 |---|---|---|
 | L-01 | Deploy the `fetcher-acc` worker on the VM, run `npx prisma migrate deploy`, set the new env vars, watch its health check | Without the worker nothing is fetched and "Fetch now" waits forever (PRD open question 1: who deploys it) |
 | L-02 | Decide the AI tier: Gemini (P1-T10b, needs the key), Ollama on the VM, or keep it off and ship F-18 | Otherwise shared non-ATS links never resolve |
-| L-03 | Ship F-01 + F-02 level 1 + F-03 | An approved bad posting can't be taken down from the UI today |
+| L-03 | Ship F-01 + F-02 level 1 + F-03 — **done 10 Oct (P5-T1 – T3)** | An approved bad posting couldn't be taken down from the UI |
 | L-04 | Add the boards in production, do a first review round, run P4-T2 (PRD §7 criteria 1 – 10, recorded in Memory.md) | Production starts with an empty database |
 | L-05 | One week admin-only (`visibleToStudents` off), then switch on; name the reviewer(s) and a daily review habit (F-16 / F-31 help) | Freshness depends on reviews |
 | L-06 | Council answer on self-reported CPI (PRD open question 3) | Privacy sign-off |

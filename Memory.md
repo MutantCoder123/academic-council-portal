@@ -8,13 +8,13 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 – T6 done; next P5-T7.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; **P5 (admin control) done 10 Oct (7/7)**. Next: P6 when the user starts it. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3 (L-03 is now covered by P5-T1 – T3). Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `c33337a` feat(careers): P5-T6 F-16 review count badge in the admin sidebar (local, not pushed)
+- **Last commit:** `97d19f8` feat(careers): P5-T7 F-28 'About these openings' banner and panel (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -74,6 +74,7 @@
 | Student-link actions | `server-acc/services/careers/links/submissionActions.js` (retry / withdraw / attach to a manual posting); migration `20261010061322_careers_link_dismiss` | admin `ReviewLinks.jsx`, `ManualPosting.jsx?fromLink=`, student `MySubmissions.jsx` |
 | Links waiting for a person | `server-acc/services/careers/links/waiting.js` (`aiTierUsable`, `waitingForAdmin`, `needsPersonWhere`, `needsPersonCounts`); dismiss in `links/submissionActions.js`; alert `LINKS_WAITING` in `ops/alerts.js` | admin Student links → "needs a person" filter + Dismiss dialog |
 | Review count badge | `server-acc/services/careers/postings/reviewCounts.js`, `GET /careers/admin/review/counts`; client `pages/admin/careers/components/ReviewCountBadge.jsx` | in the "Jobs Review" label of upstream `DashboardLayout.jsx` |
+| About these openings | client `pages/Careers/components/AboutOpenings.jsx`, `lib/about.js` | banner + panel on the jobs page |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -624,3 +625,10 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (posting #47 snapshotted, restored afterwards): admin sidebar "Jobs Review 19" (`aria-label` "19 waiting for review"); approve #47 through the API, reload → "Jobs Review 18"; student pages have no badge. #47 restored to PENDING_REVIEW, its APPROVE row removed.
   - `npm test` → 638 passed (37 files); client build ✓; changed files lint 0; `npx eslint src` 36.
 - Next step: P5-T7.
+
+### 2026-10-10, P5-T7: "About these openings" (F-28) — P5 complete
+- Did: `AboutOpenings.jsx` + `lib/about.js`; banner and header link on `JobsPage.jsx` (C-103).
+- Copy (for the user to review): banner "These are off-campus openings collected from company job boards and student links, and checked by ACC. You apply on the company's site; this is separate from the placement cell's process." Panel sections: *Where they come from* (company job boards + student links; off-campus; apply on the company's site), *Checked by ACC* (every opening reviewed; unstated pay / deadline / eligibility shown as not stated, never guessed; confirm on the company page), *Not the placement cell* (ACC does not run the hiring; separate from campus placement), *Found an opening that isn't here?* (Share a job link; follow it under "Your shared links").
+- Checks (browser, student): banner shows on a first visit; the header link and the banner's "More about these openings" open the panel (4 sections); Escape and Close close it; Dismiss hides the banner and it stays hidden after reload while the header link remains; 375 px scrollWidth 375, panel full width. `npm test` → 638 passed (37 files); client build ✓; changed files lint 0; `npx eslint src` 36.
+- **P5 summary:** 7/7 tasks (P5-T1 – T7, commits 168870f … 97d19f8), tests 610 → 638; upstream files touched: `App.jsx` +9, `DashboardLayout.jsx` +3/−2, `schema.prisma` +5 (nullable); migration `careers_link_dismiss` only; no new dependencies; no AI attribution. All test data created by the checks was removed or restored.
+- Next step: wait for the user to start P6 (or P4-T3 / L-01 – L-07).
