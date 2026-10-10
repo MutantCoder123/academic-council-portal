@@ -33,6 +33,7 @@ model User {
   cpiUpdatedAt        DateTime?
   savedPostings       SavedPosting[] // careers P4-lite (relation only, no column)
   postingApplications PostingApplication[] // careers P4-lite (relation only, no column)
+  postingReports      PostingReport[] // careers P6 (relation only, no column)
 }
 
 model Experience {
@@ -546,6 +547,7 @@ model Posting {
   reviews              PostingReview[]
   saves                SavedPosting[]
   applications         PostingApplication[]
+  reports              PostingReport[]
 
   @@index([status, lastSeenLiveAt])
   @@index([status, publishedAt]) // "Newest first" (B-15)
@@ -699,4 +701,23 @@ enum ExpiryReason {
   BOARD
   ADMIN
   DEADLINE
+}
+
+// A student's report of a problem with a posting (P6-T7, F-05). One per student and posting.
+// reason: CLOSED | WRONG_PAY | WRONG_ELIGIBILITY | NOT_A_JOB | OTHER (checked in code, not an enum,
+// so a reason can be added without ALTER TYPE). handledAt: an admin looked at it; only open reports
+// count towards the automatic "reported" flag. Who reported is never shown to anyone.
+model PostingReport {
+  id        Int       @id @default(autoincrement())
+  postingId Int
+  posting   Posting   @relation(fields: [postingId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String
+  note      String?
+  createdAt DateTime  @default(now())
+  handledAt DateTime?
+
+  @@unique([userId, postingId])
+  @@index([postingId, handledAt])
 }

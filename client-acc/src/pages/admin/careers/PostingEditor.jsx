@@ -15,6 +15,7 @@ import { Skeleton, StatusChip, dangerButton, inputClass, outlineButton, primaryB
 import { safeHref } from "../../Careers/lib/format";
 import PostingStatus from "./components/PostingStatusChip";
 import TakeDownDialog from "./components/TakeDownDialog";
+import ReportsPanel from "./components/ReportsPanel";
 
 export default function PostingEditor({ postingId, onClose, onChanged }) {
   const [posting, setPosting] = useState(null);
@@ -101,6 +102,7 @@ export default function PostingEditor({ postingId, onClose, onChanged }) {
           <div className="flex-1 overflow-y-auto xl:overflow-hidden xl:grid xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             <aside className="p-5 space-y-4 xl:overflow-y-auto border-b xl:border-b-0 xl:border-r border-slate-100 bg-slate-50/60">
               <ConfidenceMeter value={posting.extractionConfidence} tier={posting.extractionTier} />
+              {posting.reports?.total > 0 && <ReportsPanel postingId={posting.id} reports={posting.reports} onHandled={load} />}
               <div>
                 <h3 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Link2 size={14} /> Seen on</h3>
                 <ul className="space-y-1">

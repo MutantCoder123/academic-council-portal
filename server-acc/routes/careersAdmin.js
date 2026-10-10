@@ -7,7 +7,7 @@ import {
 } from '../controllers/careers/adminCompaniesController.js';
 import { merge, split, listMergeLog, undo } from '../controllers/careers/adminMergeController.js';
 import {
-    listReview, getReviewCounts, listAllPostings, getPosting, patchPosting, approve, reject, expire, reopen, takeDown, bulk, createManual, listSubmissions, retryLink, dismissLink,
+    listReview, getReviewCounts, listAllPostings, getPosting, patchPosting, approve, reject, expire, reopen, takeDown, handlePostingReports, bulk, createManual, listSubmissions, retryLink, dismissLink,
 } from '../controllers/careers/adminReviewController.js';
 import {
     listSources, createSource, bulkCreateSources, updateSource, runSourceNow, runAllNow, listRuns,
@@ -48,6 +48,7 @@ router.post('/careers/admin/postings/:id/reject', ...admin, reject);
 router.post('/careers/admin/postings/:id/expire', ...admin, expire);
 router.post('/careers/admin/postings/:id/reopen', ...admin, reopen);
 router.post('/careers/admin/postings/:id/take-down', ...admin, takeDown);
+router.post('/careers/admin/postings/:id/reports/handled', ...admin, handlePostingReports);
 router.get('/careers/admin/submissions', ...admin, listSubmissions);
 router.post('/careers/admin/submissions/:id/retry', ...admin, retryLink);
 router.post('/careers/admin/submissions/:id/dismiss', ...admin, dismissLink);

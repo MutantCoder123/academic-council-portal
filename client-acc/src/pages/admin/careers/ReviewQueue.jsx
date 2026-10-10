@@ -1,6 +1,7 @@
 // Admin review queue: Pending | Flagged | Candidate companies | Student links.
 // Pending and Flagged never overlap (the server decides). Bulk approve only publishes clean,
 // structured postings; the server skips the rest and says why.
+import ReportCount from "./components/ReportCount";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Layers, ListChecks, Plus } from "lucide-react";
@@ -140,6 +141,7 @@ export default function ReviewQueue() {
                     <span className="block text-xs text-slate-500">
                       {p.company.name} · {TYPE_LABEL[p.type]} · {p.location || "Location not stated"} · {plural(p._count.observations, "source")}
                     </span>
+                    {p._count.reports > 0 && <span className="mt-1 inline-block"><ReportCount count={p._count.reports} /></span>}
                     {p.uncertainFields.length > 0 && (
                       <span className="mt-1 flex flex-wrap gap-1">
                         {p.uncertainFields.map((f) => <span key={f} className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase">Unsure: {f}</span>)}

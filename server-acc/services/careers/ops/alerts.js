@@ -57,5 +57,7 @@ export function computeAlerts({ worker, sources, queue, llm }) {
     if (queue.submissions.failed > 0) amber('SUBMISSIONS_FAILED', `${queue.submissions.failed} student link(s) failed to process.`);
     // F-18: links nobody will read automatically, waiting for an admin for over 48 hours.
     if (queue.submissions.waitingOver48h > 0) amber('LINKS_WAITING', `${queue.submissions.waitingOver48h} student link(s) have waited more than 48 hours for an admin (Jobs review → Student links → Needs a person).`);
+    // F-05: live postings students reported several times (All postings → Reported).
+    if (queue.reported > 0) amber('POSTINGS_REPORTED', `${queue.reported} live posting(s) were reported by several students (Jobs review → All postings → Reported).`);
     return alerts;
 }

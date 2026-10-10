@@ -14,6 +14,7 @@ const ALERT_LINKS = {
   SOURCE_ZERO_RESULTS: "/admin/careers/sources",
   FLAGGED_BACKLOG: "/admin/careers/review",
   SUBMISSIONS_FAILED: "/admin/careers/review",
+  POSTINGS_REPORTED: "/admin/careers/postings?reported=yes",
 };
 
 function ago(minutes) {

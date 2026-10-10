@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import PostingEditor from "./PostingEditor";
 import CompanyPicker from "./components/CompanyPicker";
+import ReportCount from "./components/ReportCount";
 import PostingStatusChip from "./components/PostingStatusChip";
 import TakeDownDialog from "./components/TakeDownDialog";
 import { PageHeader, Skeleton, StatusChip, cardClass, inputClass, outlineButton } from "./components/ui";
@@ -86,7 +87,7 @@ export default function AllPostings() {
   const counts = result?.counts ?? {};
   const items = result?.data ?? [];
   const company = params.get("companyId") ? { companyId: Number(params.get("companyId")), name: params.get("company") || `Company #${params.get("companyId")}`, status: "ACTIVE" } : null;
-  const filtered = ["companyId", "sourceId", "tier", "hasDeadline", "q"].some((k) => params.get(k));
+  const filtered = ["companyId", "sourceId", "tier", "hasDeadline", "reported", "q"].some((k) => params.get(k));
 
   return (
     <div className="space-y-6">
@@ -142,6 +143,10 @@ export default function AllPostings() {
             <option value="no">No deadline stated</option>
           </select>
         </div>
+        <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 cursor-pointer px-1">
+          <input type="checkbox" className="w-4 h-4 accent-[var(--color-primary)]" checked={params.get("reported") === "yes"} onChange={(e) => set({ reported: e.target.checked ? "yes" : "" })} />
+          Reported by students
+        </label>
         <div>
           <label htmlFor="ap-sort" className="sr-only">Sort</label>
           <select id="ap-sort" className={selectClass} value={params.get("sort") ?? "newest"} onChange={(e) => set({ sort: e.target.value === "newest" ? "" : e.target.value })}>
@@ -155,7 +160,7 @@ export default function AllPostings() {
       {!result ? <Skeleton rows={6} /> : items.length === 0 ? (
         <div className={`${cardClass} p-8 text-center text-sm text-slate-500`}>
           No {status === "ALL" ? "" : `${STATUSES.find((s) => s.key === status)?.label.toLowerCase()} `}postings{filtered ? " match these filters" : ""}.
-          {filtered && <button type="button" className="ml-2 font-semibold text-[var(--color-secondary)] hover:underline cursor-pointer" onClick={() => { setQDraft(""); set({ q: "", companyId: "", company: "", sourceId: "", tier: "", hasDeadline: "" }); }}>Clear filters</button>}
+          {filtered && <button type="button" className="ml-2 font-semibold text-[var(--color-secondary)] hover:underline cursor-pointer" onClick={() => { setQDraft(""); set({ q: "", companyId: "", company: "", sourceId: "", tier: "", hasDeadline: "", reported: "" }); }}>Clear filters</button>}
         </div>
       ) : (
         <>
@@ -181,6 +186,7 @@ export default function AllPostings() {
                   </button>
                   <span className="flex sm:flex-col items-center sm:items-end gap-2 shrink-0">
                     {p.company.status !== "ACTIVE" && <StatusChip status={p.company.status} />}
+                    {p._count.reports > 0 && <ReportCount count={p._count.reports} />}
                     <span className="text-[11px] text-slate-500">{plural(p._count.saves, "save")} · {p._count.applications} tracking</span>
                     {p.status === "LIVE" && (
                       <button type="button" onClick={() => setTakingDown(p)} className="text-xs font-semibold text-rose-700 hover:underline cursor-pointer">Take down</button>

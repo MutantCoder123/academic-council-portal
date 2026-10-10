@@ -30,6 +30,7 @@ export const careersApi = {
   savePosting: (id) => api.put(`/careers/postings/${id}/save`).then((r) => r.data.data),
   unsavePosting: (id) => api.delete(`/careers/postings/${id}/save`).then((r) => r.data.data),
   setApplication: (id, status) => api.put(`/careers/postings/${id}/application`, { status }).then((r) => r.data.data),
+  reportPosting: (id, body) => api.post(`/careers/postings/${id}/report`, body).then((r) => r.data),
   listSaved: () => api.get('/careers/saved').then((r) => r.data),
 
   // Shared job links
@@ -70,6 +71,7 @@ export const careersAdminApi = {
   expirePosting: (id) => api.post(`/careers/admin/postings/${id}/expire`, {}).then((r) => r.data),
   reopenPosting: (id) => api.post(`/careers/admin/postings/${id}/reopen`, {}).then((r) => r.data),
   takeDownPosting: (id, body) => api.post(`/careers/admin/postings/${id}/take-down`, body).then((r) => r.data),
+  handlePostingReports: (id) => api.post(`/careers/admin/postings/${id}/reports/handled`).then((r) => r.data),
   bulkApprove: (ids) => api.post('/careers/admin/postings/bulk-approve', { ids }).then((r) => r.data),
   createPosting: (body) => api.post('/careers/admin/postings', body).then((r) => r.data),
   listSubmissions: (params) => api.get('/careers/admin/submissions', { params }).then((r) => r.data),

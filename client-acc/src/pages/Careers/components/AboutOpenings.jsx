@@ -23,6 +23,10 @@ export function AboutPanel({ onClose }) {
           <p>ACC does not run the hiring for these roles, and this is separate from the institute's campus placement and internship process.</p>
         </section>
         <section>
+          <h3 className="font-bold text-[var(--color-primary)]">Something wrong with an opening?</h3>
+          <p>Use <span className="font-semibold">Report a problem</span> on its page (closed, wrong pay or eligibility, not a real job). ACC sees the reason, not your name.</p>
+        </section>
+        <section>
           <h3 className="font-bold text-[var(--color-primary)]">Found an opening that isn't here?</h3>
           <p>Use <span className="font-semibold">Share a job link</span>. ACC reviews it, and you can follow its status under "Your shared links".</p>
         </section>

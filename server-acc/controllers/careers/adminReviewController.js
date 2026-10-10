@@ -15,6 +15,7 @@ import { takeDownBody, takeDownPosting } from '../../services/careers/postings/t
 import { retrySubmission, dismissSubmission, dismissBody } from '../../services/careers/links/submissionActions.js';
 import { aiTierUsable, needsPersonWhere } from '../../services/careers/links/waiting.js';
 import { reviewCounts } from '../../services/careers/postings/reviewCounts.js';
+import { reportsForAdmin, handleReports } from '../../services/careers/postings/reports.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -39,7 +40,7 @@ const listSelect = {
     extractionConfidence: true, uncertainFields: true, firstSeenAt: true, applyUrl: true,
     stipendDisclosure: true, ctcDisclosure: true,
     company: { select: { id: true, name: true, status: true } },
-    _count: { select: { observations: true } },
+    _count: { select: { observations: true, reports: { where: { handledAt: null } } } },
 };
 
 export const listReview = async (req, res) => {
@@ -111,13 +112,14 @@ export const getPosting = async (req, res) => {
             },
         });
         if (!posting) throw new CareersError(404, 'NOT_FOUND', `Posting #${id} was not found.`);
-        const [extractions, users] = await Promise.all([
+        const [extractions, users, reports] = await Promise.all([
             prisma.extraction.findMany({ where: { postingId: id }, orderBy: { createdAt: 'desc' }, take: 5 }),
             prisma.user.findMany({ where: { id: { in: [...new Set(posting.reviews.map((r) => r.byUserId))] } }, select: { id: true, displayName: true, email: true } }),
+            reportsForAdmin(prisma, id), // P6-T7: reasons and notes, never who reported
         ]);
         const byId = new Map(users.map((u) => [u.id, u.displayName || u.email]));
         const reviews = posting.reviews.map((r) => ({ ...r, byName: byId.get(r.byUserId) ?? `User #${r.byUserId}` }));
-        return res.json({ success: true, data: { ...posting, reviews, extractions } });
+        return res.json({ success: true, data: { ...posting, reviews, extractions, reports } });
     } catch (err) {
         return sendError(res, err, 'getPosting');
     }
@@ -151,6 +153,7 @@ export const takeDown = action(
 );
 export const dismissLink = action((req) => dismissSubmission(parseId(req.params.id), dismissBody.parse(req.body ?? {}).reason, req.user.id), 'Dismissed. The student sees your reason.');
 export const retryLink = action((req) => retrySubmission(parseId(req.params.id)), 'Queued again. The next links run (every 10 minutes) will fetch it.');
+export const handlePostingReports = action((req) => handleReports(prisma, parseId(req.params.id), req.user.id), (n) => `${n} report${n === 1 ? '' : 's'} marked as handled; the "reported" flag is cleared.`);
 export const bulk = action(
     (req) => bulkApprove(bulkBody.parse(req.body).ids, req.user.id),
     (r) => `Approved ${r.approved.length}; skipped ${r.skipped.length}.`,

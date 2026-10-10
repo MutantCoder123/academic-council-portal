@@ -8,6 +8,7 @@ import { cardFields, loadProfile, toCard } from '../../services/careers/postings
 import { withTracking, TRACKABLE_STATUSES } from '../../services/careers/postings/tracking.js';
 import { adminInfo } from '../../services/careers/postings/adminInfo.js';
 import { newCountQuery, newSinceWhere } from '../../services/careers/postings/newCount.js';
+import { reportBody, fileReport } from '../../services/careers/postings/reports.js';
 import {
     postingsQuery, baseWhere, eligibilityWhere, withEligibility, orderByFor, hasPayFilter,
 } from '../../services/careers/postings/query.js';
@@ -32,6 +33,18 @@ export const newPostingsCount = async (req, res) => {
         return res.json({ success: true, data: { count, eligibilityApplied: Boolean(eligibility) } });
     } catch (err) {
         return sendError(res, err, 'newPostingsCount');
+    }
+};
+
+// POST /careers/postings/:id/report (P6-T7, F-05): once per student, LIVE postings only.
+export const reportPosting = async (req, res) => {
+    try {
+        const id = parseId(req.params.id);
+        const body = reportBody.parse(req.body ?? {});
+        await fileReport(prisma, id, req.user.id, body);
+        return res.status(201).json({ success: true, message: 'Thanks. ACC will check this opening.', data: { reportedByMe: true } });
+    } catch (err) {
+        return sendError(res, err, 'reportPosting');
     }
 };
 
@@ -97,11 +110,12 @@ export const getPosting = async (req, res) => {
             throw new CareersError(404, 'NOT_FOUND', 'This posting is not available. It may have closed.');
         }
         const published = { companyId: posting.company.id, status: 'PUBLISHED' };
-        const [profile, companyExperienceCount, companyExperiences] = await Promise.all([
+        const [profile, companyExperienceCount, companyExperiences, myReport] = await Promise.all([
             loadProfile(req.user.id),
             prisma.experience.count({ where: published }),
             // The most recent few, for the "past experiences at X" panel (P3-T3).
             prisma.experience.findMany({ where: published, orderBy: { createdAt: 'desc' }, take: 3, select: { id: true, title: true, experienceType: true, createdAt: true } }),
+            prisma.postingReport.findUnique({ where: { userId_postingId: { userId: req.user.id, postingId: id } }, select: { id: true } }),
         ]);
         const { observations, ...rest } = posting;
         // Career admins also get status and who approved it, for the bar on the job page (P5-T3).
@@ -115,6 +129,7 @@ export const getPosting = async (req, res) => {
                 observations: observations.map(({ source, ...o }) => ({ ...o, sourceName: source.name, sourceKind: source.kind })),
                 companyExperienceCount,
                 companyExperiences,
+                reportedByMe: Boolean(myReport), // only the caller's own report, never anyone else's
                 ...(admin ? { adminInfo: admin } : {}),
             },
         });

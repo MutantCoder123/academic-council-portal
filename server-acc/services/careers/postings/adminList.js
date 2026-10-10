@@ -13,6 +13,8 @@ export const adminPostingsQuery = z.object({
     sourceId: z.coerce.number().int().positive().optional(),
     tier: z.enum(TIERS).optional(),
     hasDeadline: z.enum(['yes', 'no']).optional(),
+    // P6-T7: postings with open student reports.
+    reported: z.enum(['yes']).optional(),
     sort: z.enum(['newest', 'lastSeen', 'deadline']).default('newest'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(50).default(25),
@@ -31,6 +33,7 @@ export function adminPostingsWhere(params, { withStatus = true } = {}) {
     if (params.tier) and.push({ extractionTier: params.tier });
     if (params.hasDeadline === 'yes') and.push({ deadlineStated: { not: null } });
     if (params.hasDeadline === 'no') and.push({ deadlineStated: null });
+    if (params.reported === 'yes') and.push({ reports: { some: { handledAt: null } } });
     return { AND: and };
 }
 
@@ -47,5 +50,5 @@ export const adminListSelect = {
     rejectReason: true, expiredReason: true,
     company: { select: { id: true, name: true, slug: true, status: true } },
     // Aggregate counts only: never which students saved or applied.
-    _count: { select: { saves: true, applications: true, observations: true } },
+    _count: { select: { saves: true, applications: true, observations: true, reports: { where: { handledAt: null } } } },
 };

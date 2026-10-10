@@ -44,7 +44,9 @@ export const getOps = async (req, res) => {
             llmStatus(now),
         ]);
         const waiting = await needsPersonCounts(llm.enabled && llm.usable === true, now);
-        const queue = { pending, flagged, candidates, submissions: { received, extracting, failed, storedOnly, ...waiting } };
+        // P6-T7: LIVE postings that students reported REPORT_FLAG_AT or more times (still open).
+        const reported = await prisma.posting.count({ where: { status: 'LIVE', uncertainFields: { has: 'reported' } } });
+        const queue = { pending, flagged, candidates, reported, submissions: { received, extracting, failed, storedOnly, ...waiting } };
         const postings = { live, expiredLast7d, newLast24h };
         const alerts = computeAlerts({ worker, sources, queue, llm });
 

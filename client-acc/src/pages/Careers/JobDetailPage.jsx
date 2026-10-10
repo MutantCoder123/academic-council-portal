@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, ClipboardCheck, ExternalLink, GraduationCap, MapPin, SearchX, Share2, Wallet } from "lucide-react";
+import { ArrowLeft, CalendarDays, ClipboardCheck, ExternalLink, Flag, GraduationCap, MapPin, SearchX, Share2, Wallet } from "lucide-react";
 import AuthContext from "../../context/auth/authContext";
 import { careersApi, errorMessage } from "../../api/careersApi";
 import { useCareersStatus } from "../../hooks/useCareersStatus";
@@ -15,6 +15,7 @@ import SaveButton from "./components/SaveButton";
 import JobDescription from "./components/JobDescription";
 import ApplicationStatusButton from "./components/ApplicationStatusButton";
 import ApplyNudge from "./components/ApplyNudge";
+import ReportProblemDialog from "./components/ReportProblemDialog";
 import { applyNudgeAt, recordApplyClick } from "./lib/applyNudge";
 import AdminBar from "./components/AdminBar";
 import { collectedBy, formatDate, safeHref } from "./lib/format";
@@ -87,6 +88,7 @@ export default function JobDetailPage() {
   const [posting, setPosting] = useState(null);
   const [error, setError] = useState(null);
   const [sharing, setSharing] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
@@ -191,6 +193,13 @@ export default function JobDetailPage() {
           <button type="button" onClick={() => setSharing(true)} className="academic-btn-outline inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer">
             <Share2 size={14} aria-hidden="true" /> Share another job link
           </button>
+          {posting.status === "LIVE" && (posting.reportedByMe ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2.5 text-xs font-semibold text-slate-500"><Flag size={14} aria-hidden="true" /> You reported a problem</span>
+          ) : (
+            <button type="button" onClick={() => setReporting(true)} className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-700 hover:bg-rose-50 cursor-pointer">
+              <Flag size={14} aria-hidden="true" /> Report a problem
+            </button>
+          ))}
         </div>
       </header>
 
@@ -214,6 +223,7 @@ export default function JobDetailPage() {
       </div>
 
       {sharing && <SubmitLinkModal onClose={() => setSharing(false)} />}
+      {reporting && <ReportProblemDialog postingId={posting.id} onClose={() => setReporting(false)} onReported={() => { setReporting(false); setPosting((p) => ({ ...p, reportedByMe: true })); }} />}
     </div>
   );
 }
