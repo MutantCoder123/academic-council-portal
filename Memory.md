@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T4 done 10 Oct)**. Next: P7-T5. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T5 done 10 Oct)**. Next: P7-T6. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `224b354` fix(careers): P7-T4 Apply clicks by career admins are not counted (local, not pushed)
+- **Last commit:** `fb5aa51` feat(careers): P7-T5 F-31 review reminders (ops alert, daily admin email) (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 729 passed (47 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 735 passed (48 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -89,6 +89,7 @@
 | Programme / graduation year | `server-acc/services/careers/postings/eligibility.js` (`PROGRAMMES`, `graduationInfo`, `programmeBody`), `eligibilityWhere` in `postings/query.js`, `PATCH /careers/me/programme`; migration `20261010124250_careers_graduation_year`; client `pages/Careers/components/EligibilityCard.jsx` | private like CPI (global omit in `config/db.js`) |
 | Internship season / length | `server-acc/services/careers/text/season.js` (`parseSeason`), `buildPostingData`, `season` / `minDurationMonths` in `postings/query.js`; migration `20261010125007_careers_internship_season`; client `seasonText` in `pages/Careers/lib/format.js`, `JobFilters.jsx`, `PostingFields.jsx` | |
 | Usage numbers | `server-acc/services/careers/usage/usage.js`, `GET /careers/admin/usage`, `POST /careers/postings/:id/apply-click`; migration `20261010125613_careers_usage_counts`; client `pages/admin/careers/components/UsageCard.jsx` | Operations page; All postings rows |
+| Review reminders | `server-acc/services/careers/ops/reviewReminder.js`, job `reviewReminder` in `services/careers/jobs.js`, alerts `REVIEW_WAITING` / `REVIEW_REMINDER_FAILING` in `ops/alerts.js`; settings `careers.reviewReminderEmails`, `careers.reviewReminderStatus` | toggles in `FlagsCard.jsx` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -115,6 +116,7 @@
 - Job-alert emails (P7-T1) only go out while `careers.visibleToStudents` and `careers.alertEmailsEnabled` are both on; the alert stores the API form of the filters (minCtc in rupees), and the email's "more" link converts back to the page form (minCtcLpa).
 - `User.programme` / `User.graduationYear` are private like CPI: global omit in `config/db.js`, read only through explicit selects (`loadProfile`, `/careers/me/*`, the alerts run). A stated batch (`eligibleGradYears`) decides before the year of study.
 - Usage numbers (P7-T4) never store a user id: weekly visitors are an HMAC of (user id, week) keyed from `SECRET_KEY`, Apply clicks are per-posting daily counters. Rotating `SECRET_KEY` only splits the current week's visitor count.
+- The review reminder goes only to users with role CAREER_ADMIN; SUPER_ADMIN and FACULTY can use the admin pages but get no mail.
 
 ## Gotchas / things that surprised me
 
@@ -164,6 +166,7 @@
 - nodemon on Windows sometimes leaves the old `node server.js` on :3000, and every restart then crashes with EADDRINUSE while the stale process serves old code. Kill the PID on :3000 and run `node server.js` directly while checking.
 - The upstream app layout already renders a `<main>`; public pages rendered inside it should use a `<div>`.
 - Dev postings have no season data until re-built: the parser only runs in `buildPostingData` (new postings). To try the filters, set the three columns on a posting by hand and reset them after.
+- Dev DB: 19 postings have been PENDING_REVIEW since 1 Oct, so Ops always shows REVIEW_WAITING locally.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -783,3 +786,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 728 passed (47 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Security fix (`96b82e1`, from the background commit review: no rate limit on `apply-click`): one counted click per student, posting and IST day (`firstClickToday`, an in-memory set, so still nothing per student in the database); `224b354`: career admins' clicks are not counted (like visits). `http_p7t4c.mjs` 2/2: 5 clicks by the student → [true, false, false, false, false]; admin click not counted; +1 total. 729 tests.
 - Next step: P7-T5.
+
+### 2026-10-10, P7-T5: review reminders (F-31) ⚖️ — email OK'd by the user
+- Did: `ops/reviewReminder.js` (6 tests for the pure parts and the two alerts), settings, job + lock + CLI, ops queue fields, two amber alerts, Feature flags toggles for this and the P7-T1 job-alert switch, alert link (C-119). No schema change.
+- Checks:
+  - `http_p7t5.mjs` (11/11): dev DB has 19 PENDING_REVIEW postings, all > 48 h (oldest 1 Oct) → Ops `REVIEW_WAITING` "19 posting(s) …"; with the switch off (default) → skipped; switch on with `now` = oldest + 1 h → "nothing has waited more than 24 hours", no email; no SMTP → status error, Ops `REVIEW_REMINDER_FAILING`; with nodemailer `jsonTransport`: 1 email = the 1 CAREER_ADMIN user, subject "Jobs review: 19 waiting, oldest 9 days", body numbers equal `waitingSummary`; no student data; a second run → "already sent today"; success clears the failure alert; `reviewReminderStatus` PUT 400; student ops 403. Settings rows restored (none existed).
+  - Browser (admin): Feature flags list "Email job alerts to students" and "Remind career admins by email"; the REVIEW_WAITING alert links to /admin/careers/review.
+  - `npm test` → 735 passed (48 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Not verified: a real SMTP send (no SMTP locally).
+- Next step: P7-T6.

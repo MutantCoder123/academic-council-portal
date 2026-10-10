@@ -329,6 +329,7 @@
 - **Problem:** postings only help while fresh; a queue left for a week means students see stale roles.
 - **Design:** the F-16 sidebar badge, plus an optional daily email to career admins when items have waited > 24 h ("12 postings waiting, oldest 2 days"). Ops alert (amber) at > 48 h.
 - **Effort:** S–M
+- **Status:** ✅ Built 10 Oct (`fb5aa51`, P7-T5, C-119): amber `REVIEW_WAITING` on Operations when postings have waited > 48 h; a daily 10:00 IST email ("Jobs review: 19 waiting, oldest 9 days") to users with the CAREER_ADMIN role, only when something waited > 24 h and only while "Remind career admins by email" is on (default off).
 
 #### F-32 Share a posting
 - **Design:** "Copy link" on the job page (a portal URL; the reader still needs to log in) and a "Share on WhatsApp" link with the title + URL, since that is how openings travel between batchmates.
