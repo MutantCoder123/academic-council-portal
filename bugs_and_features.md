@@ -168,6 +168,7 @@
 #### F-03 Admin shortcuts on the student job page
 - **Design:** when the viewer is a career admin, the job detail page shows a small bar: "Edit in admin", "Take down", "Status: LIVE · approved by X on …". Uses `useCareersStatus().isCareerAdmin`.
 - **Effort:** S
+- **Status:** ✅ Built 10 Oct (`d066afa`, P5-T3, C-99): `adminInfo` on the student detail API for career admins only; `AdminBar` with Edit in admin and Take down.
 
 #### F-04 Safer bulk actions
 - **Design:** confirmation dialog for bulk approve (count + first 5 titles); **Undo** in the success toast for 30 s (moves the just-approved postings back to `PENDING_REVIEW`, clears `publishedAt` only if it was set by this action); bulk **reject** and bulk **expire** in the same selection bar.

@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1, P5-T2 done; next P5-T3.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed. **P5 (admin control, user OK 10 Oct): P5-T1 – T3 done; next P5-T4.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b4e68fe` feat(careers): P5-T2 F-02 take down a live posting (reversible) (local, not pushed)
+- **Last commit:** `d066afa` feat(careers): P5-T3 F-03 admin bar on the student job page (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 614 passed (33 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 616 passed (34 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -70,6 +70,7 @@
 | Saved + application tracking | `server-acc/services/careers/postings/tracking.js` (`withTracking`, `trackedBy`, `applicationBody`), `controllers/careers/trackingController.js`; migration `20261002185258_careers_tracking`; client `pages/Careers/SavedPage.jsx`, `components/{SaveButton,ApplicationStatusButton}.jsx`, `lib/tracking.js` (statuses, `visitBaseline`, `isNewSince`) | route `/dashboard/career-vault/saved`, Saved tab |
 | All postings (admin) | `server-acc/services/careers/postings/adminList.js`, `adminReviewController.listAllPostings`; client `pages/admin/careers/AllPostings.jsx`, `components/PostingStatusChip.jsx` | `/admin/careers/postings`; button on Jobs review |
 | Take down (admin) | `server-acc/services/careers/postings/takeDown.js` (`takeDownPlan`, `takeDownPosting`); client `pages/admin/careers/components/TakeDownDialog.jsx` | from All postings and `PostingEditor` |
+| Admin bar (job page) | `server-acc/services/careers/postings/adminInfo.js` (used by `postingsController.getPosting`); client `pages/Careers/components/AdminBar.jsx` | career admins only |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -587,3 +588,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (admin): row "Take down" opens the dialog; button reads "Mark as closed" for Closed and "Take down" otherwise; Other without a reason → toast "Say why.", dialog stays; Escape closes; editor of a LIVE posting shows Change / Take down / Save and opens the same dialog; 375 px dialog full width. Copy fixed for postings nobody saved.
   - `npm test` → 614 passed (33 files); client build ✓; changed files lint 0; `npx eslint src` 36.
 - Next step: P5-T3.
+
+### 2026-10-10, P5-T3: admin bar on the student job page (F-03)
+- Did: `adminInfo.js` (2 tests first), `adminInfo` in the student detail for career admins, `AdminBar.jsx` reusing `PostingEditor` / `TakeDownDialog` / `PostingStatusChip`, reload without the skeleton after admin actions (C-99).
+- Checks:
+  - API (`http_p5t3.mjs`, 5/5): admin on #53 gets `{status LIVE, approvedBy "Dev Career Admin", approvedAt 1 Oct}` = the APPROVE row's admin; the student's response has no `adminInfo` / `approvedBy`; pending #68 → admin preview with approvedBy null, student 404.
+  - Browser (posting #53 snapshotted with scratchpad `snap.mjs`, restored afterwards): admin bar "Admin · LIVE · Approved by Dev Career Admin on 1 Oct 2026 · Edit in admin · Take down"; Edit in admin opens the editor on the page; Take down → Mark as closed → bar shows EXPIRED and "last expired by Dev Career Admin on 10 Oct 2026", header "Admin preview · EXPIRED"; 375 px scrollWidth 375; restored → LIVE, 1 review row removed; the student sees no bar and a LIVE header.
+  - `npm test` → 616 passed (34 files); client build ✓; changed files lint 0.
+- Next step: P5-T4.
