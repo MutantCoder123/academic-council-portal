@@ -20,6 +20,16 @@ export default function SubmitLinkModal({ onClose }) {
   }, []);
   useEffect(() => { loadMine(); }, [loadMine]);
 
+  const withdraw = async (s) => {
+    try {
+      const res = await careersApi.withdrawLink(s.id);
+      toast.success(res.message);
+    } catch (err) {
+      toast.error(errorMessage(err, "Could not withdraw the link."));
+    }
+    loadMine();
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setSending(true);
@@ -84,7 +94,7 @@ export default function SubmitLinkModal({ onClose }) {
             <RefreshCw size={14} />
           </button>
         </div>
-        {mine === null ? <div className="h-16 rounded-xl bg-slate-100 animate-pulse" aria-hidden="true" /> : <MySubmissions items={mine} />}
+        {mine === null ? <div className="h-16 rounded-xl bg-slate-100 animate-pulse" aria-hidden="true" /> : <MySubmissions items={mine} onWithdraw={withdraw} />}
       </div>
     </Modal>
   );

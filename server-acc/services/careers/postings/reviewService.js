@@ -9,6 +9,7 @@ import { planEdit, postingFields } from './editPosting.js';
 import { findDuplicateCandidates, isSamePosting } from '../ingest/dedup.js';
 import { loadCompanyIndex } from '../companies/companyIndex.js';
 import { resolveCompany } from '../companies/resolveCompany.js';
+import { assertLinkable, attachSubmission } from '../links/submissionActions.js';
 
 const BULK_TIERS = ['STRUCTURED', 'JSON_LD'];
 
@@ -160,10 +161,13 @@ export async function bulkApprove(ids, userId) {
 export const manualBody = postingFields.required({ roleTitle: true, descriptionText: true, applyUrl: true }).extend({
     companyName: z.string().trim().min(1).max(120).optional(),
     publish: z.boolean().default(false),
+    // P5-T4: created from a student's link; the link then points at this posting.
+    submissionId: z.number().int().positive().optional(),
 }).refine((b) => b.companyId || b.companyName, { message: 'Give companyId or companyName.' });
 
 export async function createManualPosting(body, userId) {
-    const { companyName, publish, ...fields } = manualBody.parse(body);
+    const { companyName, publish, submissionId, ...fields } = manualBody.parse(body);
+    if (submissionId) await assertLinkable(submissionId);
     let companyId = fields.companyId;
     let companyUncertain = false;
     if (!companyId) {
@@ -208,6 +212,7 @@ export async function createManualPosting(body, userId) {
         });
         await review(tx, created.id, 'CREATE_MANUAL', userId);
         if (publish) await review(tx, created.id, 'APPROVE', userId);
+        if (submissionId) await attachSubmission(tx, submissionId, created.id);
         return { posting: created, possibleDuplicates };
     });
 }

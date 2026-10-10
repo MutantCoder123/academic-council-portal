@@ -108,6 +108,12 @@ export function collectedBy(tier) {
 // A student's shared link, in plain words: { label, tone, detail? }.
 export function submissionStatus(s) {
   if (s.postingLive) return { label: "Live on the portal", tone: "live" };
+  // Withdrawn by the student, or dismissed by ACC with a reason (P5-T4/T5; the row is kept).
+  if (s.dismissedAt) {
+    return s.dismissReason === "Withdrawn by you"
+      ? { label: "Withdrawn", tone: "neutral" }
+      : { label: "Not added", tone: "neutral", detail: s.dismissReason ? `ACC: ${s.dismissReason}` : null };
+  }
   switch (s.status) {
     case "RECEIVED":
     case "PROCESSING":

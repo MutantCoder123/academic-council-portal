@@ -7,6 +7,8 @@ import { canonicalUrl, MAX_URL_LENGTH } from '../../services/careers/links/canon
 import { getSetting } from '../../services/careers/settings.js';
 import { isCareerAdmin } from '../../middlewares/careers/requireCareerAdmin.js';
 import { limitMessage, recentSubmissionCount } from '../../middlewares/careers/submissionRateLimit.js';
+import { withdrawSubmission } from '../../services/careers/links/submissionActions.js';
+import { parseId } from '../../services/careers/errors.js';
 
 // Advisory lock namespace (first key) for "one student's submissions"; the second key is the user id.
 // Job locks use single bigint keys 81001-81004, a different key space.
@@ -17,17 +19,25 @@ const submitBody = z.object({
     note: z.string().trim().max(500).optional(),
 });
 
-const publicFields = { id: true, url: true, status: true, postingId: true, createdAt: true, updatedAt: true };
+const publicFields = { id: true, url: true, status: true, postingId: true, createdAt: true, updatedAt: true, dismissedAt: true, dismissReason: true };
 
 // A store-only link (LinkedIn, ...) shared again after this many days is queued again for the admins.
 export const STORED_ONLY_RESHARE_DAYS = 7;
+// A link an admin dismissed (e.g. "Not a job page") isn't processed again for this long (P5, D-01).
+export const DISMISSED_RESHARE_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Pure (B-08). What sharing a link means, given the latest earlier submission of the same link:
 //   NEW   = create a submission and process it (none yet, the last one failed, or an old store-only one)
 //   SHARE = don't process it twice; record that this student shared it too
+//   A link its own student withdrew can be shared again; one an admin dismissed waits 30 days.
 export function reshareDecision(existing, now = new Date()) {
-    if (!existing || existing.status === 'FAILED') return 'NEW';
+    if (!existing) return 'NEW';
+    if (existing.dismissedAt) {
+        if (existing.dismissedById === existing.submittedById) return 'NEW';
+        return now - new Date(existing.dismissedAt) > DISMISSED_RESHARE_DAYS * DAY_MS ? 'NEW' : 'SHARE';
+    }
+    if (existing.status === 'FAILED') return 'NEW';
     if (existing.status === 'STORED_ONLY' && now - new Date(existing.createdAt) > STORED_ONLY_RESHARE_DAYS * DAY_MS) return 'NEW';
     return 'SHARE';
 }
@@ -39,9 +49,9 @@ export const submitLink = async (req, res) => {
         if (!canonical) throw new CareersError(400, 'VALIDATION_ERROR', 'Enter a full http(s) link to the job posting.');
 
         // The same job link shared before (by anyone) is not processed twice, unless that attempt failed.
-        const existing = await prisma.linkSubmission.findFirst({ where: { canonicalUrl: canonical }, orderBy: { createdAt: 'desc' }, select: { ...publicFields, submittedById: true } });
+        const existing = await prisma.linkSubmission.findFirst({ where: { canonicalUrl: canonical }, orderBy: { createdAt: 'desc' }, select: { ...publicFields, submittedById: true, dismissedById: true } });
         if (reshareDecision(existing) === 'SHARE') {
-            const { submittedById, ...data } = existing;
+            const { submittedById, dismissedById, ...data } = existing; // eslint-disable-line no-unused-vars
             if (submittedById !== req.user.id) {
                 await prisma.linkShare.upsert({
                     where: { submissionId_userId: { submissionId: existing.id, userId: req.user.id } },
@@ -68,6 +78,17 @@ export const submitLink = async (req, res) => {
         return res.status(201).json({ success: true, message: 'Thanks! An admin reviews shared links before they appear.', data: created });
     } catch (err) {
         return sendError(res, err, 'submitLink');
+    }
+};
+
+// A student withdraws their own link while it is still waiting (P5-T4, F-09). Nothing is deleted.
+export const withdrawLink = async (req, res) => {
+    try {
+        const row = await withdrawSubmission(parseId(req.params.id), req.user.id);
+        const { note, submittedById, dismissedById, error, canonicalUrl: _c, ...data } = row; // eslint-disable-line no-unused-vars
+        return res.json({ success: true, message: 'Link withdrawn. It will not be processed.', data });
+    } catch (err) {
+        return sendError(res, err, 'withdrawLink');
     }
 };
 

@@ -597,6 +597,11 @@ model LinkSubmission {
   error         String?
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+  // P5 (decision D-01/D-04): a link withdrawn by its student or dismissed by an admin is kept, never
+  // processed again, and the reason is shown to the student. No enum value is added for it.
+  dismissedAt   DateTime?
+  dismissReason String?
+  dismissedById Int?
 
   shares        LinkShare[]
 

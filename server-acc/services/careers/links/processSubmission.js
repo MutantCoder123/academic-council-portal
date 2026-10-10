@@ -149,7 +149,8 @@ export async function processSubmission(submission) {
 export async function processSubmissions({ limit = BATCH_SIZE } = {}) {
     const stuckBefore = new Date(Date.now() - STUCK_MS);
     const batch = await prisma.linkSubmission.findMany({
-        where: { OR: [{ status: 'RECEIVED' }, { status: 'PROCESSING', updatedAt: { lt: stuckBefore } }] },
+        // Withdrawn / dismissed links are never processed (P5-T4).
+        where: { dismissedAt: null, OR: [{ status: 'RECEIVED' }, { status: 'PROCESSING', updatedAt: { lt: stuckBefore } }] },
         orderBy: { createdAt: 'asc' },
         take: limit,
     });

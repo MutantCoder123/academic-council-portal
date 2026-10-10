@@ -1,8 +1,9 @@
 // Manual entry: an admin adds a posting by hand (e.g. from a company email). It can wait in the
-// review queue or be published at once (the admin is the reviewer).
+// review queue or be published at once (the admin is the reviewer). Opened with ?fromLink=<id>&url=…
+// from a student's link (P5-T4): the URL is prefilled and the link then points at the new posting.
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, PenLine } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Link2, PenLine } from "lucide-react";
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
 import CompanyPicker from "./components/CompanyPicker";
@@ -13,7 +14,9 @@ import { PageHeader, cardClass, outlineButton, primaryButton } from "./component
 
 export default function ManualPosting() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(() => toForm({ type: "INTERNSHIP" }));
+  const [params] = useSearchParams();
+  const fromLink = Number(params.get("fromLink")) || null;
+  const [form, setForm] = useState(() => toForm({ type: "INTERNSHIP", ...(fromLink && params.get("url") ? { applyUrl: params.get("url") } : {}) }));
   const [company, setCompany] = useState(null);
   const [saving, setSaving] = useState(false);
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
@@ -22,7 +25,7 @@ export default function ManualPosting() {
     if (!company) return toast.error("Choose a company.");
     if (publish && company.status !== "ACTIVE") return toast.error("Only postings of an active company can be published. Save it for review instead, or approve the company first.");
     const values = fromForm(form);
-    const body = { ...values, publish, ...(company.companyId ? { companyId: company.companyId } : { companyName: company.name }) };
+    const body = { ...values, publish, ...(company.companyId ? { companyId: company.companyId } : { companyName: company.name }), ...(fromLink ? { submissionId: fromLink } : {}) };
     setSaving(true);
     try {
       const res = await careersAdminApi.createPosting(body);
@@ -44,6 +47,11 @@ export default function ManualPosting() {
       <PageHeader icon={PenLine} title="Add a posting" subtitle="For openings that reach ACC by email or another channel. Only state what the source states.">
         <Link to="/admin/careers/review" className={outlineButton}><ArrowLeft size={14} /> Review queue</Link>
       </PageHeader>
+      {fromLink && (
+        <p className="flex items-center gap-2 text-xs text-blue-800 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+          <Link2 size={14} aria-hidden="true" /> From student link #{fromLink}. The student will see this posting under "My shared links" once it is live.
+        </p>
+      )}
       <form className={`${cardClass} p-5 space-y-6`} onSubmit={(e) => { e.preventDefault(); submit(false); }}>
         <PostingFields form={form} set={set}
           companySlot={(

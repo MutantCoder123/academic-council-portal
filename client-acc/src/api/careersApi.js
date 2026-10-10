@@ -34,6 +34,7 @@ export const careersApi = {
   // Shared job links
   submitLink: (body) => api.post('/careers/submissions', body).then((r) => r.data),
   mySubmissions: () => api.get('/careers/submissions/mine').then((r) => r.data.data),
+  withdrawLink: (id) => api.post(`/careers/submissions/${id}/withdraw`, {}).then((r) => r.data),
 };
 
 export const careersAdminApi = {
@@ -70,6 +71,7 @@ export const careersAdminApi = {
   bulkApprove: (ids) => api.post('/careers/admin/postings/bulk-approve', { ids }).then((r) => r.data),
   createPosting: (body) => api.post('/careers/admin/postings', body).then((r) => r.data),
   listSubmissions: (params) => api.get('/careers/admin/submissions', { params }).then((r) => r.data),
+  retrySubmission: (id) => api.post(`/careers/admin/submissions/${id}/retry`, {}).then((r) => r.data),
 
   // Sources and operations
   listSources: (params = {}) => api.get('/careers/admin/sources', { params }).then((r) => r.data),

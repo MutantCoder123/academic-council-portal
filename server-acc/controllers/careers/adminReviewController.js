@@ -12,6 +12,7 @@ import {
     adminPostingsQuery, adminPostingsWhere, adminPostingsOrder, adminListSelect, ADMIN_STATUSES,
 } from '../../services/careers/postings/adminList.js';
 import { takeDownBody, takeDownPosting } from '../../services/careers/postings/takeDown.js';
+import { retrySubmission } from '../../services/careers/links/submissionActions.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -50,7 +51,7 @@ export const listReview = async (req, res) => {
             prisma.posting.count({ where: reviewWhere('pending', threshold) }),
             prisma.posting.count({ where: reviewWhere('flagged', threshold) }),
             prisma.company.count({ where: { status: 'CANDIDATE' } }),
-            prisma.linkSubmission.count({ where: { status: { in: ['RECEIVED', 'PROCESSING', 'EXTRACTING', 'FAILED'] } } }),
+            prisma.linkSubmission.count({ where: { status: { in: ['RECEIVED', 'PROCESSING', 'EXTRACTING', 'FAILED'] }, dismissedAt: null } }),
         ]);
         return res.json({
             success: true,
@@ -139,6 +140,7 @@ export const takeDown = action(
     (req) => takeDownPosting(parseId(req.params.id), takeDownBody.parse(req.body ?? {}), req.user.id),
     (r) => (r.action === 'expire' ? 'Marked as closed. Students who saved it see "No longer live".' : 'Taken down. Students no longer see it.'),
 );
+export const retryLink = action((req) => retrySubmission(parseId(req.params.id)), 'Queued again. The next links run (every 10 minutes) will fetch it.');
 export const bulk = action(
     (req) => bulkApprove(bulkBody.parse(req.body).ids, req.user.id),
     (r) => `Approved ${r.approved.length}; skipped ${r.skipped.length}.`,

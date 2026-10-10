@@ -9,7 +9,8 @@ const TONES = {
 };
 
 // The student's own shared links with their status. URLs and notes are shown as text, never as HTML.
-export default function MySubmissions({ items }) {
+// A link still waiting to be read can be withdrawn by the student who shared it (P5-T4).
+export default function MySubmissions({ items, onWithdraw }) {
   if (!items.length) return <p className="text-xs text-slate-500">You haven't shared any links yet.</p>;
   return (
     <ul className="divide-y divide-slate-100">
@@ -30,6 +31,9 @@ export default function MySubmissions({ items }) {
               )}
             </p>
             {status.detail && <p className="mt-0.5 text-slate-500">{status.detail}</p>}
+            {onWithdraw && !s.sharedEarlier && s.status === "RECEIVED" && !s.dismissedAt && (
+              <button type="button" onClick={() => onWithdraw(s)} className="mt-1 text-xs font-semibold text-slate-500 hover:text-rose-700 hover:underline cursor-pointer">Withdraw</button>
+            )}
           </li>
         );
       })}
