@@ -12,7 +12,8 @@ import {
     adminPostingsQuery, adminPostingsWhere, adminPostingsOrder, adminListSelect, ADMIN_STATUSES,
 } from '../../services/careers/postings/adminList.js';
 import { takeDownBody, takeDownPosting } from '../../services/careers/postings/takeDown.js';
-import { retrySubmission } from '../../services/careers/links/submissionActions.js';
+import { retrySubmission, dismissSubmission, dismissBody } from '../../services/careers/links/submissionActions.js';
+import { aiTierUsable, needsPersonWhere } from '../../services/careers/links/waiting.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -26,7 +27,8 @@ const rejectBody = z.object({ reason: z.string().trim().min(1).max(500) });
 const approveBody = z.object({ edits: z.record(z.string(), z.unknown()).optional() }).default({});
 const bulkBody = z.object({ ids: z.array(z.number().int().positive()).min(1).max(200) });
 const submissionsQuery = z.object({
-    status: z.enum(['RECEIVED', 'PROCESSING', 'EXTRACTING', 'PENDING_REVIEW', 'STORED_ONLY', 'DUPLICATE', 'FAILED', 'ALL']).default('ALL'),
+    // NEEDS_PERSON (P5-T5): links nothing will read automatically (store-only, or waiting for an AI tier that is off).
+    status: z.enum(['NEEDS_PERSON', 'RECEIVED', 'PROCESSING', 'EXTRACTING', 'PENDING_REVIEW', 'STORED_ONLY', 'DUPLICATE', 'FAILED', 'ALL']).default('ALL'),
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(25),
 });
@@ -140,6 +142,7 @@ export const takeDown = action(
     (req) => takeDownPosting(parseId(req.params.id), takeDownBody.parse(req.body ?? {}), req.user.id),
     (r) => (r.action === 'expire' ? 'Marked as closed. Students who saved it see "No longer live".' : 'Taken down. Students no longer see it.'),
 );
+export const dismissLink = action((req) => dismissSubmission(parseId(req.params.id), dismissBody.parse(req.body ?? {}).reason, req.user.id), 'Dismissed. The student sees your reason.');
 export const retryLink = action((req) => retrySubmission(parseId(req.params.id)), 'Queued again. The next links run (every 10 minutes) will fetch it.');
 export const bulk = action(
     (req) => bulkApprove(bulkBody.parse(req.body).ids, req.user.id),
@@ -162,7 +165,8 @@ export const createManual = async (req, res) => {
 export const listSubmissions = async (req, res) => {
     try {
         const { status, page, limit } = submissionsQuery.parse(req.query);
-        const where = status === 'ALL' ? {} : { status };
+        const aiUsable = await aiTierUsable();
+        const where = status === 'ALL' ? {} : status === 'NEEDS_PERSON' ? needsPersonWhere(aiUsable) : { status };
         const [items, total] = await Promise.all([
             prisma.linkSubmission.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
             prisma.linkSubmission.count({ where }),
@@ -173,6 +177,7 @@ export const listSubmissions = async (req, res) => {
             success: true,
             data: items.map((s) => ({ ...s, submittedBy: names.get(s.submittedById) ?? null })),
             pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
+            aiUsable,
         });
     } catch (err) {
         return sendError(res, err, 'listSubmissions');

@@ -72,6 +72,7 @@ export const careersAdminApi = {
   createPosting: (body) => api.post('/careers/admin/postings', body).then((r) => r.data),
   listSubmissions: (params) => api.get('/careers/admin/submissions', { params }).then((r) => r.data),
   retrySubmission: (id) => api.post(`/careers/admin/submissions/${id}/retry`, {}).then((r) => r.data),
+  dismissSubmission: (id, reason) => api.post(`/careers/admin/submissions/${id}/dismiss`, { reason }).then((r) => r.data),
 
   // Sources and operations
   listSources: (params = {}) => api.get('/careers/admin/sources', { params }).then((r) => r.data),

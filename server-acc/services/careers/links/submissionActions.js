@@ -3,6 +3,7 @@
 // their own link while it is still waiting. Nothing is deleted: withdrawn / dismissed links keep their
 // row with `dismissedAt` / `dismissReason` / `dismissedById` and are never processed again.
 // The *Problem functions are pure: null = allowed, else why not.
+import { z } from 'zod';
 import prisma from '../../../config/db.js';
 import { CareersError } from '../errors.js';
 
@@ -18,6 +19,14 @@ export function withdrawProblem(s, userId) {
     if (s.submittedById !== userId) return { status: 403, message: 'You can only withdraw a link you shared.' };
     if (s.dismissedAt) return { status: 409, message: 'This link was already withdrawn.' };
     if (s.status !== 'RECEIVED') return { status: 409, message: 'This link is already being processed, so it can no longer be withdrawn.' };
+    return null;
+}
+
+export const dismissBody = z.object({ reason: z.string().trim().min(1).max(200) }).strict();
+
+export function dismissProblem(s) {
+    if (s.dismissedAt) return 'This link was already dismissed or withdrawn.';
+    if (s.postingId) return `This link already has posting #${s.postingId}; take the posting down instead.`;
     return null;
 }
 
@@ -53,6 +62,18 @@ export async function withdrawSubmission(id, userId, db = prisma) {
     });
     if (!count) throw new CareersError(409, 'CONFLICT', 'This link is already being processed, so it can no longer be withdrawn.');
     return db.linkSubmission.findUnique({ where: { id } });
+}
+
+// Admin (P5-T5, F-18): the link is kept and marked, never processed again, and the reason is shown to
+// the student. A queued AI extraction for it is cancelled (FAILED, so it never reaches the model).
+export async function dismissSubmission(id, reason, adminId, db = prisma) {
+    return db.$transaction(async (tx) => {
+        const s = await loadSubmission(tx, id);
+        const problem = dismissProblem(s);
+        if (problem) throw new CareersError(409, 'CONFLICT', problem);
+        await tx.extraction.updateMany({ where: { submissionId: id, state: 'QUEUED' }, data: { state: 'FAILED', error: 'Link dismissed by an admin' } });
+        return tx.linkSubmission.update({ where: { id }, data: { dismissedAt: new Date(), dismissReason: reason, dismissedById: adminId } });
+    });
 }
 
 // Inside the manual-posting transaction: point the link at its new posting so the student sees it.

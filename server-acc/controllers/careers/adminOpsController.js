@@ -5,6 +5,7 @@ import { getSetting, clearSettingsCache } from '../../services/careers/settings.
 import { reviewWhere } from '../../services/careers/postings/reviewService.js';
 import { computeAlerts, workerStatus } from '../../services/careers/ops/alerts.js';
 import { llmStatus } from '../../services/careers/ops/llmStatus.js';
+import { needsPersonCounts } from '../../services/careers/links/waiting.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -37,7 +38,8 @@ export const getOps = async (req, res) => {
             prisma.posting.count({ where: { firstSeenAt: { gte: new Date(now - DAY_MS) } } }),
             llmStatus(now),
         ]);
-        const queue = { pending, flagged, candidates, submissions: { received, extracting, failed, storedOnly } };
+        const waiting = await needsPersonCounts(llm.enabled && llm.usable === true, now);
+        const queue = { pending, flagged, candidates, submissions: { received, extracting, failed, storedOnly, ...waiting } };
         const postings = { live, expiredLast7d, newLast24h };
         const alerts = computeAlerts({ worker, sources, queue, llm });
 

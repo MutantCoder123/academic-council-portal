@@ -114,6 +114,9 @@ export function submissionStatus(s) {
       ? { label: "Withdrawn", tone: "neutral" }
       : { label: "Not added", tone: "neutral", detail: s.dismissReason ? `ACC: ${s.dismissReason}` : null };
   }
+  if (s.waitingForAdmin) {
+    return { label: "Waiting for an ACC admin", tone: "waiting", detail: "This page can't be read automatically right now; an admin will add it or tell you why not." };
+  }
   switch (s.status) {
     case "RECEIVED":
     case "PROCESSING":

@@ -6,6 +6,7 @@ const TONES = {
   info: "text-blue-700 bg-blue-50 border-blue-100",
   neutral: "text-slate-600 bg-slate-50 border-slate-200",
   failed: "text-rose-700 bg-rose-50 border-rose-100",
+  waiting: "text-amber-700 bg-amber-50 border-amber-100",
 };
 
 // The student's own shared links with their status. URLs and notes are shown as text, never as HTML.

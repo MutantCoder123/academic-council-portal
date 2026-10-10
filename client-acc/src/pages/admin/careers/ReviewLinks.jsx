@@ -2,13 +2,15 @@
 // failed link or turn a link into a manual posting (P5-T4, F-09); nothing is deleted (D-01).
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, PenLine, RotateCcw } from "lucide-react";
+import { Ban, ExternalLink, PenLine, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
 import { careersAdminApi, errorMessage } from "../../../api/careersApi";
-import { Skeleton, cardClass, inputClass } from "./components/ui";
+import { Modal, Skeleton, cardClass, dangerButton, inputClass, outlineButton } from "./components/ui";
 import { safeHref } from "../../Careers/lib/format";
 
-const STATUSES = ["ALL", "RECEIVED", "PROCESSING", "EXTRACTING", "PENDING_REVIEW", "STORED_ONLY", "DUPLICATE", "FAILED"];
+const STATUSES = ["ALL", "NEEDS_PERSON", "RECEIVED", "PROCESSING", "EXTRACTING", "PENDING_REVIEW", "STORED_ONLY", "DUPLICATE", "FAILED"];
+const STATUS_LABEL = { NEEDS_PERSON: "needs a person" };
+const DISMISS_REASONS = ["Not a job page", "Not for students", "Already listed on the portal", "Closed", "Other"];
 const STYLE = {
   FAILED: "text-rose-700 bg-rose-50 border-rose-100",
   STORED_ONLY: "text-slate-600 bg-slate-100 border-slate-200",
@@ -24,6 +26,8 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
   const [items, setItems] = useState(null);
   const [reload, setReload] = useState(0);
   const [busyId, setBusyId] = useState(null);
+  const [aiUsable, setAiUsable] = useState(null);
+  const [dismissing, setDismissing] = useState(null);
 
   const retry = async (s) => {
     setBusyId(s.id);
@@ -42,7 +46,7 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
   useEffect(() => {
     let alive = true;
     careersAdminApi.listSubmissions({ status, limit: 100 })
-      .then((res) => alive && setItems(res.data))
+      .then((res) => { if (alive) { setItems(res.data); setAiUsable(res.aiUsable); } })
       .catch((err) => toast.error(errorMessage(err, "Could not load student links.")));
     return () => {
       alive = false;
@@ -54,9 +58,14 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
       <div className="flex items-center gap-2">
         <label htmlFor="links-status" className="text-xs font-semibold text-slate-600">Status</label>
         <select id="links-status" className={`${inputClass} w-48`} value={status} onChange={(e) => { setStatus(e.target.value); setItems(null); }}>
-          {STATUSES.map((s) => <option key={s} value={s}>{s.replace("_", " ").toLowerCase()}</option>)}
+          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s.replace("_", " ").toLowerCase()}</option>)}
         </select>
       </div>
+      {status === "NEEDS_PERSON" && (
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+          Links nothing will read automatically: sites that can't be fetched (LinkedIn, Naukri, …){aiUsable === false ? ", and, while the AI step is off, pages without job-board data" : ""}. Create a posting from each, or dismiss it with a reason the student will see.
+        </p>
+      )}
       {!items ? <Skeleton rows={4} /> : !items.length ? (
         <div className={`${cardClass} p-8 text-center text-sm text-slate-500`}>No student links{status !== "ALL" ? ` with status ${status.toLowerCase().replace("_", " ")}` : " yet"}.</div>
       ) : (
@@ -74,6 +83,9 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
                     <span className="truncate">{s.url}</span> <ExternalLink size={12} className="shrink-0" />
                   </a>
                 </div>
+                {s.status === "EXTRACTING" && !s.dismissedAt && !s.postingId && aiUsable === false && (
+                  <p className="text-xs font-semibold text-amber-700">Waiting for an admin: the AI step is off, so nothing will read this page.</p>
+                )}
                 <p className="text-xs text-slate-500">
                   By {s.submittedBy ?? `user #${s.submittedById}`} · {new Date(s.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                   {s.postingId && <> · <button type="button" className="text-[var(--color-secondary)] hover:underline cursor-pointer" onClick={() => onOpenPosting(s.postingId)}>posting #{s.postingId}</button></>}
@@ -93,6 +105,9 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
                     {!s.postingId && (
                       <button type="button" className={smallButton} onClick={() => createPosting(s)}><PenLine size={13} aria-hidden="true" /> Create posting from this link</button>
                     )}
+                    {!s.postingId && (
+                      <button type="button" className={smallButton} onClick={() => setDismissing(s)}><Ban size={13} aria-hidden="true" /> Dismiss</button>
+                    )}
                   </div>
                 )}
               </li>
@@ -100,6 +115,49 @@ export default function ReviewLinks({ refreshKey, onOpenPosting }) {
           </ul>
         </div>
       )}
+      {dismissing && <DismissDialog link={dismissing} onClose={() => setDismissing(null)} onDone={() => { setDismissing(null); setReload((n) => n + 1); }} />}
     </div>
+  );
+}
+
+// Dismiss a link with a reason the student sees ("Not a job page"). The row is kept (decision D-01).
+function DismissDialog({ link, onClose, onDone }) {
+  const [reason, setReason] = useState(DISMISS_REASONS[0]);
+  const [other, setOther] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    const text = reason === "Other" ? other.trim() : reason;
+    if (!text) return toast.error("Give a reason.");
+    setBusy(true);
+    try {
+      const res = await careersAdminApi.dismissSubmission(link.id, text);
+      toast.success(res.message);
+      onDone();
+    } catch (err) {
+      toast.error(errorMessage(err));
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal title="Dismiss this link?" onClose={onClose}
+      footer={(
+        <>
+          <button type="button" className={outlineButton} onClick={onClose} disabled={busy}>Cancel</button>
+          <button type="button" className={dangerButton} onClick={submit} disabled={busy}>Dismiss</button>
+        </>
+      )}>
+      <p className="text-sm text-slate-700 break-all">{link.url}</p>
+      <p className="mt-1 text-xs text-slate-500">It won't be processed again, and the student sees the reason. The link is kept in this list.</p>
+      <label htmlFor="dl-reason" className="mt-4 block text-xs font-semibold text-slate-600">Reason (shown to the student)</label>
+      <select id="dl-reason" className={`${inputClass} mt-1`} value={reason} onChange={(e) => setReason(e.target.value)}>
+        {DISMISS_REASONS.map((r) => <option key={r}>{r}</option>)}
+      </select>
+      {reason === "Other" && (
+        <>
+          <label htmlFor="dl-other" className="sr-only">Other reason</label>
+          <input id="dl-other" className={`${inputClass} mt-2`} value={other} maxLength={200} onChange={(e) => setOther(e.target.value)} placeholder="Reason" />
+        </>
+      )}
+    </Modal>
   );
 }

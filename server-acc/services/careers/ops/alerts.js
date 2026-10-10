@@ -55,5 +55,7 @@ export function computeAlerts({ worker, sources, queue, llm }) {
     }
     if (queue.flagged > FLAGGED_AMBER) amber('FLAGGED_BACKLOG', `${queue.flagged} postings are waiting in Flagged.`);
     if (queue.submissions.failed > 0) amber('SUBMISSIONS_FAILED', `${queue.submissions.failed} student link(s) failed to process.`);
+    // F-18: links nobody will read automatically, waiting for an admin for over 48 hours.
+    if (queue.submissions.waitingOver48h > 0) amber('LINKS_WAITING', `${queue.submissions.waitingOver48h} student link(s) have waited more than 48 hours for an admin (Jobs review → Student links → Needs a person).`);
     return alerts;
 }

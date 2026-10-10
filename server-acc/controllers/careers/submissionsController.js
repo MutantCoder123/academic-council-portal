@@ -8,6 +8,7 @@ import { getSetting } from '../../services/careers/settings.js';
 import { isCareerAdmin } from '../../middlewares/careers/requireCareerAdmin.js';
 import { limitMessage, recentSubmissionCount } from '../../middlewares/careers/submissionRateLimit.js';
 import { withdrawSubmission } from '../../services/careers/links/submissionActions.js';
+import { aiTierUsable, waitingForAdmin } from '../../services/careers/links/waiting.js';
 import { parseId } from '../../services/careers/errors.js';
 
 // Advisory lock namespace (first key) for "one student's submissions"; the second key is the user id.
@@ -116,7 +117,9 @@ export const mySubmissions = async (req, res) => {
         // Only "is it live on the portal" is shared about the resulting posting, nothing about review.
         const postingIds = [...new Set(items.map((s) => s.postingId).filter(Boolean))];
         const live = new Set((await prisma.posting.findMany({ where: { id: { in: postingIds }, status: 'LIVE' }, select: { id: true } })).map((p) => p.id));
-        return res.json({ success: true, data: items.map((s) => ({ ...s, postingLive: live.has(s.postingId) })) });
+        // F-18: a link nothing will read automatically right now says so, instead of "Being processed".
+        const aiUsable = await aiTierUsable();
+        return res.json({ success: true, data: items.map((s) => ({ ...s, postingLive: live.has(s.postingId), waitingForAdmin: waitingForAdmin(s, aiUsable) })) });
     } catch (err) {
         return sendError(res, err, 'mySubmissions');
     }
