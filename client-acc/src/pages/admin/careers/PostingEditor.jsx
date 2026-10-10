@@ -14,6 +14,7 @@ import { REJECT_REASONS, changedFields, toForm } from "./components/postingForm"
 import { Skeleton, StatusChip, dangerButton, inputClass, outlineButton, primaryButton } from "./components/ui";
 import { safeHref } from "../../Careers/lib/format";
 import PostingStatus from "./components/PostingStatusChip";
+import TakeDownDialog from "./components/TakeDownDialog";
 
 export default function PostingEditor({ postingId, onClose, onChanged }) {
   const [posting, setPosting] = useState(null);
@@ -23,6 +24,7 @@ export default function PostingEditor({ postingId, onClose, onChanged }) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState(REJECT_REASONS[0]);
   const [otherReason, setOtherReason] = useState("");
+  const [takingDown, setTakingDown] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -170,8 +172,9 @@ export default function PostingEditor({ postingId, onClose, onChanged }) {
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-2">
-                {posting.status !== "REJECTED" && <button type="button" className={dangerButton} onClick={() => setRejecting(true)} disabled={busy}>Reject</button>}
-                {posting.status === "LIVE" && <button type="button" className={outlineButton} onClick={() => run(() => careersAdminApi.expirePosting(postingId))} disabled={busy}>Mark expired</button>}
+                {/* A LIVE posting is taken down with a reason (closed → expired, otherwise rejected). */}
+                {posting.status === "LIVE" && <button type="button" className={dangerButton} onClick={() => setTakingDown(true)} disabled={busy}>Take down</button>}
+                {["PENDING_REVIEW", "EXPIRED"].includes(posting.status) && <button type="button" className={dangerButton} onClick={() => setRejecting(true)} disabled={busy}>Reject</button>}
                 {["EXPIRED", "REJECTED"].includes(posting.status) && <button type="button" className={outlineButton} onClick={() => run(() => careersAdminApi.reopenPosting(postingId))} disabled={busy}>Reopen</button>}
                 <div className="flex gap-2 ml-auto">
                   {posting.status !== "REJECTED" && <button type="button" className={outlineButton} onClick={save} disabled={busy}>Save</button>}
@@ -182,6 +185,10 @@ export default function PostingEditor({ postingId, onClose, onChanged }) {
           </div>
         )}
       </div>
+      {takingDown && posting && (
+        <TakeDownDialog posting={posting} onClose={() => setTakingDown(false)}
+          onDone={() => { setTakingDown(false); onChanged(); load(); }} />
+      )}
     </div>
   );
 }

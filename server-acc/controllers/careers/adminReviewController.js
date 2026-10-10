@@ -11,6 +11,7 @@ import { likeSafe } from '../../services/careers/text/likeSafe.js';
 import {
     adminPostingsQuery, adminPostingsWhere, adminPostingsOrder, adminListSelect, ADMIN_STATUSES,
 } from '../../services/careers/postings/adminList.js';
+import { takeDownBody, takeDownPosting } from '../../services/careers/postings/takeDown.js';
 
 const reviewQuery = z.object({
     tab: z.enum(['pending', 'flagged']).default('pending'),
@@ -96,6 +97,7 @@ export const getPosting = async (req, res) => {
                 company: { select: { id: true, name: true, slug: true, status: true, website: true } },
                 observations: { include: { source: { select: { id: true, name: true, kind: true, boardToken: true } } }, orderBy: { firstSeenAt: 'asc' } },
                 reviews: { orderBy: { createdAt: 'desc' }, take: 50 },
+                _count: { select: { saves: true, applications: true } }, // who a take-down affects (counts only)
             },
         });
         if (!posting) throw new CareersError(404, 'NOT_FOUND', `Posting #${id} was not found.`);
@@ -133,6 +135,10 @@ export const approve = action(
 export const reject = action((req) => rejectPosting(parseId(req.params.id), rejectBody.parse(req.body).reason, req.user.id), 'Rejected.');
 export const expire = action((req) => expirePosting(parseId(req.params.id), req.user.id, noteBody.parse(req.body ?? {}).note), 'Marked as expired.');
 export const reopen = action((req) => reopenPosting(parseId(req.params.id), req.user.id, noteBody.parse(req.body ?? {}).note), (r) => `Reopened as ${r.posting.status}.`);
+export const takeDown = action(
+    (req) => takeDownPosting(parseId(req.params.id), takeDownBody.parse(req.body ?? {}), req.user.id),
+    (r) => (r.action === 'expire' ? 'Marked as closed. Students who saved it see "No longer live".' : 'Taken down. Students no longer see it.'),
+);
 export const bulk = action(
     (req) => bulkApprove(bulkBody.parse(req.body).ids, req.user.id),
     (r) => `Approved ${r.approved.length}; skipped ${r.skipped.length}.`,

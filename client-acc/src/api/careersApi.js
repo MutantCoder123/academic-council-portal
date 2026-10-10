@@ -66,6 +66,7 @@ export const careersAdminApi = {
   rejectPosting: (id, reason) => api.post(`/careers/admin/postings/${id}/reject`, { reason }).then((r) => r.data),
   expirePosting: (id) => api.post(`/careers/admin/postings/${id}/expire`, {}).then((r) => r.data),
   reopenPosting: (id) => api.post(`/careers/admin/postings/${id}/reopen`, {}).then((r) => r.data),
+  takeDownPosting: (id, body) => api.post(`/careers/admin/postings/${id}/take-down`, body).then((r) => r.data),
   bulkApprove: (ids) => api.post('/careers/admin/postings/bulk-approve', { ids }).then((r) => r.data),
   createPosting: (body) => api.post('/careers/admin/postings', body).then((r) => r.data),
   listSubmissions: (params) => api.get('/careers/admin/submissions', { params }).then((r) => r.data),
