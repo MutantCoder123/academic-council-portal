@@ -26,6 +26,7 @@ different branches. `planning-docs` is an orphan branch that shares no history w
 4. The section of `planning/Phases.md` for the current task.
 5. `planning/Architecture.md` and `planning/Design.md`: only the sections the task touches.
 6. `planning/PRD.md`: only when a requirement is unclear.
+7. `planning/bugs_and_features.md` (feature backlog, F-xx) and `planning/decisions_to_review.md` (decisions the user accepted, D-xx) for P5 onwards.
 
 Do not re-read the whole codebase. Memory.md and Architecture.md tell you where things are.
 
