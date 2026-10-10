@@ -84,7 +84,7 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   permanent deletes (P8-T2, F-17 / P8-T3, F-07 source delete, F-11 candidate delete), F-29 (P8-T1).
 - **Status:** Partly answered by the user on 10 Oct 2026 when starting P7: **build both emails**
   (F-19 job alerts, F-31 admin reminder email); **F-11 candidate cleanup hides the candidate,
-  never deletes the row** (see D-12). Still open: P8-T2, P8-T3 (F-17), F-07 source delete, F-29.
+  never deletes the row** (recorded as D-13 with P7-T11). Still open: P8-T2, P8-T3 (F-17), F-07 source delete, F-29.
 
 ## D-11 How job-alert emails work (P7-T1, C-115)
 - **What:** emails go out only while `careers.visibleToStudents` **and** a new admin switch
