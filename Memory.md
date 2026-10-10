@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T8 done; next P6-T9.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T9 done; next P6-T10.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `dea0b25` feat(careers): P6-T8 F-04 undo bulk approve, bulk reject and bulk expire (local, not pushed)
+- **Last commit:** `8bf813c` feat(careers): P6-T9 F-12 hide a posting ('Not for me') (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 667 passed (41 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 671 passed (42 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -82,6 +82,7 @@
 | Deadlines on Saved | client `pages/Careers/components/SavedDeadlines.jsx`, `lib/deadlines.js` | above the Saved filters |
 | Report a problem | `server-acc/services/careers/postings/reports.js`, `POST /careers/postings/:id/report`, `POST /careers/admin/postings/:id/reports/handled`; migration `20261010094447_careers_posting_reports`; client `pages/Careers/components/ReportProblemDialog.jsx`, `pages/admin/careers/components/{ReportCount,ReportsPanel}.jsx` | alert `POSTINGS_REPORTED` |
 | Bulk undo / reject / expire | `server-acc/services/careers/postings/bulkActions.js` (+ `approveTrail` in `reviewService.js`), `POST /careers/admin/postings/bulk-approve/undo`, `/bulk-reject`, `/bulk-expire`; client `pages/admin/careers/components/BulkActionDialog.jsx` | review queue selection bar + approve toast |
+| Hide a posting | `server-acc/services/careers/postings/hidden.js`, `PUT/DELETE /careers/postings/:id/hide` (`trackingController.js`); migration `20261010115347_careers_hidden_postings`; client `JobCard.jsx` (`onHide` / `onUnhide`), `JobsPage.jsx` | `?showHidden=true` view |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -707,3 +708,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (admin, #47 snapshotted): Select page → bar shows Approve / Reject… / Mark expired; Reject dialog's button disabled without a reason; Publish 1 posting → toast "Approved 1; skipped 0. Undo", Pending 0 → Undo → "1 back in Pending.", Pending 1; 375 px scrollWidth 375. #47 restored (2 review rows removed).
   - `npm test` → 667 passed (41 files); client build ✓; changed files lint 0.
 - Next step: P6-T9.
+
+### 2026-10-10, P6-T9: hide a posting (F-12) 🗄️
+- Did: schema + migration `careers_hidden_postings` (`--create-only`, SQL read: CREATE TABLE, CREATE INDEX ×2, ADD FOREIGN KEY ×2; forbidden-SQL grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `hidden.js` (4 tests first), list / count / routes, card button, hidden view (C-112).
+- Checks:
+  - `http_p6t9.mjs` on #59 (12/12): hide 200, twice → one row; gone from the student's list (total −1, `hiddenByYou` 1); still in the admin's list; `showHidden=true` → only #59; `hiddenByYou` 0 with `type=FULL_TIME` (#59 is an internship); job page still 200; "New for you" student 27 vs admin 28; non-LIVE posting → 404; deleting #59 inside a transaction removes the hidden row (rolled back, #59 and the row still there after); unhide → back, `hiddenByYou` 0.
+  - Browser (student): 28 openings → eye-off on the first card → "Hidden from your list. Undo", 27 openings, "Show hidden (1)"; reload → Show hidden → URL `showHidden=true`, only that card; Show again → "It is back in your list.", empty view "Nothing hidden." (added after the first run showed the generic "No openings right now"); back to 28; 375 px scrollWidth 375. No hidden rows left.
+  - `npm test` → 671 passed (42 files); client build ✓; changed files lint 0.
+- Next step: P6-T10.

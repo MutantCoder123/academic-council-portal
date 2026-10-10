@@ -221,6 +221,7 @@
 #### F-12 "Not interested" / hide a posting
 - **Design:** students can hide a posting from their own list ("Not for me"); a "Show hidden (3)" toggle brings them back. Per user, never shown to anyone. 🗄️ `HiddenPosting` table (like `SavedPosting`).
 - **Effort:** S–M
+- **Status:** ✅ Built 10 Oct (`8bf813c`, P6-T9, C-112): "Not for me" on job cards (`HiddenPosting`, private), "Show hidden (n)" view with "Show again", Undo in the toast; the "New for you" count skips hidden postings.
 
 #### F-13 Notes and dates on application tracking
 - **Design:** the Saved page shows "Applied on 3 Oct" (from the status change time) and an optional private note per application (text, max 500). 🗄️ nullable `note`, `appliedAt` on `PostingApplication`.
