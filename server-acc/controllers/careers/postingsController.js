@@ -6,6 +6,7 @@ import { sendError, CareersError, parseId } from '../../services/careers/errors.
 import { isCareerAdmin } from '../../middlewares/careers/requireCareerAdmin.js';
 import { cardFields, loadProfile, toCard } from '../../services/careers/postings/cards.js';
 import { withTracking, TRACKABLE_STATUSES } from '../../services/careers/postings/tracking.js';
+import { adminInfo } from '../../services/careers/postings/adminInfo.js';
 import {
     postingsQuery, baseWhere, eligibilityWhere, withEligibility, orderByFor, hasPayFilter,
 } from '../../services/careers/postings/query.js';
@@ -61,6 +62,15 @@ export const listPostings = async (req, res) => {
     }
 };
 
+async function loadAdminInfo(posting) {
+    const reviews = await prisma.postingReview.findMany({
+        where: { postingId: posting.id }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 50,
+        select: { action: true, byUserId: true, createdAt: true, note: true },
+    });
+    const users = await prisma.user.findMany({ where: { id: { in: [...new Set(reviews.map((r) => r.byUserId))] } }, select: { id: true, displayName: true, email: true } });
+    return adminInfo(posting, reviews, new Map(users.map((u) => [u.id, u.displayName || u.email])));
+}
+
 // LIVE postings for everyone; career admins can open any status (to preview before approving), and a
 // student can still open an expired posting they saved or track (P4-lite).
 export const getPosting = async (req, res) => {
@@ -80,6 +90,8 @@ export const getPosting = async (req, res) => {
             prisma.experience.findMany({ where: published, orderBy: { createdAt: 'desc' }, take: 3, select: { id: true, title: true, experienceType: true, createdAt: true } }),
         ]);
         const { observations, ...rest } = posting;
+        // Career admins also get status and who approved it, for the bar on the job page (P5-T3).
+        const admin = isCareerAdmin(req.user) ? await loadAdminInfo(posting) : undefined;
         return res.status(200).json({
             success: true,
             data: {
@@ -89,6 +101,7 @@ export const getPosting = async (req, res) => {
                 observations: observations.map(({ source, ...o }) => ({ ...o, sourceName: source.name, sourceKind: source.kind })),
                 companyExperienceCount,
                 companyExperiences,
+                ...(admin ? { adminInfo: admin } : {}),
             },
         });
     } catch (err) {

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, ClipboardCheck, ExternalLink, GraduationCap, MapPin, SearchX, Share2, Wallet } from "lucide-react";
 import AuthContext from "../../context/auth/authContext";
@@ -14,6 +14,7 @@ import EmptyState from "./components/EmptyState";
 import SaveButton from "./components/SaveButton";
 import JobDescription from "./components/JobDescription";
 import ApplicationStatusButton from "./components/ApplicationStatusButton";
+import AdminBar from "./components/AdminBar";
 import { collectedBy, formatDate, safeHref } from "./lib/format";
 
 const TYPE_LABELS = { INTERNSHIP: "Internship", FULL_TIME: "Full-time" };
@@ -84,11 +85,12 @@ export default function JobDetailPage() {
   const [posting, setPosting] = useState(null);
   const [error, setError] = useState(null);
   const [sharing, setSharing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
   useEffect(() => {
     if (!status.enabled) return undefined;
     let alive = true;
-    setPosting(null);
     setError(null);
     careersApi.getPosting(id)
       .then((p) => { if (alive) setPosting(p); })
@@ -98,7 +100,10 @@ export default function JobDetailPage() {
         setError(code === "NOT_FOUND" || code === "VALIDATION_ERROR" ? "GONE" : code === "CAREERS_DISABLED" ? "DISABLED" : errorMessage(err, "Could not load this posting."));
       });
     return () => { alive = false; };
-  }, [id, status.enabled]);
+  }, [id, status.enabled, reloadKey]);
+
+  // A new posting id starts from the skeleton; a reload after an admin action keeps the page.
+  useEffect(() => setPosting(null), [id]);
 
   if (status.loading) return <div className="h-64 rounded-2xl bg-slate-100 animate-pulse" aria-hidden="true" />;
   if (!status.enabled || error === "DISABLED") {
@@ -127,6 +132,8 @@ export default function JobDetailPage() {
   return (
     <div className="space-y-6">
       <BackLink />
+
+      {status.isCareerAdmin && posting.adminInfo && <AdminBar info={posting.adminInfo} onChanged={reload} />}
 
       <header className={card}>
         <div className="flex flex-wrap items-center gap-2">
