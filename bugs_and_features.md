@@ -201,6 +201,7 @@
 #### F-09 Retry, delete, or convert a student link
 - **Design:** on the Student links tab: **Retry** (FAILED → RECEIVED, picked up by the next links run; uses the same SSRF path), **Delete** (spam), **Create posting from this link** (opens Manual posting with the URL prefilled). Students can withdraw their own link while it is RECEIVED.
 - **Effort:** S–M
+- **Status:** ✅ Built 10 Oct (`5ab4f95`, P5-T4, C-100, decisions D-01/D-04): admin **Retry** and **Create posting from this link**, students **Withdraw**; no hard delete (spam links are dismissed in P5-T5).
 
 ### Companies and experiences (admin)
 
