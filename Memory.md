@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T6 done; next P6-T7.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7). **P6 (student value, user OK 10 Oct): P6-T1 – T7 done; next P6-T8.** Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions the user accepted: `decisions_to_review.md`.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `adf16f6` feat(careers): P6-T6 F-20 deadlines stated by source on the Saved page (local, not pushed)
+- **Last commit:** `f62f9ed` feat(careers): P6-T7 F-05 report a problem with a posting (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 655 passed (39 files). Client: build ✓, `npx eslint src` 36 (baseline).
+- **Tests:** `npm test` → 662 passed (40 files). Client: build ✓, `npx eslint src` 36 (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -80,6 +80,7 @@
 | Quick filter chips | client `pages/Careers/components/QuickFilters.jsx`, `lib/quickFilters.js`; server `postedWithin` in `services/careers/postings/query.js` | above the jobs list |
 | "Did you apply?" nudge | client `pages/Careers/components/ApplyNudge.jsx`, `lib/applyNudge.js` | `JobDetailPage.jsx` (below the header), `SavedPage.jsx` (above the filters) |
 | Deadlines on Saved | client `pages/Careers/components/SavedDeadlines.jsx`, `lib/deadlines.js` | above the Saved filters |
+| Report a problem | `server-acc/services/careers/postings/reports.js`, `POST /careers/postings/:id/report`, `POST /careers/admin/postings/:id/reports/handled`; migration `20261010094447_careers_posting_reports`; client `pages/Careers/components/ReportProblemDialog.jsx`, `pages/admin/careers/components/{ReportCount,ReportsPanel}.jsx` | alert `POSTINGS_REPORTED` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -102,6 +103,7 @@
 - `companyId` on `PATCH /posts/:id`: omitted = unchanged (the admin editor never sends it), `null` = unlink. Admins otherwise link/relink experiences through the backfill page (P3-T2).
 - Tracking data is per student and never shown to admins (no admin endpoint reads it). `GET /careers/saved` as an admin returns the admin's own list.
 - P5 – P8 (C-96): no hard deletes before the user OKs them; spam/unusable student links are **dismissed** (nullable `LinkSubmission.dismissedAt` / `dismissReason` / `dismissedById`), never deleted; take-down *Closed* → expire, other reasons → reject; never add enum values (not in AI_Rules §3), use nullable columns.
+- Who reported a posting is never returned, not even to admins (P6-T7): the reason and note are enough to act on, and students report more freely.
 
 ## Gotchas / things that surprised me
 
@@ -688,3 +690,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (student saved #53, #59, #63, #85; deadlines #59 15 Oct, #53 30 Oct, #63 moved to 5 Oct, #85 none): rows "15 Oct 2026 · Software Engineer, Intern · Stripe", "30 Oct 2026 · Operations Associate, Apprenticeship · Stripe", "5 Oct 2026 (passed) · ENG Project/ Program - Intern · Rubrik"; #85 not listed; no countdown wording; 375 px scrollWidth 375. Afterwards: 4 saves removed, deadlines on #53 / #59 / #63 back to null.
   - `npm test` → 655 passed; client build ✓; changed files lint 0.
 - Next step: P6-T7.
+
+### 2026-10-10, P6-T7: report a problem (F-05) 🗄️
+- Did: schema + migration `careers_posting_reports` (`--create-only`, SQL read: CREATE TABLE, CREATE INDEX ×2, ADD FOREIGN KEY ×2; forbidden-SQL grep empty; `git diff schema.prisma | grep '^-[^-]'` empty; `migrate deploy`; API stopped for `prisma generate`), `reports.js` (7 tests first), routes, admin counts / filter / panel / alert, student dialog, About panel line (C-110).
+- Checks:
+  - `http_p6t7.mjs` on #59 (16/16): OTHER without note 400; student 201, again 409 `ALREADY_REPORTED`, one row; student response has `reportedByMe` and no `reports` / `uncertainFields`; admin as second reporter 201, not flagged; temporary third user (created and deleted by the script) → `reported` added, still LIVE; editor gets 3 open reasons, no user ids or emails; All postings `reported=yes` lists it with `_count.reports` 3; ops amber `POSTINGS_REPORTED`; student 403 on handled; admin handled → flag cleared, 3 reports kept with `handledAt`, PostingReview EDIT "Student reports handled (3)"; again → 409; unknown posting 404. Cleaned up.
+  - Browser: student Send disabled until a reason (and a note for "Something else"); sent → "You reported a problem", same after reload; About panel shows "Something wrong with an opening?"; 375 px dialog scrollWidth 375. Admin: All postings → Reported by students → 1 row with "1 report" → editor "Student reports · 1 open of 1", note `<b>…</b>` shown as text (no `<b>` element) → Mark as handled → "0 open of 1". Report and history row removed afterwards.
+  - `npm test` → 662 passed (40 files); client build ✓; changed files lint 0.
+- Next step: P6-T8.

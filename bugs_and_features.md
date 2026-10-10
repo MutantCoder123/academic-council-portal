@@ -177,6 +177,7 @@
 #### F-05 Report a problem with a posting (students)
 - **Design:** "Report a problem" on the job page: closed / wrong pay / wrong eligibility / not a real job / other + optional note (text only). Reports show as a count badge in the review queue and in F-01; three reports auto-flag the posting (adds `reported` to `uncertainFields`, never auto-removes). 🗄️ `PostingReport` table (new, additive).
 - **Effort:** M
+- **Status:** ✅ Built 10 Oct (`f62f9ed`, P6-T7, C-110): "Report a problem" on the job page (`PostingReport`, once per student), 3 open reports add `reported` (never hides), report counts in the review queue and All postings (+ "Reported by students" filter), Student reports panel with "Mark as handled" in the editor, amber ops alert.
 
 #### F-06 Merge two postings by hand
 - **Design:** dedup misses some pairs; from F-01 pick two postings → "Merge into…": observations, saves and applications move to the kept posting; the other becomes REJECTED "Duplicate of #N". The duplicate report after a company merge (`possibleDuplicatePostings`) gets a "Merge" button.
@@ -305,7 +306,7 @@
 - **Problem:** students may confuse this with the placement cell (TPC/CDC) process.
 - **Design:** a short dismissible banner and an "About these openings" panel: off-campus roles collected from company job boards and student links, reviewed by ACC before they appear; apply on the company's site; ACC does not run the hiring; how to share a link; how to report a problem (F-05). Text only, stored with the page.
 - **Effort:** S
-- **Status:** ✅ Built 10 Oct (`97d19f8`, P5-T7, C-103): dismissible banner + "About these openings" panel on the jobs page; copy to be reviewed by the user ("Report a problem" is added once P6-T7 exists).
+- **Status:** ✅ Built 10 Oct (`97d19f8`, P5-T7, C-103): dismissible banner + "About these openings" panel on the jobs page; copy to be reviewed by the user. "Something wrong with an opening?" (Report a problem) added to the panel on 10 Oct with P6-T7 (C-110).
 
 #### F-29 Seniors' reported stipend and process on company pages ⚖️
 - **Problem:** pay is almost never published (0 of 53 dev postings), and students care most about it.
