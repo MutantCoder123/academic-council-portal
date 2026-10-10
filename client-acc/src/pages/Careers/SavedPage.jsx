@@ -6,6 +6,8 @@ import { careersApi, errorMessage } from "../../api/careersApi";
 import { useCareersStatus } from "../../hooks/useCareersStatus";
 import CareerVaultTabs from "./components/CareerVaultTabs";
 import EmptyState from "./components/EmptyState";
+import ApplyNudge from "./components/ApplyNudge";
+import { applyNudgeAt } from "./lib/applyNudge";
 import JobCard from "./components/JobCard";
 import PageTitle from "./components/PageTitle";
 import { APPLICATION_STATUSES } from "./lib/tracking";
@@ -40,6 +42,7 @@ export default function SavedPage() {
 
   // A card that is unsaved and untracked stays until the next load, so the list doesn't jump.
   const patch = useCallback((id, changes) => setItems((list) => list.map((p) => (p.id === id ? { ...p, ...changes } : p))), []);
+  const [dismissed, setDismissed] = useState(() => new Set());
 
   if (status.loading) return <div className="h-64 rounded-2xl bg-slate-100 animate-pulse" aria-hidden="true" />;
   if (!status.enabled || error === "DISABLED") {
@@ -78,10 +81,25 @@ export default function SavedPage() {
     );
   }
 
+  // "Did you apply?" (P6-T4): live postings whose Apply button was clicked in this browser.
+  const nudges = (items ?? [])
+    .filter((p) => p.status !== "EXPIRED" && !dismissed.has(p.id))
+    .map((p) => ({ posting: p, at: applyNudgeAt(p.id, p.applicationStatus) }))
+    .filter((n) => n.at);
+
   return (
     <div className="space-y-6">
       <PageTitle title="Saved" subtitle={SUBTITLE} />
       <CareerVaultTabs />
+      {nudges.length > 0 && (
+        <div className="space-y-2" aria-label="Did you apply?">
+          {nudges.map(({ posting, at }) => (
+            <ApplyNudge key={posting.id} posting={posting} at={at} title={`${posting.roleTitle} · ${posting.company.name}`}
+              onApplied={(changes) => patch(posting.id, changes)}
+              onDismiss={() => setDismissed((s) => new Set(s).add(posting.id))} />
+          ))}
+        </div>
+      )}
       {items?.length > 0 && (
         <div role="group" aria-label="Filter saved postings" className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (

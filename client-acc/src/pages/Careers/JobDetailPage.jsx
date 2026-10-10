@@ -14,6 +14,8 @@ import EmptyState from "./components/EmptyState";
 import SaveButton from "./components/SaveButton";
 import JobDescription from "./components/JobDescription";
 import ApplicationStatusButton from "./components/ApplicationStatusButton";
+import ApplyNudge from "./components/ApplyNudge";
+import { applyNudgeAt, recordApplyClick } from "./lib/applyNudge";
 import AdminBar from "./components/AdminBar";
 import { collectedBy, formatDate, safeHref } from "./lib/format";
 
@@ -47,7 +49,7 @@ function Rail({ posting }) {
     <aside className="order-first lg:order-none space-y-4 lg:sticky lg:top-4 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:-mx-1 lg:px-1 lg:pb-1">
       <section aria-labelledby="app-title" className={card}>
         <h2 id="app-title" className={railTitle}><ClipboardCheck size={16} className="text-[var(--color-secondary)]" aria-hidden="true" /> Your application</h2>
-        <ApplicationStatusButton posting={posting} />
+        <ApplicationStatusButton key={posting.applicationStatus ?? "none"} posting={posting} />
         <p className="mt-2 text-xs text-slate-500">Only you can see this. Tracked postings are listed under Saved.</p>
       </section>
 
@@ -105,6 +107,17 @@ export default function JobDetailPage() {
   // A new posting id starts from the skeleton; a reload after an admin action keeps the page.
   useEffect(() => setPosting(null), [id]);
 
+  // "Did you apply?" (P6-T4): read from this browser on every render, and again when the student
+  // comes back to this tab from the company's site.
+  const [, setReturned] = useState(0);
+  const [nudgeHidden, setNudgeHidden] = useState(false);
+  useEffect(() => {
+    const onShow = () => { if (document.visibilityState === "visible") setReturned((n) => n + 1); };
+    document.addEventListener("visibilitychange", onShow);
+    return () => document.removeEventListener("visibilitychange", onShow);
+  }, []);
+  const markedApplied = useCallback((changes) => setPosting((p) => ({ ...p, ...changes })), []);
+
   if (status.loading) return <div className="h-64 rounded-2xl bg-slate-100 animate-pulse" aria-hidden="true" />;
   if (!status.enabled || error === "DISABLED") {
     return <EmptyState icon={SearchX} title="Jobs & Internships isn't open yet." detail="The Academic Council will announce it when it is ready." />;
@@ -129,6 +142,7 @@ export default function JobDetailPage() {
   }
 
   const applyHref = posting.status === "EXPIRED" ? null : safeHref(posting.applyUrl);
+  const nudgeAt = nudgeHidden ? null : applyNudgeAt(posting.id, posting.applicationStatus);
   return (
     <div className="space-y-6">
       <BackLink />
@@ -167,17 +181,20 @@ export default function JobDetailPage() {
               href={applyHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => { recordApplyClick(posting.id); setNudgeHidden(false); }}
               className="inline-flex items-center gap-2 bg-[var(--color-secondary)] hover:opacity-90 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-[0_8px_20px_var(--color-secondary-glow)]"
             >
               Apply on the company site <ExternalLink size={14} aria-hidden="true" />
             </a>
           )}
-          <SaveButton key={posting.id} posting={posting} withLabel />
+          <SaveButton key={`${posting.id}-${posting.saved}`} posting={posting} withLabel />
           <button type="button" onClick={() => setSharing(true)} className="academic-btn-outline inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold cursor-pointer">
             <Share2 size={14} aria-hidden="true" /> Share another job link
           </button>
         </div>
       </header>
+
+      {nudgeAt && <ApplyNudge posting={posting} at={nudgeAt} onApplied={markedApplied} onDismiss={() => setNudgeHidden(true)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <section aria-labelledby="desc-title" className={`${card} min-w-0`}>
