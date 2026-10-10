@@ -693,6 +693,8 @@ model PostingApplication {
   status    ApplicationStatus
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
+  note      String? // P6-T10: the student's own note, plain text, at most 500 characters
+  appliedAt DateTime? // P6-T10: when the status first became Applied (or a later stage); null before, or for rows from before P6-T10
 
   @@unique([userId, postingId])
   @@index([postingId])

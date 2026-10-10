@@ -15,6 +15,7 @@ import SaveButton from "./components/SaveButton";
 import JobDescription from "./components/JobDescription";
 import ApplicationStatusButton from "./components/ApplicationStatusButton";
 import ApplyNudge from "./components/ApplyNudge";
+import ApplicationNote from "./components/ApplicationNote";
 import ReportProblemDialog from "./components/ReportProblemDialog";
 import { applyNudgeAt, recordApplyClick } from "./lib/applyNudge";
 import AdminBar from "./components/AdminBar";
@@ -43,14 +44,15 @@ function BackLink() {
   );
 }
 
-function Rail({ posting }) {
+function Rail({ posting, onChange }) {
   const e = posting.eligibility;
   return (
     // Below lg the rail comes first: pay and eligibility before a long description.
     <aside className="order-first lg:order-none space-y-4 lg:sticky lg:top-4 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:overscroll-contain lg:-mx-1 lg:px-1 lg:pb-1">
       <section aria-labelledby="app-title" className={card}>
         <h2 id="app-title" className={railTitle}><ClipboardCheck size={16} className="text-[var(--color-secondary)]" aria-hidden="true" /> Your application</h2>
-        <ApplicationStatusButton key={posting.applicationStatus ?? "none"} posting={posting} />
+        <ApplicationStatusButton key={posting.applicationStatus ?? "none"} posting={posting} onChange={onChange} />
+        <div className="mt-2"><ApplicationNote key={`${posting.applicationStatus}-${posting.applicationNote}`} posting={posting} onChange={onChange} /></div>
         <p className="mt-2 text-xs text-slate-500">Only you can see this. Tracked postings are listed under Saved.</p>
       </section>
 
@@ -118,7 +120,7 @@ export default function JobDetailPage() {
     document.addEventListener("visibilitychange", onShow);
     return () => document.removeEventListener("visibilitychange", onShow);
   }, []);
-  const markedApplied = useCallback((changes) => setPosting((p) => ({ ...p, ...changes })), []);
+  const mergePosting = useCallback((changes) => setPosting((p) => ({ ...p, ...changes })), []);
 
   if (status.loading) return <div className="h-64 rounded-2xl bg-slate-100 animate-pulse" aria-hidden="true" />;
   if (!status.enabled || error === "DISABLED") {
@@ -203,7 +205,7 @@ export default function JobDetailPage() {
         </div>
       </header>
 
-      {nudgeAt && <ApplyNudge posting={posting} at={nudgeAt} onApplied={markedApplied} onDismiss={() => setNudgeHidden(true)} />}
+      {nudgeAt && <ApplyNudge posting={posting} at={nudgeAt} onApplied={mergePosting} onDismiss={() => setNudgeHidden(true)} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         <section aria-labelledby="desc-title" className={`${card} min-w-0`}>
@@ -219,7 +221,7 @@ export default function JobDetailPage() {
             {collectedBy(posting.extractionTier)} Always check the details on the company's own page before applying.
           </p>
         </section>
-        <Rail posting={posting} />
+        <Rail posting={posting} onChange={mergePosting} />
       </div>
 
       {sharing && <SubmitLinkModal onClose={() => setSharing(false)} />}

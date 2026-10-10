@@ -53,3 +53,27 @@ describe('applicationBody', () => {
         expect(applicationBody.safeParse(body).success).toBe(false);
     });
 });
+
+describe('appliedAtFor / noteBody (P6-T10, F-13)', async () => {
+    const { appliedAtFor, noteBody } = await import('../../services/careers/postings/tracking.js');
+    const now = new Date('2026-10-10T10:00:00Z');
+    const earlier = new Date('2026-10-03T09:00:00Z');
+    it('is set the first time the status reaches Applied or a later stage', () => {
+        expect(appliedAtFor(null, 'INTERESTED', now)).toBeNull();
+        expect(appliedAtFor(null, 'APPLIED', now)).toBe(now);
+        expect(appliedAtFor(null, 'IN_PROGRESS', now)).toBe(now);
+        expect(appliedAtFor(null, 'OFFER', now)).toBe(now);
+        expect(appliedAtFor(null, 'REJECTED', now)).toBe(now);
+    });
+    it('never moves once set, even if the status goes back to Interested', () => {
+        expect(appliedAtFor(earlier, 'APPLIED', now)).toBe(earlier);
+        expect(appliedAtFor(earlier, 'INTERESTED', now)).toBe(earlier);
+    });
+    it('note: trimmed, at most 500 characters, empty clears it, text only', () => {
+        expect(noteBody.parse({ note: '  Round 1 on 12 Oct  ' }).note).toBe('Round 1 on 12 Oct');
+        expect(noteBody.parse({ note: '   ' }).note).toBeNull();
+        expect(noteBody.parse({ note: null }).note).toBeNull();
+        expect(() => noteBody.parse({ note: 'x'.repeat(501) })).toThrow();
+        expect(noteBody.parse({ note: '<img src=x onerror=alert(1)>' }).note).toBe('<img src=x onerror=alert(1)>');
+    });
+});

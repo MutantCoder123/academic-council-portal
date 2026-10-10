@@ -4,7 +4,7 @@ import prisma from '../../config/db.js';
 import { sendError, CareersError, parseId } from '../../services/careers/errors.js';
 import { cardFields, loadProfile, toCard } from '../../services/careers/postings/cards.js';
 import {
-    applicationBody, trackedBy, TRACKABLE_STATUSES, withTracking, byTrackedAt,
+    applicationBody, trackedBy, TRACKABLE_STATUSES, withTracking, byTrackedAt, noteBody, appliedAtFor,
 } from '../../services/careers/postings/tracking.js';
 
 const SAVED_LIMIT = 200;
@@ -90,14 +90,32 @@ export const setApplication = async (req, res) => {
             return res.status(200).json({ success: true, data: { applicationStatus: null } });
         }
         await trackablePosting(postingId, userId);
-        await prisma.postingApplication.upsert({
+        // appliedAt (P6-T10) is set once, the first time the status reaches Applied or later.
+        const current = await prisma.postingApplication.findUnique({ where: { userId_postingId: { userId, postingId } }, select: { appliedAt: true } });
+        const appliedAt = appliedAtFor(current?.appliedAt ?? null, status);
+        const saved = await prisma.postingApplication.upsert({
             where: { userId_postingId: { userId, postingId } },
-            create: { userId, postingId, status },
-            update: { status },
+            create: { userId, postingId, status, appliedAt },
+            update: { status, appliedAt },
+            select: { status: true, appliedAt: true, note: true },
         });
-        return res.status(200).json({ success: true, data: { applicationStatus: status } });
+        return res.status(200).json({ success: true, data: { applicationStatus: saved.status, appliedAt: saved.appliedAt, applicationNote: saved.note } });
     } catch (err) {
         return sendError(res, err, 'setApplication');
+    }
+};
+
+// PUT /careers/postings/:id/application/note (P6-T10, F-13): the student's own note on a tracked
+// application. Needs a status first (the note lives on the application row).
+export const setApplicationNote = async (req, res) => {
+    try {
+        const postingId = parseId(req.params.id);
+        const { note } = noteBody.parse(req.body ?? {});
+        const { count } = await prisma.postingApplication.updateMany({ where: { userId: req.user.id, postingId }, data: { note } });
+        if (!count) throw new CareersError(409, 'NO_APPLICATION', 'Set your application status first; the note is kept with it.');
+        return res.status(200).json({ success: true, data: { applicationNote: note } });
+    } catch (err) {
+        return sendError(res, err, 'setApplicationNote');
     }
 };
 

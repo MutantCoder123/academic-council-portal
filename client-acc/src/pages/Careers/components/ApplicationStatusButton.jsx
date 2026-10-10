@@ -48,12 +48,14 @@ export default function ApplicationStatusButton({ posting, onChange }) {
   const update = async (value) => {
     setOpen(false);
     if (busy || value === status) return;
+    // P6-T10: the note is kept with the status, so clearing the status removes it too.
+    if (value === null && posting.applicationNote && !window.confirm("Clearing the status also deletes your note on this application. Clear it?")) return;
     const before = status;
     setStatus(value);
     setBusy(true);
     try {
-      await careersApi.setApplication(posting.id, value);
-      onChange?.({ applicationStatus: value });
+      const data = await careersApi.setApplication(posting.id, value);
+      onChange?.({ applicationStatus: value, appliedAt: data.appliedAt ?? null, applicationNote: data.applicationNote ?? null });
     } catch (err) {
       setStatus(before);
       toast.error(errorMessage(err, "Could not update your application status."));

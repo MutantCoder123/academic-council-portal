@@ -131,6 +131,8 @@ export const getPosting = async (req, res) => {
                 ...toCard(rest, profile),
                 saved: tracked.saved,
                 applicationStatus: tracked.applicationStatus,
+                applicationNote: tracked.applicationNote,
+                appliedAt: tracked.appliedAt,
                 observations: observations.map(({ source, ...o }) => ({ ...o, sourceName: source.name, sourceKind: source.kind })),
                 companyExperienceCount,
                 companyExperiences,

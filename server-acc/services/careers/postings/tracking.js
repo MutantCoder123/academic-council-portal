@@ -8,6 +8,18 @@ export const APPLICATION_STATUSES = ['INTERESTED', 'APPLIED', 'IN_PROGRESS', 'RE
 // null removes the status.
 export const applicationBody = z.object({ status: z.enum(APPLICATION_STATUSES).nullable() }).strict();
 
+// P6-T10 (F-13): the student's own note on an application (plain text; rendered as text).
+export const noteBody = z.object({ note: z.string().trim().max(500).nullable().transform((v) => v || null) }).strict();
+
+// Statuses that mean the student has applied (Rejected = not selected after applying).
+const APPLIED_STAGES = new Set(['APPLIED', 'IN_PROGRESS', 'OFFER', 'REJECTED']);
+
+// Pure. The appliedAt to store: set once, when the status first reaches an applied stage.
+export function appliedAtFor(current, status, now = new Date()) {
+    if (current) return current;
+    return APPLIED_STAGES.has(status) ? now : null;
+}
+
 // Postings the student saved or tracks an application for.
 export const trackedBy = (userId) => ({
     OR: [{ saves: { some: { userId } } }, { applications: { some: { userId } } }],
@@ -23,7 +35,7 @@ export async function withTracking(cards, userId, db = prisma) {
     const where = { userId, postingId: { in: cards.map((c) => c.id) } };
     const [saves, applications] = await Promise.all([
         db.savedPosting.findMany({ where, select: { postingId: true, createdAt: true } }),
-        db.postingApplication.findMany({ where, select: { postingId: true, status: true, updatedAt: true } }),
+        db.postingApplication.findMany({ where, select: { postingId: true, status: true, updatedAt: true, note: true, appliedAt: true } }),
     ]);
     const savedAt = new Map(saves.map((s) => [s.postingId, s.createdAt]));
     const apps = new Map(applications.map((a) => [a.postingId, a]));
@@ -31,6 +43,8 @@ export async function withTracking(cards, userId, db = prisma) {
         ...c,
         saved: savedAt.has(c.id),
         applicationStatus: apps.get(c.id)?.status ?? null,
+        applicationNote: apps.get(c.id)?.note ?? null, // P6-T10: only ever the caller's own
+        appliedAt: apps.get(c.id)?.appliedAt ?? null,
         // When the student last touched it (saved or changed the status), for ordering the Saved page.
         trackedAt: latest(savedAt.get(c.id), apps.get(c.id)?.updatedAt),
     }));

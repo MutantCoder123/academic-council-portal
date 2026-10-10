@@ -5,6 +5,7 @@ import EligibilityBadge from "./EligibilityBadge";
 import FreshnessLine from "./FreshnessLine";
 import SaveButton from "./SaveButton";
 import ApplicationStatusButton from "./ApplicationStatusButton";
+import ApplicationNote from "./ApplicationNote";
 import { formatDate } from "../lib/format";
 
 const TYPE_LABELS = { INTERNSHIP: "Internship", FULL_TIME: "Full-time" };
@@ -89,9 +90,12 @@ export default function JobCard({ posting, isNew = false, showStatus = false, on
       </div>
 
       {showStatus && (
-        <div className="relative z-10 mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your application</span>
-          <ApplicationStatusButton posting={posting} onChange={onChange} />
+        <div className="relative z-10 mt-3 pt-3 border-t border-slate-100 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Your application</span>
+            <ApplicationStatusButton posting={posting} onChange={onChange} />
+          </div>
+          <ApplicationNote key={`${posting.applicationStatus}-${posting.applicationNote}`} posting={posting} onChange={onChange} />
         </div>
       )}
     </div>
