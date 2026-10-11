@@ -219,6 +219,7 @@
 #### F-11 Clean up candidate companies
 - **Design:** on the Candidate companies tab: **Reject** a candidate (e.g. "keka", "colecta" taken from page noise) when nothing LIVE uses it: its postings go to Flagged with `company` uncertain and the candidate is deleted; **Edit name/website** before approving.
 - **Effort:** M
+- **Status:** ✅ Built 11 Oct (`eb1dd35`, P7-T11, C-125, D-13): on Candidate companies: Edit (name, website), Reject… (optional reason) for a candidate nothing live, no board and no experience uses — hidden (`Company.rejectedAt`), never deleted; its postings go to Flagged with company uncertain; "Show rejected" with Restore.
 
 ### Students
 

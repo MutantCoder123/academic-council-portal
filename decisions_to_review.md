@@ -119,3 +119,14 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   cannot drop an enum value, so these two stay even if the adapters are removed.
 - **Status:** Decided by the user (11 Oct 2026). AI_Rules §3 itself is unchanged (the AI may not
   edit it); this entry is the record of the exception.
+
+## D-13 Rejecting a candidate company hides it; nothing is deleted (P7-T11, C-125)
+- **What:** "Reject" on a candidate company sets `rejectedAt` (with who and an optional reason);
+  the row, its aliases and its postings stay. It leaves the candidate list, the company pickers and
+  the counts; "Show rejected" lists it with Restore. Allowed only when no live posting, no job board
+  and no experience uses it. Its other postings get "company" as an uncertain field (Flagged). The
+  name stays known to the matcher, so the same junk name later attaches to the hidden candidate and
+  is flagged, instead of creating a new candidate every time.
+- **Why:** the user chose "hide it and take note on this decision" (10 Oct 2026) over deleting the
+  row; F-11 and D-01 treat permanent deletes as needing an explicit OK.
+- **Status:** Decided by the user (10 Oct 2026); the details above were chosen by the AI.

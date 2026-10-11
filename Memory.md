@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T10 done 10 – 11 Oct)**. Next: P7-T11. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T11 done 10 – 11 Oct)**. Next: P7-T12. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 – D-14 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `56ac838` feat(careers): P7-T10 F-10 experience shortcuts on company pages (local, not pushed)
+- **Last commit:** `eb1dd35` feat(careers): P7-T11 F-11 candidate company cleanup (edit, reject = hide, restore) (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 758 passed (51 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 764 passed (52 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -95,6 +95,7 @@
 | Merge two postings | `server-acc/services/careers/postings/mergePostings.js`, `GET /careers/admin/postings/merge-preview`, `POST /careers/admin/postings/merge`; client `pages/admin/careers/components/MergePostingsDialog.jsx` | All postings rows; company merge dialog |
 | Per-board keyword rules | `server-acc/services/careers/sources/keywordRules.js`, check in `ingest/runSource.js`, `PATCH /careers/admin/sources/:id`; migration `20261011051019_careers_source_keyword_rules`; client `EditSourceDialog.jsx` | Sources → Edit |
 | Experience shortcuts (admin) | client `pages/Careers/components/ExperienceAdminActions.jsx` on `CompanyPage.jsx`; uses `careersAdminApi.unlinkBackfill` and upstream `deletePost` | company pages, career admins only |
+| Reject / restore a candidate company | `server-acc/services/careers/companies/rejectCandidate.js`, `POST /careers/admin/companies/:id/reject` / `restore`, `?status=REJECTED` on the company list; migration `20261011051917_careers_reject_candidate`; client `pages/admin/careers/ReviewCandidates.jsx` | Jobs review → Candidate companies |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -844,3 +845,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `http_p7t10.mjs` (2/2): student unlink 403; student DELETE of an experience uploaded by someone else 403. All P7-T10 experiences removed (0 left).
   - Client build ✓; `npx eslint src` 36 (baseline); touched files 0 errors; `npm test` 758 passed.
 - Next step: P7-T11.
+
+### 2026-10-11, P7-T11: candidate company cleanup (F-11) 🗄️ — reject = hide (user, D-13)
+- Did: migration (`--create-only`, SQL read: 1 ALTER TABLE, 3 ADD COLUMN; forbidden grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `rejectCandidate.js` (6 tests), controller + routes, list filter, counts, candidates tab (C-125, D-13). Updated the review-counts test for the new count query.
+- Checks:
+  - `http_p7t11.mjs` (15/15) on a throwaway candidate "Acc Noise Platform" with pending posting #47 pointed at it: listed; with LIVE #53 pointed at it → 409 "1 live posting(s) use …"; student 403; reject with a reason → 1 posting flagged; row kept (CANDIDATE, rejectedAt, by user 2, reason); gone from `status=CANDIDATE` and from `status=ALL` (pickers); listed under REJECTED; candidate count 11 → 10; #47 `uncertainFields` = [company] and listed under Flagged; approving #47 409; approving the candidate 409; `resolveCompany` on the same name → the rejected candidate (exact, uncertain), no new company; reject twice 409; restore → candidate again. #47, #53 and the company removed / restored.
+  - Browser (admin): a second throwaway candidate: row "0 postings · 1 alias … Edit · Merge into… · Approve · Reject…"; Reject… with reason → gone, tab count 11 → 10; Show rejected (1) → "Rejected 11/10/2026 · job platform, not the employer" → Restore → back in the list; 375 px scrollWidth 375. Removed after.
+  - `npm test` → 764 passed (52 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P7-T12.
