@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 done 11 Oct (3/3) with the user's OK (D-15)**. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
+- **Phase / task:** P0 – P3 done; **P1-T10b done 11 Oct** (Gemini built, mock-tested; live call waits for a key, V-06); P4-T1 done; bugs B-01 – B-21 fixed; P5 – P8 done. Next: **P4-T2** (demo on Groq), **P4-T3** (final QA + PR draft; the user opens the PR). Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b8c4c9c` feat(careers): Groq provider (openai/gpt-oss-120b) as the cloud LLM for testing (local, not pushed)
+- **Last commit:** `07234d2` feat(careers): P1-T10b Gemini provider (plain fetch, mocked tests); Groq in .env.example (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
-- **LLM provider:** for testing since 11 Oct: **Groq** `openai/gpt-oss-120b` (cloud, free tier: 30 req/min, 1,000/day, 8K tokens/min; `LLM_PROVIDER=groq`, `CAREERS_LLM_FAST_MODEL=openai/gpt-oss-120b`, `GROQ_API_KEY` in the local `server-acc/.env`, never committed). Local Ollama `qwen2.5:7b` still works (`LLM_PROVIDER=ollama`, `CAREERS_LLM_FAST_MODEL=qwen2.5:7b`). **Gemini for the final phase** (P1-T10b, before P4-T2). `careers.llmEnabled` is **on** in the dev DB since 11 Oct.
+- **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 790 passed (57 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 797 passed (58 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -919,3 +919,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Status: good model → reachable, modelPresent, keyPresent, usable; `CAREERS_LLM_FAST_MODEL=no-such-model` → modelPresent false, usable false. (First version used `/models/{encoded id}` and wrongly said missing; fixed before commit.)
   - End to end: `careers.llmEnabled` turned on (admin API); links #7 (iipe.ac.in SIP) and #8 (iiitb.ac.in SRIP), which Ollama had failed as "not a single posting", retried; `runJob.js links` → both EXTRACTING → Groq 1.3 s / 2.0 s, 22 s apart → postings #115 "Summer Internship Program (SIP)" (IIPE, stipend UNCLEAR "Rs. 10,000/- for the entire tenure", confidence 0.4) and #116 "IIIT-B Summer Research Internship Program (SRIP) 2025" (deadline 2025-04-30, 2 months, confidence 0.53), both PENDING_REVIEW with uncertain fields, candidate companies IIPE and IIIT-B; LlmUsage rows provider groq, cost 0. Ops `llm`: provider groq, usable, todayRequests 2 / dailyLimit 200. Left in the review queue for an admin (#116 is a 2025 programme and should be rejected).
   - `npm test` → 790 passed (57 files).
+
+### 2026-10-11, P1-T10b: Gemini provider (built without a key)
+- User: the Groq key was rotated (new key in `.env`, checked usable); build Gemini now and run the demo on Groq; prepare the demo data.
+- Did: `providers/gemini.js` with plain fetch (no `@google/genai`, C-132), registered in `callModel.js`; per-provider `PAUSE_MS` (Gemini 4 s moved out of runExtractions); `.env.example` lists groq / gemini and `GROQ_API_KEY` (`07234d2`).
+- Checks: `geminiProvider.test.js` 7/7 (request body; text parts joined without thoughts; output = candidates + thoughts tokens; MAX_TOKENS → LENGTH; SAFETY / RECITATION / PROHIBITED_CONTENT / blockReason → BLOCKED; 400 API_KEY_INVALID and 403 → AUTH, 404 → MODEL_MISSING, 429 → RATE_LIMIT, 400 other → BAD_REQUEST, 503 → SERVER; key in the header not the URL; no key → CONFIG; fetch failure → UNREACHABLE; status cases; provider / default model / cap per LLM_PROVIDER; 50K input truncated under 41K). Live status by env only: gemini → keyPresent false "GEMINI_API_KEY is not set."; groq → usable; ollama `qwen2.5:7b` → usable. `npm test` → 797 passed (58 files).
+- Open: live Gemini call (V-06).

@@ -8,18 +8,18 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | Phase | Planned dates | Tasks | Done | Status |
 |---|---|---|---|---|
 | P0 Foundation | 29 Sep – 1 Oct | 8 | 8 | **Done** |
-| P1 Ingestion | 1 – 4 Oct | 12 | 11 | In progress |
+| P1 Ingestion | 1 – 4 Oct | 12 | 12 | **Done** |
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
 | P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
-| **Plan to 10 Oct** | | **31** | **28** | **90 %** |
+| **Plan to 10 Oct** | | **31** | **29** | **94 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
 | P7 Depth | after P6 | 12 | 12 | **Done** |
 | P8 Needs a decision | only with the user's OK | 3 | 3 | **Done** |
-| **Total incl. P5 – P8** | | **64** | **61** | **95 %** |
+| **Total incl. P5 – P8** | | **64** | **62** | **97 %** |
 
-**Next task:** **P8 done (3/3).** All P5 – P8 tasks are built. Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY; Groq is the testing stand-in, C-131), `P4-T2`, `P4-T3` (the human opens the upstream PR), and the go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05).
+**Next task:** `P4-T2` demo readiness (on Groq, user 11 Oct), then `P4-T3` final QA + PR draft (the user opens the PR). Go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-06).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -49,7 +49,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P1-T8 | Sources + Operations UI | [x] | bf52ad8 | FAILING board red with error; worker stale alert (faked heartbeat); visibleToStudents toggle flips student status |
 | P1-T9 | Student link pipeline (SSRF guard, JSON-LD, ATS links) | [x] | 4ef6cbd | 127.0.0.1 / 169.254.169.254 / 10.x hostname FAILED; LinkedIn STORED_ONLY unfetched; GH link DUPLICATE (+obs); 6th → 429 |
 | P1-T10 | LLM extraction: provider layer + local Qwen 7B (Ollama) + verify.js | [x] | 754aa3e | 368 tests; smoke: 3 real non-ATS job pages → LLM_FAST postings in Flagged (0.40/0.55/0.55); llmEnabled off stops; Ollama down → red alert, rows QUEUED |
-| P1-T10b | Gemini provider (required for final phase; needs API key) | [ ] | | **Deferred (user, 2 Oct): waiting for GEMINI_API_KEY. Must be done before P4-T2.** Testing stand-in since 11 Oct: Groq `openai/gpt-oss-120b` (`b8c4c9c`, C-131) |
+| P1-T10b | Gemini provider (required for final phase; needs API key) | [x] | 07234d2 | User 11 Oct: build Gemini now, demo on Groq. `providers/gemini.js` (plain fetch to generateContent, no SDK / no new dependency), 7 mocked tests (body, finish / usage incl. thinking, errors incl. 400 API_KEY_INVALID → AUTH, header key, status, env-only switch, 40K cap); live: gemini → "GEMINI_API_KEY is not set", groq and ollama usable by env change only; 797 tests. **Live Gemini call waits for a key (V-06)** |
 | P1-T11 ◇ | Liveness recheck for manual/link postings | [x] | 64ea7bf | 373 tests; dev DB: 8 example.com test postings 404 twice → EXPIRED; real pages stay live; worker lists recheckLiveness 30 5 * * * |
 
 ## P2: Browsing

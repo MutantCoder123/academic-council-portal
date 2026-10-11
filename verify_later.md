@@ -12,6 +12,7 @@
 | V-03 | SmartRecruiters accepts an unknown company id | P7-T7 | ⬜ Open (known gap) |
 | V-04 | Merge postings from the company screen after a company merge | P7-T8 | ⬜ Open |
 | V-05 | Season data on postings that existed before P7-T3 | P7-T3 | ⬜ Open |
+| V-06 | Live Gemini call (P1-T10b built and mock-tested only) | P1-T10b | ⬜ Open (needs GEMINI_API_KEY) |
 
 ---
 
@@ -89,3 +90,19 @@
   refreshes them), or a one-off backfill is decided on. A backfill would run `parseSeason` over the
   stored title and description and fill only empty columns, never overwriting an admin's edit.
   Manual and student-link postings without season words stay empty, which is correct.
+
+## V-06: Live Gemini call
+
+- **Why open:** there is no `GEMINI_API_KEY`. `providers/gemini.js` is unit-tested against mocked
+  responses and the switch is checked (`LLM_PROVIDER=gemini` → "GEMINI_API_KEY is not set"); no real
+  request has been sent. The demo (P4-T2) runs on Groq by the user's choice.
+- **How to check:**
+  1. In `server-acc/.env`: `GEMINI_API_KEY=<key>`, `LLM_PROVIDER=gemini`,
+     `CAREERS_LLM_FAST_MODEL=gemini-3.1-flash-lite`. Restart the API.
+  2. Operations → AI extraction shows provider gemini, usable.
+  3. Retry two student links (or share a non-ATS job page) and run
+     `node scripts/careers/runJob.js links`.
+- **Passes when:** the calls succeed (Gemini accepts `responseJsonSchema` with nullable
+  `["string","null"]` types; if it does not, switch to `anyOf` per Architecture §8.1), the postings
+  land in the review queue, `LlmUsage` rows say provider gemini with cost 0 on the free tier, and
+  switching `LLM_PROVIDER` back to groq or ollama still works.
