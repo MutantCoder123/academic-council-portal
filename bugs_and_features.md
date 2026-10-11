@@ -352,6 +352,12 @@
 **Rules note.** Hard deletes (F-02, F-07, F-09, F-11, F-17) are new destructive features. AI_Rules §3 says rows are only changed through explicit features, so each needs the user's go-ahead before it is built, and each must: confirm in the UI, show what else is removed, and leave an audit line. Every 🗄️ item is an additive migration (new table or nullable column), reviewed with `--create-only` first.
 - **Status:** ✅ Built 10 Oct (`3aa3460`, P7-T6, C-120): "Copy link" (portal URL; the reader logs in) and "Share on WhatsApp" (title + company + URL via wa.me) on the job page of a LIVE posting.
 
+#### F-33 Filter the jobs list by my application status (added 11 Oct, user request)
+- **Problem:** a student who tracks openings cannot list only the ones they haven't applied to yet, or only the ones marked Interested.
+- **Design:** a "My application" select in the jobs filters: Any, Not applied yet (not tracked or Interested), Not tracked, Interested, Applied, In progress, Offer, Rejected. Only the student's own tracking rows count. Kept in the URL, counted on "Filters (n)", remembered by "My last filters"; not part of job alerts.
+- **Effort:** S
+- **Status:** ✅ Built 11 Oct (`524c085`, C-136).
+
 ---
 
 ## 3. Go-live checklist and suggested order
