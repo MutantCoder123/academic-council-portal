@@ -993,3 +993,6 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 ### 2026-10-11, B-27: admin company picker (user report)
 - Did: outside-click / Escape / focus-out close, click / ArrowDown reopen, portal + fixed position (C-139). Browser: All postings: list bottom is the top element, closes on outside click, Escape, Tab, reopens on click, Paytm pick → `?companyId=37&company=Paytm`. Add board dialog: list extends past the dialog, Escape closes the list but not the dialog, a click in the dialog closes the list. Build ✓, eslint 36.
 - Noticed: candidate companies "Another Candidate <timestamp>" (left by old check scripts) are not matched by the cleanup command's "… Test <timestamp>" rule.
+
+### 2026-10-11, B-28: Student links tab count follows the status filter (user report)
+- `onCount` from `ReviewLinks` → tab number while the tab is open (C-140). Browser: tab = rows for needs attention 1 / all 8 / pending review 6 / duplicate 1 / failed 0; back to 1 after switching tabs. Build ✓, eslint 36.
