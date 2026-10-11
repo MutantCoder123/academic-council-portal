@@ -125,6 +125,7 @@
 | B-21 | Pay filter is close to useless on real data: none of the 25 live postings states pay, so "minimum stipend" only shows undisclosed results | data, `JobFilters.jsx` | UI hint ("Most company boards don't publish pay"); B-03-style parser for "stipend ₹…" in descriptions | S |
 | B-22 | "About the role" of an AI-extracted posting is the whole fetched page: on an aggregator page (e.g. Semesteria) it includes menus, a "Similar Jobs" list and a chat widget (reported by the user, 11 Oct, posting #101) | `extract/applyExtraction.js` (`descriptionText: extraction.inputText`) | Model returns verbatim start / end anchors; code cuts the page between them | S |
 | B-23 | Posting #103: the header lines (title, "0 Years", location, "Full-Time") and the "Requirements" heading render as one paragraph (user report, 11 Oct) | `client-acc/.../lib/description.js` (a run of > 2 short lines is never a heading); the B-22 start anchor included the header lines | Last line of a short-line run that a list follows is the list's heading; prompt: start after the header lines | S |
+| B-24 | Posting #110: "Positions / Mode / Duration" lines look like plain text, and the description says "ob Title" (user report, 11 Oct) | `lib/description.js` (no layout for "Label: value" lines); the typo is in Paytm's own Lever posting (`<div>ob Title: …`) | Facts block for runs of ≥ 2 "Label: value" lines; typo corrected by an admin edit | S |
 
 
 **Status of the Low bugs (9 Oct):** all fixed.
@@ -144,6 +145,7 @@
 | B-21 | `3dace0b` | Pay read from the description when stated with an amount (flagged); filter hint (C-95) |
 | B-22 | `8ef1221` | Description cut from the page by the model's verbatim anchors, widened to whole lines; whole page only as a fallback; 4 existing postings fixed through the admin edit API (C-133) |
 | B-23 | `068abf0` | Run-before-list heading rule (2 postings change layout, all text kept); prompt starts the description after the header lines; #103 re-cut (C-134) |
+| B-24 | `bd2e69f` | Facts block with bold labels (9 blocks on 7 postings, all text kept); #110 "ob Title" → "Job Title" by admin edit (source typo; re-fetches never overwrite a seen posting) (C-135) |
 
 ---
 

@@ -14,7 +14,7 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `068abf0` fix(careers): B-23 a list's heading at the end of a run of short lines; descriptions start after the header lines (local, not pushed)
+- **Last commit:** `bd2e69f` feat(careers): B-24 "Label: value" lines in job descriptions shown as facts with bold labels (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -974,3 +974,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Cause: the layout rule only makes a run of ≤ 2 short lines a heading, so "Software Engineer - Intern / 0 Years / Bengaluru (Kormangala) / Full-Time / Requirements" stayed one paragraph; and the B-22 start anchor included those header lines.
 - Did: run-before-list rule in `description.js`; prompt rule to start after the header lines; #103 re-cut (starts at "Requirements", 933 chars) (`068abf0`, C-134).
 - Checks: `desc_check.mjs` on 63 postings → text kept (same 2 trailing-dash cases as before); before / after snapshot diff → only #103 and #102 change. Browser #103: headings Requirements, The interview process, Perks for our interns; no header-line paragraph; 375 px scrollWidth 375. Client lint 0 on the file, build ✓; `npm test` → 805 passed.
+
+### 2026-10-11, B-24: "Label: value" facts; "ob Title" (#110, user report)
+- "ob Title" comes from Paytm's Lever posting (`descriptionPlain` and the HTML both start "ob Title:"); corrected to "Job Title" via admin PATCH (EDIT row). A re-fetch of a seen posting only refreshes liveness, so the fix stays.
+- Did: facts rule in `description.js` + `<dl>` rendering in `JobDescription.jsx` (`bd2e69f`, C-135).
+- Checks: `desc_check.mjs` (63 postings) text kept, same 2 trailing-dash cases; 9 facts blocks; diff → #74, #82, #86, #87, #109, #110 gain facts (plus #88 / #103 from earlier text edits). Browser #110 at 1280 and 375 px: box with "Job Title: / Positions (MBA / Graduate) Location: / Mode: / Duration:" in bold, scrollWidth 375. Client build ✓, `eslint src` 36.
