@@ -21,6 +21,7 @@
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
 - **Tests:** `npm test` → 768 passed (53 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
+- **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
 
