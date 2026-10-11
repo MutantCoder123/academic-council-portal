@@ -8,7 +8,7 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; **P1-T10b done 11 Oct** (Gemini built, mock-tested; live call waits for a key, V-06); P4-T1 done; bugs B-01 – B-21 fixed; P5 – P8 done. Next: **P4-T2** (demo on Groq), **P4-T3** (final QA + PR draft; the user opens the PR). Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
+- **Phase / task:** P0 – P3 done; P1-T10b done (live Gemini call waits for a key, V-06); P4-T1 and **P4-T2 done 11 Oct** (demo on Groq); bugs B-01 – B-21 fixed; P5 – P8 done. Next: **P4-T3** (final QA + PR draft; the user opens the PR). Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
@@ -925,3 +925,32 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: `providers/gemini.js` with plain fetch (no `@google/genai`, C-132), registered in `callModel.js`; per-provider `PAUSE_MS` (Gemini 4 s moved out of runExtractions); `.env.example` lists groq / gemini and `GROQ_API_KEY` (`07234d2`).
 - Checks: `geminiProvider.test.js` 7/7 (request body; text parts joined without thoughts; output = candidates + thoughts tokens; MAX_TOKENS → LENGTH; SAFETY / RECITATION / PROHIBITED_CONTENT / blockReason → BLOCKED; 400 API_KEY_INVALID and 403 → AUTH, 404 → MODEL_MISSING, 429 → RATE_LIMIT, 400 other → BAD_REQUEST, 503 → SERVER; key in the header not the URL; no key → CONFIG; fetch failure → UNREACHABLE; status cases; provider / default model / cap per LLM_PROVIDER; 50K input truncated under 41K). Live status by env only: gemini → keyPresent false "GEMINI_API_KEY is not set."; groq → usable; ollama `qwen2.5:7b` → usable. `npm test` → 797 passed (58 files).
 - Open: live Gemini call (V-06).
+
+### 2026-10-11, P4-T2: demo readiness + PRD §7 run (on Groq)
+- User: run the demo on Groq; OK to approve ~30 postings and turn the flag on in the dev DB.
+- Data:
+  - API restarted with the rotated Groq key. `runJob.js ingest`: 12 sources SUCCESS, fetched 1,728, kept 54, new 6, dup 1, seen 47; 3 postings expired by liveness.
+  - Review of the 31 pending, one by one from the descriptions (admin API, history rows by admin #2):
+    - **Approved 13:** #101 MyGyan SWE Intern, #103 Keka SWE Intern (companies approved from candidates), #108 / #109 / #110 Paytm HR / TA interns, #117 / #118 Rubrik SWE (0 – 2 yrs), #122 Razorpay Junior Analyst (freshers), #121 Razorpay Analyst Risk, #111 Paytm Product Analyst, #107 Paytm User Growth Associate, #65 Groww Content Associate, #50 Stripe Fraud Ops Associate. Type set to FULL_TIME where it was UNKNOWN.
+    - **Rejected 17, with reasons:**
+      - Needs experience: #47, #48, #51, #52, #55, #61, #68, #112, #119, #120 (1 – 8 years).
+      - Not in India: #60 Bucharest.
+      - Shift support, not campus roles: #49 Mandarin, #57 weekend, #58 social-media support, #62 voice support.
+      - Past dates: #102 Summer 2026, #116 SRIP 2025.
+    - **Left for a human:** #115 IIPE SIP (no dates).
+  - Result: 40 LIVE.
+  - 5 demo experiences, titled "(demo)" and saying "Local demo data … not a real senior's account" (#43 – #47), created through `POST /posts` as the dev student and published via Prisma (upstream's PATCH-to-PUBLISHED emails every user). Paytm 19 roles, Razorpay 3, Rubrik 4, Groww 3, Meesho 1, each with 1 experience.
+  - `careers.visibleToStudents` on. Worker started (`node worker.js`, heartbeat fresh); the only alert left is amber LINKS_WAITING.
+  - The links run also processed old link #9 (Tirupati internship page) through Groq → a new pending posting.
+- PRD §7 (`prd7.mjs`, `prd7b.mjs`, `prd6.mjs`; everything created by the checks removed, settings restored):
+  1. ✅ Flag off → student status `visibleToStudents:false`, `/careers/postings` 404; on → visible, 20 postings, no restart (30 s settings cache).
+  2. ✅ 12 healthy ATS sources with runs and postings; a temporary broken board → FAILING after one run, one SourceRun row, red SOURCE_FAILING ("HTTP 404 from boards-api.greenhouse.io"); removed after.
+  3. ✅ #59 "Software Engineer, Intern": STUDENT_LINK + GREENHOUSE sources on one posting.
+  4. ✅ "Google India" and "Google LLC" → company 1 (normalized "google"); merge log has 3 MERGE + 2 SPLIT, all undone.
+  5. ✅ minStipend=10000 without include-undisclosed → 0 results (40 undisclosed live); with it → 22 results.
+  6. ✅ Paytm, Razorpay, Rubrik, Groww, Meesho company pages: open roles + experiences (demo experiences, labelled).
+  7. ✅ 127.0.0.1:3000 → "Port 3000 is not allowed"; 10.0.0.5 → "Address 10.0.0.5 is not allowed"; localhost → "resolves to a blocked address (::1)" (refused in the guarded DNS lookup; the "safeFetch GET" log line comes before the connect); LinkedIn → STORED_ONLY, not fetched.
+  8. ✅ Operations llm: groq, openai/gpt-oss-120b, usable, 2 / 200 today. Invalid key → PROVIDER_UNUSABLE ("Groq refused the API key (HTTP 401)"), queued item untouched; daily cap = today's count → DAILY_LIMIT, no call, item waits.
+  9. → P4-T3.
+  10. ✅ 21 careers migrations, no DROP / RENAME / ALTER COLUMN / SET NOT NULL. `schema.prisma` vs the merge base with upstream: 0 removed lines. Upstream GET /posts, /announcements?page&limit, /resources?page&limit, /roadmaps → 200.
+- Note for P4-T3: upstream/main is 5 commits ahead of our merge base (`28a65dd`). The schema check against today's `upstream/main` lists upstream's new Doubt models as "removed".

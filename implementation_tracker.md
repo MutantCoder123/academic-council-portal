@@ -11,15 +11,15 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P1 Ingestion | 1 – 4 Oct | 12 | 12 | **Done** |
 | P2 Browsing | 5 – 6 Oct | 4 | 4 | **Done** |
 | P3 Linking | 7 – 8 Oct | 4 | 4 | **Done** |
-| P4-lite + Buffer | 9 – 10 Oct | 3 | 1 | In progress |
-| **Plan to 10 Oct** | | **31** | **29** | **94 %** |
+| P4-lite + Buffer | 9 – 10 Oct | 3 | 2 | In progress |
+| **Plan to 10 Oct** | | **31** | **30** | **97 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
 | P7 Depth | after P6 | 12 | 12 | **Done** |
 | P8 Needs a decision | only with the user's OK | 3 | 3 | **Done** |
-| **Total incl. P5 – P8** | | **64** | **62** | **97 %** |
+| **Total incl. P5 – P8** | | **64** | **63** | **98 %** |
 
-**Next task:** `P4-T2` demo readiness (on Groq, user 11 Oct), then `P4-T3` final QA + PR draft (the user opens the PR). Go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-06).
+**Next task:** `P4-T3` final QA + PR draft (the user opens the PR). Go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-06).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -72,7 +72,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
 | P4-T1 ◇ | Saved + application tracking | [x] | 30ed0ca | Migration careers_tracking (additive). Save + status persist across reload/new session; deleting a posting cascades its saves and applications (checked in a rolled-back transaction); API checks 25/25; browser: New badge on exactly the 3 postings published after lastVisit, status cycle + menu, Saved filters, expired saved posting, 375 px; 464 tests |
-| P4-T2 | Demo readiness + PRD §7 criteria run | [ ] | | |
+| P4-T2 | Demo readiness + PRD §7 criteria run | [x] | (data + checks, no code) | 11 Oct, on Groq (user). Real ingest 12 sources (1,728 fetched, 54 kept, 6 new); 31 pending reviewed one by one: 13 approved, 17 rejected with reasons, 1 left for a human → 40 LIVE; 5 labelled demo experiences → Paytm, Razorpay, Rubrik, Groww, Meesho have postings + experiences; worker running. PRD §7: 1 – 8 and 10 pass (details in Memory.md), 9 in P4-T3 |
 | P4-T3 | Final QA + PR draft | [ ] | | |
 
 ## P5: Admin control (before go-live)
