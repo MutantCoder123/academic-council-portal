@@ -8,7 +8,7 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P1-T10b done (live Gemini call waits for a key, V-06); P4-T1 and **P4-T2 done 11 Oct** (demo on Groq); bugs B-01 – B-21 fixed; P5 – P8 done. Next: **P4-T3** (final QA + PR draft; the user opens the PR). Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
+- **Phase / task:** everything built; P4-T2 done; **P4-T3 QA done and PR description drafted (`PR_DESCRIPTION.md`), waiting on the user** for the upstream merge (5 upstream commits conflict in 4 files) and to open the PR. Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
@@ -954,3 +954,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   9. → P4-T3.
   10. ✅ 21 careers migrations, no DROP / RENAME / ALTER COLUMN / SET NOT NULL. `schema.prisma` vs the merge base with upstream: 0 removed lines. Upstream GET /posts, /announcements?page&limit, /resources?page&limit, /roadmaps → 200.
 - Note for P4-T3: upstream/main is 5 commits ahead of our merge base (`28a65dd`). The schema check against today's `upstream/main` lists upstream's new Doubt models as "removed".
+
+### 2026-10-11, P4-T3: final QA + PR draft
+- QA (merge base with upstream `28a65dd`):
+  - `npm test` → 797 passed (58 files).
+  - Client `npm run build` ✓; `npx eslint` on all 96 client files we added or changed → 0 errors; `npx eslint src` → 36 errors (baseline).
+  - Existing files changed since the merge base, all allowed by AI_Rules §4 or a recorded exception (C-66, D-15): App.jsx, DashboardLayout.jsx, CareerVaultuser/index.jsx, docker-compose.yml, config/db.js, ForumController.js, server-acc package.json / lock, schema.prisma, server.js. Nothing deleted or renamed. 313 files added (all careers paths, tests, `.env.example`, `vitest.config.js`, `worker.js`).
+  - Whole branch: 96 commits, +25,646 / −15 lines.
+- **Upstream moved:** 5 commits since the merge base (#151 doubt forum, #153 post-login redirect, #155 Level Up reveal). `git merge-tree` reports conflicts in `client-acc/src/App.jsx`, `client-acc/src/layout/DashboardLayout.jsx`, `server-acc/prisma/schema.prisma` and `server-acc/server.js`. A local `git merge --no-commit upstream/main` was refused by the permission check (shared resource), and was not retried another way. Left for the user.
+- `PR_DESCRIPTION.md` drafted for the maintainers: features, changes to existing files, the 21 migrations, env vars, deploy / rollback, testing, what is not verified, and a pointer to the private security report (no content from `upstream_vulnerabilities.md`). No AI attribution.

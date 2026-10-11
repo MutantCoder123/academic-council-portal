@@ -19,7 +19,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P8 Needs a decision | only with the user's OK | 3 | 3 | **Done** |
 | **Total incl. P5 – P8** | | **64** | **63** | **98 %** |
 
-**Next task:** `P4-T3` final QA + PR draft (the user opens the PR). Go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-06).
+**Next task:** `P4-T3`: the user decides how to bring in upstream/main (5 commits, 4 conflicting files), then opens the PR with `PR_DESCRIPTION.md`. Go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-06).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -73,7 +73,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 |---|---|---|---|---|
 | P4-T1 ◇ | Saved + application tracking | [x] | 30ed0ca | Migration careers_tracking (additive). Save + status persist across reload/new session; deleting a posting cascades its saves and applications (checked in a rolled-back transaction); API checks 25/25; browser: New badge on exactly the 3 postings published after lastVisit, status cycle + menu, Saved filters, expired saved posting, 375 px; 464 tests |
 | P4-T2 | Demo readiness + PRD §7 criteria run | [x] | (data + checks, no code) | 11 Oct, on Groq (user). Real ingest 12 sources (1,728 fetched, 54 kept, 6 new); 31 pending reviewed one by one: 13 approved, 17 rejected with reasons, 1 left for a human → 40 LIVE; 5 labelled demo experiences → Paytm, Razorpay, Rubrik, Groww, Meesho have postings + experiences; worker running. PRD §7: 1 – 8 and 10 pass (details in Memory.md), 9 in P4-T3 |
-| P4-T3 | Final QA + PR draft | [ ] | | |
+| P4-T3 | Final QA + PR draft | [~] | (QA + `PR_DESCRIPTION.md`) | 11 Oct: QA passes (797 tests; build ✓; 96 changed client files 0 lint errors; `eslint src` 36; changed existing files all allowed). PR description drafted. **Blocked on the user:** upstream/main is 5 commits ahead and conflicts in App.jsx, DashboardLayout.jsx, schema.prisma, server.js; merging upstream into the branch was refused by the permission check, so the user decides (merge it, or let the AI do it). The user opens the PR |
 
 ## P5: Admin control (before go-live)
 | ID | Task | Status | Commit | Notes |
