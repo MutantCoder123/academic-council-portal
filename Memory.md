@@ -8,13 +8,13 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T9 done 10 – 11 Oct)**. Next: P7-T10. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T10 done 10 – 11 Oct)**. Next: P7-T11. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `af45c8c` feat(careers): P7-T9 F-08 per-source keyword rules (local, not pushed)
+- **Last commit:** `56ac838` feat(careers): P7-T10 F-10 experience shortcuts on company pages (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -94,6 +94,7 @@
 | SmartRecruiters / Workable adapters | `server-acc/services/careers/ingest/adapters/{smartrecruiters,workable}.js` (`fetchAll`), `fetchJson(url, { body })` in `ingest/http.js`; fixtures `tests/careers/fixtures/{smartrecruiters,smartrecruiters_detail,workable,workable_detail}.json`; migration `20261011045900_careers_more_ats_kinds` | Add board / bulk add |
 | Merge two postings | `server-acc/services/careers/postings/mergePostings.js`, `GET /careers/admin/postings/merge-preview`, `POST /careers/admin/postings/merge`; client `pages/admin/careers/components/MergePostingsDialog.jsx` | All postings rows; company merge dialog |
 | Per-board keyword rules | `server-acc/services/careers/sources/keywordRules.js`, check in `ingest/runSource.js`, `PATCH /careers/admin/sources/:id`; migration `20261011051019_careers_source_keyword_rules`; client `EditSourceDialog.jsx` | Sources → Edit |
+| Experience shortcuts (admin) | client `pages/Careers/components/ExperienceAdminActions.jsx` on `CompanyPage.jsx`; uses `careersAdminApi.unlinkBackfill` and upstream `deletePost` | company pages, career admins only |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -835,3 +836,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (admin): Edit board on paytm shows "Drop titles containing" / "Only keep titles containing" with the help text; Paytm's run history: "180 fetched, 16 relevant, 5 new, 0 merged, 2 dropped by this board's rules".
   - `npm test` → 758 passed (51 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Next step: P7-T10.
+
+### 2026-10-11, P7-T10: experience shortcuts on company pages (F-10)
+- Did: `ExperienceAdminActions.jsx` + `CompanyPage.jsx` (C-124). No server change.
+- Checks:
+  - Created two throwaway PUBLISHED experiences on Swiggy (#19, #20). Browser as admin: #19 Unlink → confirm "Remove it from Swiggy's page? It stays in Career Vault." → card gone; DB: #19 PUBLISHED, `companyId` null. #20 Delete experience… → confirm "Delete “P7-T10 check B (delete)” from Career Vault for everyone? This cannot be undone." → card gone; DB: #20 deleted (upstream route). After relinking #19 for the check: admin sees 1 admin bar; student (375 px) sees the experience and 0 admin buttons, scrollWidth 375.
+  - `http_p7t10.mjs` (2/2): student unlink 403; student DELETE of an experience uploaded by someone else 403. All P7-T10 experiences removed (0 left).
+  - Client build ✓; `npx eslint src` 36 (baseline); touched files 0 errors; `npm test` 758 passed.
+- Next step: P7-T11.

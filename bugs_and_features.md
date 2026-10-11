@@ -214,6 +214,7 @@
 - **Today:** deleting an experience already exists in upstream's **Manage Posts** (`DELETE /posts/:id`, admins and the author), and unlinking it from a company exists on the **Link experiences** page.
 - **Design:** on the company page, career admins get a menu on each experience: "Unlink from this company" (uses the backfill unlink API) and "Delete experience…" (calls the existing upstream delete, with the upstream confirm). No new delete logic; this is only a shortcut to what exists.
 - **Effort:** S
+- **Status:** ✅ Built 11 Oct (`56ac838`, P7-T10, C-124): career admins get "Unlink from this company" (backfill unlink) and "Delete experience…" (upstream `DELETE /posts/:id`, behind our confirmation) under each experience on a company page; students see neither.
 
 #### F-11 Clean up candidate companies
 - **Design:** on the Candidate companies tab: **Reject** a candidate (e.g. "keka", "colecta" taken from page noise) when nothing LIVE uses it: its postings go to Flagged with `company` uncertain and the candidate is deleted; **Edit name/website** before approving.
