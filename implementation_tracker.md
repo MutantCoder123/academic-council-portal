@@ -15,11 +15,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
-| P7 Depth | after P6 | 12 | 11 | In progress |
+| P7 Depth | after P6 | 12 | 12 | **Done** |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **57** | **89 %** |
+| **Total incl. P5 – P8** | | **64** | **58** | **91 %** |
 
-**Next task:** **P7 in progress (11/12).** Next: `P7-T12` (admin activity log, read-only). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P7 done (12/12).** Next: P8 only with the user's OK (P8-T1 F-29, P8-T2 permanent delete, P8-T3 test-data cleanup), or the original plan's open tasks `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`, and the go-live checklist L-01 – L-07.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -115,7 +115,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P7-T9 | Per-source keyword rules (F-08) 🗄️ | [x] | af45c8c | Migration careers_source_keyword_rules (3 nullable ADD COLUMNs); 5 unit tests; live run 8/8: Paytm (Lever) 180 fetched, 18 kept by the global rules, rule "sales, tele" dropped exactly the 2 matching titles (kept 16, run shows sourceRules=2); Stripe (no rules) dropped 0; browser edit fields + run line; 758 tests |
 | P7-T10 | Experience shortcuts on company pages (F-10) | [x] | 56ac838 | Client only, no new delete logic. Browser on throwaway experiences: admin Unlink → still PUBLISHED, companyId null; admin Delete… (confirm) → removed via upstream DELETE /posts/:id; student sees the experience with no admin bar (375 px); API: student unlink 403, student delete of another's 403; all throwaway rows removed |
 | P7-T11 | Candidate company cleanup (F-11) | [x] | eb1dd35 | User chose hide (D-13). Migration careers_reject_candidate (3 nullable ADD COLUMNs); 6 unit tests; API 15/15 (refused while LIVE uses it; reject → hidden from candidates / All / pickers, under REJECTED, count 11 → 10, its pending posting in Flagged with company uncertain and not approvable; same name later resolves to it, no new company; restore); browser Edit / Reject… / Show rejected / Restore, 375 px; 764 tests |
-| P7-T12 | Admin activity log (F-15) | [ ] | | Read-only |
+| P7-T12 | Admin activity log (F-15) | [x] | c19fa11 | Read-only, no schema change. 4 unit tests; API 14/14: all 73 entries (63 reviews, 5 merges / splits, 5 undos) listed with admin and time, newest first, each action filter = DB count, admin filter, fresh reject + reopen on top (rolled back); browser page + filters, 375 px; 768 tests |
 
 ## P8: Needs a decision
 | ID | Task | Status | Commit | Notes |

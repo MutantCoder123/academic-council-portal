@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T11 done 10 – 11 Oct)**. Next: P7-T12. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 – D-14 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 (depth) done 10 – 11 Oct (12/12)**. Next: P8 (needs the user's OK per item) or P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 – D-14 new in P7; D-06 partly answered). Code and docs since `731ca0a` / `ed62275` are local, not pushed.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `eb1dd35` feat(careers): P7-T11 F-11 candidate company cleanup (edit, reject = hide, restore) (local, not pushed)
+- **Last commit:** `c19fa11` feat(careers): P7-T12 F-15 admin activity log (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 764 passed (52 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 768 passed (53 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -96,6 +96,7 @@
 | Per-board keyword rules | `server-acc/services/careers/sources/keywordRules.js`, check in `ingest/runSource.js`, `PATCH /careers/admin/sources/:id`; migration `20261011051019_careers_source_keyword_rules`; client `EditSourceDialog.jsx` | Sources → Edit |
 | Experience shortcuts (admin) | client `pages/Careers/components/ExperienceAdminActions.jsx` on `CompanyPage.jsx`; uses `careersAdminApi.unlinkBackfill` and upstream `deletePost` | company pages, career admins only |
 | Reject / restore a candidate company | `server-acc/services/careers/companies/rejectCandidate.js`, `POST /careers/admin/companies/:id/reject` / `restore`, `?status=REJECTED` on the company list; migration `20261011051917_careers_reject_candidate`; client `pages/admin/careers/ReviewCandidates.jsx` | Jobs review → Candidate companies |
+| Activity log | `server-acc/services/careers/ops/activityLog.js`, `GET /careers/admin/activity`; client `pages/admin/careers/ActivityLog.jsx` (`/admin/careers/activity`) | link on Operations |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -176,6 +177,7 @@
 - SmartRecruiters answers an unknown company id with an empty list (HTTP 200), so Add board accepts it with "0 jobs now"; the board then shows ZERO_RESULTS after its first run. Workable answers an unknown account with 404 (refused).
 - Add board queues a fetch in `careers.runRequest`; test scripts that add boards must restore that setting (the worker would otherwise run a full ingest when it starts).
 - Prisma returns `[]` for a NULL `String[]` column, so `excludeTitleKeywords` reads as `[]` on boards that never had rules.
+- Check scripts that PATCH a posting as admin create an EDIT review row; resetting the posting's columns does not remove it. Delete review rows with id > the max taken before the check (the P7-T2 / P7-T3 checks left two; removed on 11 Oct).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -853,3 +855,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (admin): a second throwaway candidate: row "0 postings · 1 alias … Edit · Merge into… · Approve · Reject…"; Reject… with reason → gone, tab count 11 → 10; Show rejected (1) → "Rejected 11/10/2026 · job platform, not the employer" → Restore → back in the list; 375 px scrollWidth 375. Removed after.
   - `npm test` → 764 passed (52 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Next step: P7-T12.
+
+### 2026-10-11, P7-T12: admin activity log (F-15) — P7 complete
+- Did: `activityLog.js` (4 tests), route, `ActivityLog.jsx`, route in `App.jsx`, link on Operations (C-126). No schema change.
+- Checks:
+  - `http_p7t12.mjs` (14/14): student 403; DB has 63 PostingReview, 5 CompanyMergeLog (all 5 undone) → log lists 73 entries, every one with an admin name and a time, newest first; action filters CREATE_MANUAL 8, REOPEN 8, EDIT 6, REJECT 5, EXPIRE 4, APPROVE 32 = DB counts; MERGE = merge-log count; adminId=2 only that admin; the filter lists the admins who appear; a fresh reject + reopen on pending #68 show on top (REOPEN, REJECT, "Dev Career Admin", seconds old). #68 and its two review rows restored.
+  - Browser (admin): Operations → Activity log; first row "10 Oct, 06:22 pm · Dev Career Admin · EDITED · Intern - Creative & Communications … #69 · Changed: season, startMonth, durationMonths" — that and an `eligibleGradYears` edit of #63 were left by the P7-T3 / P7-T2 admin-edit checks (they reset the columns but not the review rows); both rows (ids 89, 90) deleted. Action = Merged companies → "Google Cloud India into Google", 3 entries; 375 px scrollWidth 375.
+  - `npm test` → 768 passed (53 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- **P7 summary:** 12/12 tasks (P7-T1 – T12, code `e05f590` … `c19fa11`, plus fixes `f2d0b23`, `96b82e1`, `224b354` from the background commit reviews), tests 678 → 768. Schema (all additive, each `--create-only` + SQL read + forbidden grep + schema diff check): `careers_saved_searches` (enum `AlertFrequency` + `SavedSearch`), `careers_graduation_year`, `careers_internship_season`, `careers_usage_counts` (`PostingDailyStat`, `CareersWeeklyVisitor`), `careers_more_ats_kinds` (2 enum values, user OK, D-14), `careers_source_keyword_rules`, `careers_reject_candidate`. Upstream files touched in P7: `config/db.js` (omit 2 more private columns), `App.jsx` (2 routes), `schema.prisma` (additions only). No new dependencies. The user OK'd both P7 emails and chose hide for candidate rejection. Emails were verified through nodemailer's JSON transport only (no SMTP locally). Decisions for the user to review: D-11 – D-14.
+- Next step: wait for the user (push, P8 items with OK, or P1-T10b / P4-T2 / P4-T3 / go-live).

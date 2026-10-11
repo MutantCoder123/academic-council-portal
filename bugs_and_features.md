@@ -243,6 +243,7 @@
 #### F-15 Admin activity log
 - **Design:** a page listing `PostingReview` rows (approve / reject / expire / edit / create) and `CompanyMergeLog`, filterable by admin and action, so a team of admins can see who published what. Read-only.
 - **Effort:** S
+- **Status:** ✅ Built 11 Oct (`c19fa11`, P7-T12, C-126): Operations → Activity log (`/admin/careers/activity`): posting approve / reject / edit / expire / reopen / create and company merge / split / undo, newest first, with admin and time, filterable by admin and action. Read-only.
 
 #### F-16 Pending-review count in the admin sidebar
 - **Design:** the "Jobs Review" sidebar item shows a badge with pending + flagged counts (one cached call to the existing counts).
