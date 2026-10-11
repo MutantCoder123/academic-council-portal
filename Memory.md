@@ -14,12 +14,12 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `accd3e0` fix(careers): P8-T1 seniors' numbers show a rounded median and middle half, never min / max (local, not pushed)
+- **Last commit:** `b8c4c9c` feat(careers): Groq provider (openai/gpt-oss-120b) as the cloud LLM for testing (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
-- **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
+- **LLM provider:** for testing since 11 Oct: **Groq** `openai/gpt-oss-120b` (cloud, free tier: 30 req/min, 1,000/day, 8K tokens/min; `LLM_PROVIDER=groq`, `CAREERS_LLM_FAST_MODEL=openai/gpt-oss-120b`, `GROQ_API_KEY` in the local `server-acc/.env`, never committed). Local Ollama `qwen2.5:7b` still works (`LLM_PROVIDER=ollama`, `CAREERS_LLM_FAST_MODEL=qwen2.5:7b`). **Gemini for the final phase** (P1-T10b, before P4-T2). `careers.llmEnabled` is **on** in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 786 passed (56 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 790 passed (57 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -187,6 +187,7 @@
 - Check scripts that PATCH a posting as admin create an EDIT review row; resetting the posting's columns does not remove it. Delete review rows with id > the max taken before the check (the P7-T2 / P7-T3 checks left two; removed on 11 Oct).
 - Deleting a posting that a job board still lists does not keep it away: its observation goes with it, so the next fetch creates it again (PENDING_REVIEW). The dialog says so; reject instead when the aim is to keep it out.
 - Upstream `editPost` returns 201 (not 200), and an edit with status PUBLISHED calls `notifyOnNewPost`, which mails every user. Check scripts publish experiences through Prisma, never through that PATCH.
+- Groq model ids contain a slash (`openai/gpt-oss-120b`): check availability with the `/models` list, not `/models/{id}`. After changing `LLM_PROVIDER`, also change `CAREERS_LLM_FAST_MODEL` (an Ollama model name makes Groq report MODEL_MISSING) and restart the API (the worker reads env at start).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -908,3 +909,13 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: `summary()`: median (rounded to the step) from 3 reports, middle half (25th – 75th percentile, widened) from 5, never min / max; card and form hint text (`accd3e0`).
 - Checks: unit tests 7/7 (3 – 4 reports → typical only; 5 reports 20k / 41k / 50k / 59k / 150k → typical 50,000, middle half 40,000 – 60,000). `http_p8t1.mjs` 16/16, including 3 reports → {typical 50000, low null, high null, no min / max keys} and 5 reports (20k, 42k, 50k, 58k, 150k) → {typical 50000, low 40000, high 60000}, neither 20k nor 150k in the response. Browser (375 px): "Stipend: typically about ₹50,000 a month, from 3 seniors (2024 – 2026). Interview rounds: usually 3, from 3 seniors (2024 – 2026)." Seeded rows removed (experiences 12). `npm test` 786 passed; client build ✓; eslint 36 (baseline).
 - Remaining (inherent): a published median can still move when one report is added; at ₹5k rounding from 3 reports that reveals little.
+
+### 2026-10-11, Groq provider for testing (C-131)
+- User asked to use Groq's free API instead of Gemini for testing, with the best free-tier model. Key stored only in the local `server-acc/.env` (gitignored; appended without printing the file).
+- Models the key lists (text): `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b` (+ safeguard, prompt-guard, whisper, TTS, allam). Groq docs (11 Oct): all three 30 RPM / 1K RPD / 8K TPM / 200K TPD on the free plan; all three support strict json_schema. Chose `openai/gpt-oss-120b`.
+- Did: `providers/groq.js`, `isCloud`, daily cap for every cloud provider, per-provider key check, pacing 20 s, batch 5, FlagsCard label; 4 new tests + runExtractions mock (`b8c4c9c`).
+- Checks:
+  - Live call (sample Razorpay SDE intern page): 1.4 s, 1,007 in / 382 out tokens, finish STOP; parsed: Razorpay, SDE Intern (Summer 2027), INTERNSHIP, PPO true, Bengaluru, HYBRID, ₹80,000/month text, branches CSE/ECE/EE → CS/EC/EE, min CPI 7.5, deadline 2026-11-15, apply URL; verify added grad year 2027, no uncertain fields.
+  - Status: good model → reachable, modelPresent, keyPresent, usable; `CAREERS_LLM_FAST_MODEL=no-such-model` → modelPresent false, usable false. (First version used `/models/{encoded id}` and wrongly said missing; fixed before commit.)
+  - End to end: `careers.llmEnabled` turned on (admin API); links #7 (iipe.ac.in SIP) and #8 (iiitb.ac.in SRIP), which Ollama had failed as "not a single posting", retried; `runJob.js links` → both EXTRACTING → Groq 1.3 s / 2.0 s, 22 s apart → postings #115 "Summer Internship Program (SIP)" (IIPE, stipend UNCLEAR "Rs. 10,000/- for the entire tenure", confidence 0.4) and #116 "IIIT-B Summer Research Internship Program (SRIP) 2025" (deadline 2025-04-30, 2 months, confidence 0.53), both PENDING_REVIEW with uncertain fields, candidate companies IIPE and IIIT-B; LlmUsage rows provider groq, cost 0. Ops `llm`: provider groq, usable, todayRequests 2 / dailyLimit 200. Left in the review queue for an admin (#116 is a 2025 programme and should be rejected).
+  - `npm test` → 790 passed (57 files).
