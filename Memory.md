@@ -986,3 +986,6 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 
 ### 2026-10-11, B-25: "Add a note" spacing (user report)
 - `ApplicationNote.jsx`: "Applied on" as a block line, "Add a note" on its own line with an icon and padding (C-137). Browser #122: button 22 px below "Applied on 11 Oct 2026", no longer touching it. Client lint 0 on the file, build ✓.
+
+### 2026-10-11, B-26: Student links tab count (user report)
+- Badge 0 vs 8 listed: badge counted only in-flight / failed links (missed STORED_ONLY), list defaulted to All. Now badge = `needsAttentionWhere` (failed + needs a person, not dismissed), list opens on that filter, "Show all N links" when empty (C-138). Tests: linksAttention 2, reviewCounts updated; 809 passed. Browser: "Student links 1", list shows the LinkedIn link; all links = 8. Client build ✓, eslint 36.
