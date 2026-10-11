@@ -983,3 +983,6 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 ### 2026-10-11, F-33: filter the jobs list by my application status (user request)
 - Did: `myStatus` query param + `myStatusWhere` (2 tests), applied in all three list queries; "My application" select in the filters (`524c085`, C-136).
 - Checks: `http_mystatus.mjs` (9/9): student statuses on 5 live postings (Interested 1, Applied 2, Offer 1, Rejected 1) + the admin's Applied on a 6th; each status filter returns exactly the student's postings with matching totals; In progress → 0; NONE → 34 of 39 (all untracked, including the posting only the admin tracked); NOT_APPLIED = NONE + the Interested one; combines with type; unknown value → 400. Rows removed. Browser (1280): options Any / Not applied yet / Not tracked / Interested / Applied / In progress / Offer / Rejected; Applied → only the applied posting, URL `?myStatus=APPLIED`; 375 px: "Filters (1)", value kept, scrollWidth 375. Test statuses removed. `npm test` → 807; client build ✓, eslint 36.
+
+### 2026-10-11, B-25: "Add a note" spacing (user report)
+- `ApplicationNote.jsx`: "Applied on" as a block line, "Add a note" on its own line with an icon and padding (C-137). Browser #122: button 22 px below "Applied on 11 Oct 2026", no longer touching it. Client lint 0 on the file, build ✓.
