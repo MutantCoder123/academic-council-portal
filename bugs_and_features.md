@@ -199,6 +199,7 @@
 - **Problem:** some boards are mostly noise (Paytm: tele-callers, sales).
 - **Design:** on a source, optional "exclude title keywords" and "only keep titles with" lists, applied after the global relevance rules; the run summary shows "dropped by source rules". 🗄️ two nullable `String[]` columns on `Source`.
 - **Effort:** M
+- **Status:** ✅ Built 11 Oct (`af45c8c`, P7-T9, C-123): "Drop titles containing" / "Only keep titles containing" (whole words, comma-separated, ≤ 20 each) in Edit board; applied after the global rules; each run shows "N dropped by this board's rules".
 
 ### Student links (admin and students)
 

@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T8 done 10 – 11 Oct)**. Next: P7-T9. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T9 done 10 – 11 Oct)**. Next: P7-T10. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `f3e485c` feat(careers): P7-T8 F-06 merge two postings by hand (local, not pushed)
+- **Last commit:** `af45c8c` feat(careers): P7-T9 F-08 per-source keyword rules (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 753 passed (50 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 758 passed (51 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -93,6 +93,7 @@
 | Share a posting | client `pages/Careers/components/SharePosting.jsx`, `pages/Careers/lib/share.js` | job page, LIVE postings |
 | SmartRecruiters / Workable adapters | `server-acc/services/careers/ingest/adapters/{smartrecruiters,workable}.js` (`fetchAll`), `fetchJson(url, { body })` in `ingest/http.js`; fixtures `tests/careers/fixtures/{smartrecruiters,smartrecruiters_detail,workable,workable_detail}.json`; migration `20261011045900_careers_more_ats_kinds` | Add board / bulk add |
 | Merge two postings | `server-acc/services/careers/postings/mergePostings.js`, `GET /careers/admin/postings/merge-preview`, `POST /careers/admin/postings/merge`; client `pages/admin/careers/components/MergePostingsDialog.jsx` | All postings rows; company merge dialog |
+| Per-board keyword rules | `server-acc/services/careers/sources/keywordRules.js`, check in `ingest/runSource.js`, `PATCH /careers/admin/sources/:id`; migration `20261011051019_careers_source_keyword_rules`; client `EditSourceDialog.jsx` | Sources → Edit |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -172,6 +173,7 @@
 - Dev DB: 19 postings have been PENDING_REVIEW since 1 Oct, so Ops always shows REVIEW_WAITING locally.
 - SmartRecruiters answers an unknown company id with an empty list (HTTP 200), so Add board accepts it with "0 jobs now"; the board then shows ZERO_RESULTS after its first run. Workable answers an unknown account with 404 (refused).
 - Add board queues a fetch in `careers.runRequest`; test scripts that add boards must restore that setting (the worker would otherwise run a full ingest when it starts).
+- Prisma returns `[]` for a NULL `String[]` column, so `excludeTitleKeywords` reads as `[]` on boards that never had rules.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -825,3 +827,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 753 passed (50 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Not checked in the browser: the duplicate-pairs step after a company merge (needs a real company merge); its data comes from the existing merge response.
 - Next step: P7-T9.
+
+### 2026-10-11, P7-T9: per-source keyword rules (F-08) 🗄️
+- Did: migration (`--create-only`, SQL read: 2 ALTER TABLE, 3 ADD COLUMN; forbidden grep empty; schema diff additions only; `migrate deploy`; API stopped for `prisma generate`), `keywordRules.js` (5 tests: exclude, whole words ("Salesforce", "Telecom" kept), include list, exclude wins, normalising and limits), `runSource` hook + run column, update schema, Sources select, edit dialog fields, run line (C-123).
+- Checks:
+  - `http_p7t9.mjs` (8/8): live Paytm board 180 jobs, 18 kept by the global rules, of which "Sales/Services Associate - Health Insurance" and "Tele caller - Associate" match `sales, tele`; 21 keywords 400; student 403; `[' Sales', 'TELE', 'sales']` saved as `['sales', 'tele']`; Sources list returns it; live run: SUCCESS fetched 180 kept 16 `droppedBySourceRules` 2 (= expected); run list shows 2; Stripe run (no rules) 0 dropped. Rule removed after. The two live runs added 5 new Paytm and 1 new Stripe posting to the review queue (real jobs, as a "Fetch now" would).
+  - Browser (admin): Edit board on paytm shows "Drop titles containing" / "Only keep titles containing" with the help text; Paytm's run history: "180 fetched, 16 relevant, 5 new, 0 merged, 2 dropped by this board's rules".
+  - `npm test` → 758 passed (51 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P7-T10.

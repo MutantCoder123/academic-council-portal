@@ -15,11 +15,11 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | **Plan to 10 Oct** | | **31** | **28** | **90 %** |
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
-| P7 Depth | after P6 | 12 | 8 | In progress |
+| P7 Depth | after P6 | 12 | 9 | In progress |
 | P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **54** | **84 %** |
+| **Total incl. P5 – P8** | | **64** | **55** | **86 %** |
 
-**Next task:** **P7 in progress (8/12).** Next: `P7-T9` (per-source keyword rules). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
+**Next task:** **P7 in progress (9/12).** Next: `P7-T10` (experience shortcuts on company pages). Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -112,7 +112,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 | P7-T6 | Share a posting (F-32) | [x] | 3aa3460 | Client only. Browser: Copy link → clipboard = portal URL of #64, button shows Copied; WhatsApp link (new tab) text "Software Engineer (CPD) - Winter Intern at Rubrik, on ACC Jobs & Internships: <url>", wa.me → api.whatsapp.com/send with that text (200); 375 px; 735 tests |
 | P7-T7 | SmartRecruiters + Workable adapters (F-24) | [x] | 29b0dec | APIs verified live first (SR: Swiggy/Bosch/ServiceNow/Experian; Workable v3 POST + v2 detail, pagination token checked on leena-ai). Enum values added with the user's OK (D-14). 11 adapter tests on real fixtures; live ingest 9/9: Swiggy 173 fetched → "Software Dev Engineer I" PENDING_REVIEW with description, 2nd run seen=1 new=0; Leena AI 11 fetched, 0 kept (no junior roles), 2nd run new=0; unknown Workable account BOARD_INVALID; 746 tests |
 | P7-T8 | Merge two postings by hand (F-06) | [x] | f3e485c | No schema change. 7 unit tests (rules, application merge, in-memory transaction); API 13/13 on #53 ← #59 (student saved both → one posting on Saved with APPLIED + note; admin's save moved; 3 observations moved; #59 REJECTED "Duplicate of #53"; exactly 2 review rows; repeat / reverse 409; student 403), all restored; browser dialog + preview + Swap, 375 px; 753 tests |
-| P7-T9 | Per-source keyword rules (F-08) 🗄️ | [ ] | | |
+| P7-T9 | Per-source keyword rules (F-08) 🗄️ | [x] | af45c8c | Migration careers_source_keyword_rules (3 nullable ADD COLUMNs); 5 unit tests; live run 8/8: Paytm (Lever) 180 fetched, 18 kept by the global rules, rule "sales, tele" dropped exactly the 2 matching titles (kept 16, run shows sourceRules=2); Stripe (no rules) dropped 0; browser edit fields + run line; 758 tests |
 | P7-T10 | Experience shortcuts on company pages (F-10) | [ ] | | Reuses existing delete/unlink |
 | P7-T11 | Candidate company cleanup (F-11) | [ ] | | Deleting the row ⚖️ |
 | P7-T12 | Admin activity log (F-15) | [ ] | | Read-only |
