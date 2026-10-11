@@ -364,6 +364,12 @@
 - **Effort:** M
 - **Status:** ✅ Built 11 Oct (`162717c`, C-142).
 
+#### F-35 How many students applied (proposal §4.5; added 11 Oct, user request)
+- **Problem:** the proposal promised an anonymised answer to "how many students from our campus applied here"; only admins saw totals (usage card).
+- **Design:** counts from the students' own tracking: statuses Applied, In progress, Rejected, Offer; STUDENT accounts only; never shown below 3 (the API sends null). Job page: "N students from campus marked this as applied" in the application card. Company page: "N students applied here" chip (different students across all its postings, open or closed). No names, no per-student data.
+- **Effort:** S
+- **Status:** ✅ Built 11 Oct (`59977a5`, C-145).
+
 ---
 
 ## 3. Go-live checklist and suggested order
