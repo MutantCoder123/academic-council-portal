@@ -989,3 +989,7 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 
 ### 2026-10-11, B-26: Student links tab count (user report)
 - Badge 0 vs 8 listed: badge counted only in-flight / failed links (missed STORED_ONLY), list defaulted to All. Now badge = `needsAttentionWhere` (failed + needs a person, not dismissed), list opens on that filter, "Show all N links" when empty (C-138). Tests: linksAttention 2, reviewCounts updated; 809 passed. Browser: "Student links 1", list shows the LinkedIn link; all links = 8. Client build ✓, eslint 36.
+
+### 2026-10-11, B-27: admin company picker (user report)
+- Did: outside-click / Escape / focus-out close, click / ArrowDown reopen, portal + fixed position (C-139). Browser: All postings: list bottom is the top element, closes on outside click, Escape, Tab, reopens on click, Paytm pick → `?companyId=37&company=Paytm`. Add board dialog: list extends past the dialog, Escape closes the list but not the dialog, a click in the dialog closes the list. Build ✓, eslint 36.
+- Noticed: candidate companies "Another Candidate <timestamp>" (left by old check scripts) are not matched by the cleanup command's "… Test <timestamp>" rule.
