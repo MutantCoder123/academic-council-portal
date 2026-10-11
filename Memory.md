@@ -14,7 +14,7 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `b2c8d28` fix(layout): move the mobile sidebar button below the page's back link (local, not pushed)
+- **Last commit:** `2f0bfa0` feat(careers-admin): calmer unsure-field flags (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -1008,3 +1008,7 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 ### 2026-10-11, B-30: mobile sidebar button over the back link (user report)
 - Did: `DashboardLayout.jsx` toggle `top-20` -> `top-32` (`b2c8d28`, C-143). Upstream file: adds one line to the existing merge conflict there.
 - Check: browser 375 px, `/dashboard/career-vault/jobs/110`: "All openings" arrow fully visible; the button now sits beside the admin box.
+
+### 2026-10-11, B-31: calmer unsure-field flags in the posting editor (user report)
+- Did: summary line + Check markers + FieldGroup for Pay / Eligibility / Internship timing (`2f0bfa0`, C-144).
+- Check: browser 1310 px, Flagged #123 (Tirupati): summary "Check these 3 first (extractor confidence 0.68): Eligibility · Company · Internship timing"; Company label has Check; Eligibility and Internship timing groups show one marker each with amber input outlines; clicking Eligibility scrolls and focuses `pf-branches`. 375 px: no horizontal overflow. Client build ✓, eslint 36 (baseline).
