@@ -253,6 +253,7 @@
 #### F-17 Clear test data before go-live
 - **Design:** `npm run careers:job -- cleanup --dry-run` lists test companies (e.g. "Acme Robotics Test …"), example.com postings, failing test sources and test submissions; without `--dry-run` it removes them. Local and staging only (refuses when `NODE_ENV=production`).
 - **Effort:** S
+- **Status:** ✅ Built 11 Oct (`633ac9b`, P8-T3, C-128, D-15): `npm run careers:job -- cleanup` lists test postings (test-host apply URLs and postings of test companies), test companies ("… Test <timestamp>", not in use), test sources ("test" / "bogus", no observations) and test-host student links; `cleanup --yes` deletes them in one transaction with a PostingDeletion row per posting ("Cleanup command" in the Activity log). Refuses with NODE_ENV=production. Run on the dev DB 11 Oct: 8 postings, 4 companies, 1 source, 4 links removed.
 
 ### Making it useful to students (added 9 Oct)
 

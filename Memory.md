@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 started 11 Oct with the user's OK for all three tasks (D-15): P8-T2 done**. Next: P8-T3, then P8-T1. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 started 11 Oct with the user's OK for all three tasks (D-15): P8-T2, P8-T3 done**. Next: P8-T1. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `cc81ff6` feat(careers): P8-T2 F-02 delete a posting permanently (local, not pushed)
+- **Last commit:** `633ac9b` feat(careers): P8-T3 F-17 test-data cleanup command (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 773 passed (54 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 779 passed (55 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -99,6 +99,7 @@
 | Reject / restore a candidate company | `server-acc/services/careers/companies/rejectCandidate.js`, `POST /careers/admin/companies/:id/reject` / `restore`, `?status=REJECTED` on the company list; migration `20261011051917_careers_reject_candidate`; client `pages/admin/careers/ReviewCandidates.jsx` | Jobs review → Candidate companies |
 | Activity log | `server-acc/services/careers/ops/activityLog.js`, `GET /careers/admin/activity`; client `pages/admin/careers/ActivityLog.jsx` (`/admin/careers/activity`) | link on Operations |
 | Permanent delete | `server-acc/services/careers/postings/deletePosting.js`, `DELETE /careers/admin/postings/:id`, `GET …/:id/delete-preview`; audit table `PostingDeletion`; client `components/DeletePostingDialog.jsx` | not for LIVE postings |
+| Test-data cleanup | `server-acc/services/careers/ops/cleanup.js`; `npm run careers:job -- cleanup [--yes]` | refuses NODE_ENV=production |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -127,6 +128,7 @@
 - Usage numbers (P7-T4) never store a user id: weekly visitors are an HMAC of (user id, week) keyed from `SECRET_KEY`, Apply clicks are per-posting daily counters. Rotating `SECRET_KEY` only splits the current week's visitor count.
 - The review reminder goes only to users with role CAREER_ADMIN; SUPER_ADMIN and FACULTY can use the admin pages but get no mail.
 - P8-T2: a LIVE posting must be taken down before it can be deleted; the admin types the posting number back; a student link that made the posting is kept and marked dismissed ("removed by ACC"), which also blocks re-sharing it for 30 days (existing B-08 rule).
+- P8-T3: test data = fixed patterns only (test-host URLs, "… Test <timestamp>" companies, "test" / "bogus" sources); anything matching but still in use is listed as kept, never deleted. Deletions by the command are logged as user 0, "Cleanup command".
 
 ## Gotchas / things that surprised me
 
@@ -877,3 +879,14 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Browser (admin): rejected throwaway #114 → All postings "Delete…" → dialog "1 student save …"; button disabled until 114 is typed (113 keeps it disabled); 375 px scrollWidth 375; Test data → toast "Deleted #114 P8-T2 browser throwaway permanently.", DB row gone, Activity log → Deleted lists it. Editor: "Delete permanently…" on rejected #70 opens the dialog (cancelled); a LIVE posting shows neither button. Audit row of the browser check removed.
   - `npm test` → 773 passed (54 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Next step: P8-T3.
+
+### 2026-10-11, P8-T3: test-data cleanup command (F-17)
+- Did: `cleanup.js` (6 tests), `runJob.js cleanup [--yes]`, activity-log name / filter for user 0 (C-128).
+- Checks:
+  - Dry run on the dev DB listed exactly the test rows found by a manual survey: postings #93 – #100 (all example.com, EXPIRED), companies #65, #67, #69, #71 ("Acme Robotics Test …"), source #15 "Bogus test board", links #1 – #3 (127.0.0.1, 169.254.169.254, 10-0-0-1.nip.io SSRF checks) and #6 (example.com); kept 0; "Dry run: nothing deleted". Real student links (iiitb.ac.in, semesteria, peerlist …) and all real postings not listed.
+  - `NODE_ENV=production … cleanup --yes` → "The cleanup command does not run with NODE_ENV=production." exit 1; `cleanup --force` → "Unknown option" exit 1.
+  - DB backed up first (`pg_dump` to the session scratchpad, `devdb_before_cleanup.sql`), then `cleanup --yes` → `{"postings":8,"companies":4,"sources":1,"links":4}`. Row counts before → after: postings 62 → 54, companies 75 → 71, aliases 100 → 96, sources 15 → 14, source runs 49 → 47, links 12 → 8, PostingDeletion 0 → 8; LIVE 28 → 28, experiences 12 → 12. Second dry run → "Nothing to delete."
+  - `http_p8t3.mjs` (5/5): 8 DELETE entries by "Cleanup command" (id 0) with the reason; the admin filter offers it; adminId=0 lists only those; adminId=2 unaffected; no test company in the admin company list. Browser: Activity log → Admin "Cleanup command" → 8 entries, 375 px scrollWidth 375.
+  - `npm test` → 779 passed (55 files).
+- The dev DB no longer has the old test rows (deliberate; the backup is in the session scratchpad only).
+- Next step: P8-T1.
