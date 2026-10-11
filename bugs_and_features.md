@@ -183,6 +183,7 @@
 #### F-06 Merge two postings by hand
 - **Design:** dedup misses some pairs; from F-01 pick two postings → "Merge into…": observations, saves and applications move to the kept posting; the other becomes REJECTED "Duplicate of #N". The duplicate report after a company merge (`possibleDuplicatePostings`) gets a "Merge" button.
 - **Effort:** M
+- **Status:** ✅ Built 11 Oct (`f3e485c`, P7-T8, C-122): "Merge into…" on All postings (pick the posting to keep, preview what moves, Swap) and Merge buttons for the duplicate pairs a company merge reports; observations, saves, statuses and hides move; the other posting becomes Rejected "Duplicate of #N" (nothing deleted).
 
 ### Sources (admin)
 

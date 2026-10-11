@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T7 done 10 – 11 Oct)**. Next: P7-T8. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T8 done 10 – 11 Oct)**. Next: P7-T9. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `29b0dec` feat(careers): P7-T7 F-24 SmartRecruiters and Workable adapters (local, not pushed)
+- **Last commit:** `f3e485c` feat(careers): P7-T8 F-06 merge two postings by hand (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 746 passed (49 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 753 passed (50 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -92,6 +92,7 @@
 | Review reminders | `server-acc/services/careers/ops/reviewReminder.js`, job `reviewReminder` in `services/careers/jobs.js`, alerts `REVIEW_WAITING` / `REVIEW_REMINDER_FAILING` in `ops/alerts.js`; settings `careers.reviewReminderEmails`, `careers.reviewReminderStatus` | toggles in `FlagsCard.jsx` |
 | Share a posting | client `pages/Careers/components/SharePosting.jsx`, `pages/Careers/lib/share.js` | job page, LIVE postings |
 | SmartRecruiters / Workable adapters | `server-acc/services/careers/ingest/adapters/{smartrecruiters,workable}.js` (`fetchAll`), `fetchJson(url, { body })` in `ingest/http.js`; fixtures `tests/careers/fixtures/{smartrecruiters,smartrecruiters_detail,workable,workable_detail}.json`; migration `20261011045900_careers_more_ats_kinds` | Add board / bulk add |
+| Merge two postings | `server-acc/services/careers/postings/mergePostings.js`, `GET /careers/admin/postings/merge-preview`, `POST /careers/admin/postings/merge`; client `pages/admin/careers/components/MergePostingsDialog.jsx` | All postings rows; company merge dialog |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -815,3 +816,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 746 passed (49 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - Not verified: dedup of a kept Workable posting (no Workable board with an early-career India role was found).
 - Next step: P7-T8.
+
+### 2026-10-11, P7-T8: merge two postings by hand (F-06)
+- Did: `mergePostings.js` with 7 tests (rules, `mergedApplication`, a fake transaction checking moves / one row per student / review rows / 409), controller + routes, `MergePostingsDialog`, All postings action, duplicate pairs after a company merge (C-122). No schema change.
+- Checks:
+  - `http_p7t8.mjs` (13/13, after fixing the script's field names) on Stripe #53 (keep) and #59 (drop), both LIVE: the student saved both, INTERESTED on #53 and APPLIED + note on #59; the admin saved #59. Student merge 403; same id 400; preview observations 3, saves 2, applications 1; merge 200; student's Saved now has only #53 with APPLIED and the note; admin's save is on #53; 3 observations on #53, none left on #59; #59 REJECTED "Duplicate of #53"; exactly 2 new reviews (REJECT on #59, EDIT on #53); #59 gone from the student list; merging again 409; preview into the rejected one 409. Postings, observations, tracking rows and reviews restored (checked: both LIVE, 3 / 1 observations, no saves).
+  - Browser (admin): row #59 → Merge into… → "#53" → Use posting #53 → Keep #53 / Merge away #59, "Moves to #53: 3 board observations …"; Swap → "Merge #53 into #59"; Cancel; 375 px scrollWidth 375.
+  - `npm test` → 753 passed (50 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Not checked in the browser: the duplicate-pairs step after a company merge (needs a real company merge); its data comes from the existing merge response.
+- Next step: P7-T9.
