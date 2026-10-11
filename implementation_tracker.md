@@ -16,10 +16,10 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
 | P7 Depth | after P6 | 12 | 12 | **Done** |
-| P8 Needs a decision | only with the user's OK | 3 | 0 | Blocked on decisions |
-| **Total incl. P5 – P8** | | **64** | **58** | **91 %** |
+| P8 Needs a decision | only with the user's OK | 3 | 1 | In progress |
+| **Total incl. P5 – P8** | | **64** | **59** | **92 %** |
 
-**Next task:** **P7 done (12/12).** Next: P8 only with the user's OK (P8-T1 F-29, P8-T2 permanent delete, P8-T3 test-data cleanup), or the original plan's open tasks `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`, and the go-live checklist L-01 – L-07.
+**Next task:** **P8-T2 done.** Next: P8-T3 test-data cleanup (user OK 11 Oct: dry run by default, delete only with `--yes`), then P8-T1 seniors' stipend (user OK 11 Oct, one-off exception to AI_Rules §4, D-15). Still open outside P8: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`, go-live checklist L-01 – L-07.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -120,9 +120,9 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 ## P8: Needs a decision
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P8-T1 | Seniors' reported stipend and process (F-29) ⚖️ 🗄️ | [!] | | Upstream experience form beyond AI_Rules §4 |
-| P8-T2 | Delete a posting permanently (F-02 level 2) ⚖️ | [!] | | |
-| P8-T3 | Clear test data before go-live (F-17) ⚖️ | [!] | | |
+| P8-T1 | Seniors' reported stipend and process (F-29) ⚖️ 🗄️ | [ ] | | Upstream experience form beyond AI_Rules §4 |
+| P8-T2 | Delete a posting permanently (F-02 level 2) ⚖️ | [x] | cc81ff6 | User OK 11 Oct (D-15). 🗄️ `careers_posting_deletions`. 5 unit tests; API 18/18 (LIVE 409, wrong confirm 400, student 403, every dependent row gone, link kept + marked, audit row, activity log); browser dialog from row and editor, 1280 + 375 px; 773 tests |
+| P8-T3 | Clear test data before go-live (F-17) ⚖️ | [ ] | | |
 
 ---
 

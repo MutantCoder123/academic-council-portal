@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 (depth) done 10 – 11 Oct (12/12)**. Next: P8 (needs the user's OK per item) or P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11 – D-14 new in P7; D-06 partly answered). Code and docs since `731ca0a` / `ed62275` are local, not pushed.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 started 11 Oct with the user's OK for all three tasks (D-15): P8-T2 done**. Next: P8-T3, then P8-T1. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `c19fa11` feat(careers): P7-T12 F-15 admin activity log (local, not pushed)
+- **Last commit:** `cc81ff6` feat(careers): P8-T2 F-02 delete a posting permanently (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 768 passed (53 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 773 passed (54 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -98,6 +98,7 @@
 | Experience shortcuts (admin) | client `pages/Careers/components/ExperienceAdminActions.jsx` on `CompanyPage.jsx`; uses `careersAdminApi.unlinkBackfill` and upstream `deletePost` | company pages, career admins only |
 | Reject / restore a candidate company | `server-acc/services/careers/companies/rejectCandidate.js`, `POST /careers/admin/companies/:id/reject` / `restore`, `?status=REJECTED` on the company list; migration `20261011051917_careers_reject_candidate`; client `pages/admin/careers/ReviewCandidates.jsx` | Jobs review → Candidate companies |
 | Activity log | `server-acc/services/careers/ops/activityLog.js`, `GET /careers/admin/activity`; client `pages/admin/careers/ActivityLog.jsx` (`/admin/careers/activity`) | link on Operations |
+| Permanent delete | `server-acc/services/careers/postings/deletePosting.js`, `DELETE /careers/admin/postings/:id`, `GET …/:id/delete-preview`; audit table `PostingDeletion`; client `components/DeletePostingDialog.jsx` | not for LIVE postings |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -125,6 +126,7 @@
 - `User.programme` / `User.graduationYear` are private like CPI: global omit in `config/db.js`, read only through explicit selects (`loadProfile`, `/careers/me/*`, the alerts run). A stated batch (`eligibleGradYears`) decides before the year of study.
 - Usage numbers (P7-T4) never store a user id: weekly visitors are an HMAC of (user id, week) keyed from `SECRET_KEY`, Apply clicks are per-posting daily counters. Rotating `SECRET_KEY` only splits the current week's visitor count.
 - The review reminder goes only to users with role CAREER_ADMIN; SUPER_ADMIN and FACULTY can use the admin pages but get no mail.
+- P8-T2: a LIVE posting must be taken down before it can be deleted; the admin types the posting number back; a student link that made the posting is kept and marked dismissed ("removed by ACC"), which also blocks re-sharing it for 30 days (existing B-08 rule).
 
 ## Gotchas / things that surprised me
 
@@ -179,6 +181,7 @@
 - Add board queues a fetch in `careers.runRequest`; test scripts that add boards must restore that setting (the worker would otherwise run a full ingest when it starts).
 - Prisma returns `[]` for a NULL `String[]` column, so `excludeTitleKeywords` reads as `[]` on boards that never had rules.
 - Check scripts that PATCH a posting as admin create an EDIT review row; resetting the posting's columns does not remove it. Delete review rows with id > the max taken before the check (the P7-T2 / P7-T3 checks left two; removed on 11 Oct).
+- Deleting a posting that a job board still lists does not keep it away: its observation goes with it, so the next fetch creates it again (PENDING_REVIEW). The dialog says so; reject instead when the aim is to keep it out.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -865,3 +868,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 768 passed (53 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - **P7 summary:** 12/12 tasks (P7-T1 – T12, code `e05f590` … `c19fa11`, plus fixes `f2d0b23`, `96b82e1`, `224b354` from the background commit reviews), tests 678 → 768. Schema (all additive, each `--create-only` + SQL read + forbidden grep + schema diff check): `careers_saved_searches` (enum `AlertFrequency` + `SavedSearch`), `careers_graduation_year`, `careers_internship_season`, `careers_usage_counts` (`PostingDailyStat`, `CareersWeeklyVisitor`), `careers_more_ats_kinds` (2 enum values, user OK, D-14), `careers_source_keyword_rules`, `careers_reject_candidate`. Upstream files touched in P7: `config/db.js` (omit 2 more private columns), `App.jsx` (2 routes), `schema.prisma` (additions only). No new dependencies. The user OK'd both P7 emails and chose hide for candidate rejection. Emails were verified through nodemailer's JSON transport only (no SMTP locally). Decisions for the user to review: D-11 – D-14.
 - Next step: wait for the user (push, P8 items with OK, or P1-T10b / P4-T2 / P4-T3 / go-live).
+
+### 2026-10-11, P8-T2: delete a posting permanently (F-02 level 2)
+- User OK'd all three P8 tasks (D-15); audit in a new table; cleanup dry run by default.
+- Did: migration `careers_posting_deletions` (`--create-only`, SQL = CREATE TABLE + 2 indexes, forbidden grep empty, schema `^-` diff empty, `migrate deploy`, lock file restored), `deletePosting.js` (4 tests), activity-log DELETE entries (1 test), routes, `DeletePostingDialog.jsx`, buttons in All postings and the editor (C-127).
+- Checks:
+  - `http_p8t2.mjs` (18/18): throwaway posting #113 with 1 save, 1 status, 1 report, 1 hidden, 1 observation, 1 review, 3 Apply clicks, 1 student link. Student → 403 on preview and delete; LIVE → 409 on both; rejected → preview counts all of the above; wrong number → 400; no reason → 400; posting still there; delete → 200 "Deleted #113 … permanently."; all 7 dependent tables 0 rows; link kept with postingId null, dismissed "The posting made from this link was removed by ACC." by admin 2 and shown so in the student's My submissions; one PostingDeletion row (title, company, REJECTED, "Test data", counts, admin 2); activity log `action=DELETE` and the full log show it on top; delete again → 404. Throwaway link and audit row removed after.
+  - Browser (admin): rejected throwaway #114 → All postings "Delete…" → dialog "1 student save …"; button disabled until 114 is typed (113 keeps it disabled); 375 px scrollWidth 375; Test data → toast "Deleted #114 P8-T2 browser throwaway permanently.", DB row gone, Activity log → Deleted lists it. Editor: "Delete permanently…" on rejected #70 opens the dialog (cancelled); a LIVE posting shows neither button. Audit row of the browser check removed.
+  - `npm test` → 773 passed (54 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Next step: P8-T3.

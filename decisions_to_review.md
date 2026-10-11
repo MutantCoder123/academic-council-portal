@@ -130,3 +130,16 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 - **Why:** the user chose "hide it and take note on this decision" (10 Oct 2026) over deleting the
   row; F-11 and D-01 treat permanent deletes as needing an explicit OK.
 - **Status:** Decided by the user (10 Oct 2026); the details above were chosen by the AI.
+
+## D-15 P8 approved: permanent delete, test-data cleanup, seniors' stipend (P8-T1 – T3, C-127 –)
+- **What the user decided (11 Oct 2026):** build all three P8 tasks. Permanent delete keeps its audit
+  line in a new table (`PostingDeletion`, shown in the Activity log). The cleanup command only lists
+  by default and deletes only with `--yes`. P8-T1 (stipend fields on the experience form) may edit
+  the upstream experience files beyond AI_Rules §4's "P3 only" allowance, as a one-off exception.
+- **What the AI chose for P8-T2:** a LIVE posting cannot be deleted directly (take it down first);
+  the admin types the posting number back; a student link that made the posting stays in "My
+  submissions", marked "The posting made from this link was removed by ACC."; deleting a posting a
+  job board still lists does not keep it away (the next fetch adds it back for review), and the
+  dialog says so.
+- **Status:** Decided by the user (11 Oct 2026); the P8-T2 details were chosen by the AI. AI_Rules
+  §4 itself is unchanged (the AI may not edit it); this entry records the P8-T1 exception.
