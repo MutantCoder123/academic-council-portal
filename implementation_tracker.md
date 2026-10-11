@@ -16,10 +16,10 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P5 Admin control | after 10 Oct, before go-live | 7 | 7 | **Done** |
 | P6 Student value | first month after launch | 11 | 11 | **Done** |
 | P7 Depth | after P6 | 12 | 12 | **Done** |
-| P8 Needs a decision | only with the user's OK | 3 | 2 | In progress |
-| **Total incl. P5 – P8** | | **64** | **60** | **94 %** |
+| P8 Needs a decision | only with the user's OK | 3 | 3 | **Done** |
+| **Total incl. P5 – P8** | | **64** | **61** | **95 %** |
 
-**Next task:** **P8-T3 done.** Next: P8-T1 seniors' stipend (user OK 11 Oct, one-off exception to AI_Rules §4, D-15). Still open outside P8: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3`, go-live checklist L-01 – L-07.
+**Next task:** **P8 done (3/3).** All P5 – P8 tasks are built. Still open from the original plan: `P1-T10b` (needs GEMINI_API_KEY), `P4-T2`, `P4-T3` (the human opens the upstream PR), and the go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05).
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---
@@ -120,7 +120,7 @@ Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK b
 ## P8: Needs a decision
 | ID | Task | Status | Commit | Notes |
 |---|---|---|---|---|
-| P8-T1 | Seniors' reported stipend and process (F-29) ⚖️ 🗄️ | [ ] | | Upstream experience form beyond AI_Rules §4 |
+| P8-T1 | Seniors' reported stipend and process (F-29) ⚖️ 🗄️ | [x] | 2d14c4e | User OK 11 Oct (D-15, one-off exception to AI_Rules §4 for the experience form). 🗄️ `careers_senior_reports`. 7 unit tests; API 15/15 (validation, stored, never echoed or listed, admin edit keeps them, shown only from 3 published reports); browser form + company card, 1280 + 375 px; 786 tests |
 | P8-T2 | Delete a posting permanently (F-02 level 2) ⚖️ | [x] | cc81ff6 | User OK 11 Oct (D-15). 🗄️ `careers_posting_deletions`. 5 unit tests; API 18/18 (LIVE 409, wrong confirm 400, student 403, every dependent row gone, link kept + marked, audit row, activity log); browser dialog from row and editor, 1280 + 375 px; 773 tests |
 | P8-T3 | Clear test data before go-live (F-17) ⚖️ | [x] | 633ac9b | User OK 11 Oct (D-15): dry run by default, deletes only with `--yes`, refuses NODE_ENV=production. 6 unit tests; dev DB: dry run listed 8 postings, 4 companies, 1 source, 4 links; `--yes` deleted exactly those (DB backup first), second run "Nothing to delete"; activity log 5/5; 779 tests |
 

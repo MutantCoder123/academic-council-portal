@@ -141,5 +141,12 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   submissions", marked "The posting made from this link was removed by ACC."; deleting a posting a
   job board still lists does not keep it away (the next fetch adds it back for review), and the
   dialog says so.
-- **Status:** Decided by the user (11 Oct 2026); the P8-T2 details were chosen by the AI. AI_Rules
-  §4 itself is unchanged (the AI may not edit it); this entry records the P8-T1 exception.
+- **What the AI chose for P8-T1:** the numbers are private per experience (omitted from every
+  query) and appear only as company aggregates once 3 published experiences report the same one;
+  ranges are widened to ₹5k (stipend) / 1 lakh (CTC) steps; the experience type decides stipend vs
+  CTC (no separate role-type field). Upstream files edited: `ForumController.js` (+9 / −1),
+  `CareerVaultuser/index.jsx` (+6 / −1), `config/db.js` (the omit line).
+- **What the AI chose for P8-T3:** only fixed patterns count as test data; anything matching but in
+  use is listed as kept. The command's deletions are logged as "Cleanup command" (user id 0).
+- **Status:** Decided by the user (11 Oct 2026); the details were chosen by the AI. AI_Rules §4
+  itself is unchanged (the AI may not edit it); this entry records the P8-T1 exception.

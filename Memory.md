@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 started 11 Oct with the user's OK for all three tasks (D-15): P8-T2, P8-T3 done**. Next: P8-T1. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); P7 done (12/12); **P8 done 11 Oct (3/3) with the user's OK (D-15)**. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07. Verify-later items: `verify_later.md` (V-01 – V-05). Pushed through `c19fa11` / `5914960`; later commits local.
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `633ac9b` feat(careers): P8-T3 F-17 test-data cleanup command (local, not pushed)
+- **Last commit:** `2d14c4e` feat(careers): P8-T1 F-29 seniors' reported stipend and rounds on company pages (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 779 passed (55 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 786 passed (56 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -100,6 +100,7 @@
 | Activity log | `server-acc/services/careers/ops/activityLog.js`, `GET /careers/admin/activity`; client `pages/admin/careers/ActivityLog.jsx` (`/admin/careers/activity`) | link on Operations |
 | Permanent delete | `server-acc/services/careers/postings/deletePosting.js`, `DELETE /careers/admin/postings/:id`, `GET …/:id/delete-preview`; audit table `PostingDeletion`; client `components/DeletePostingDialog.jsx` | not for LIVE postings |
 | Test-data cleanup | `server-acc/services/careers/ops/cleanup.js`; `npm run careers:job -- cleanup [--yes]` | refuses NODE_ENV=production |
+| Seniors' reported numbers | `server-acc/services/careers/companies/seniorReports.js` (`reportData` used by upstream `ForumController` addpost / editPost; `companyReports` in `getCompanyPage`); client `components/SeniorReportFields.jsx` (on the upstream form), `components/SeniorReportsCard.jsx` (company page), `lib/seniorReports.js` | columns omitted in `config/db.js` |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -129,6 +130,7 @@
 - The review reminder goes only to users with role CAREER_ADMIN; SUPER_ADMIN and FACULTY can use the admin pages but get no mail.
 - P8-T2: a LIVE posting must be taken down before it can be deleted; the admin types the posting number back; a student link that made the posting is kept and marked dismissed ("removed by ACC"), which also blocks re-sharing it for 30 days (existing B-08 rule).
 - P8-T3: test data = fixed patterns only (test-host URLs, "… Test <timestamp>" companies, "test" / "bogus" sources); anything matching but still in use is listed as kept, never deleted. Deletions by the command are logged as user 0, "Cleanup command".
+- P8-T1: seniors' numbers are private per experience (global omit) and appear only as company aggregates from 3 published reports, with ranges widened to ₹5k / 1 lakh steps; the experience type decides stipend vs CTC.
 
 ## Gotchas / things that surprised me
 
@@ -184,6 +186,7 @@
 - Prisma returns `[]` for a NULL `String[]` column, so `excludeTitleKeywords` reads as `[]` on boards that never had rules.
 - Check scripts that PATCH a posting as admin create an EDIT review row; resetting the posting's columns does not remove it. Delete review rows with id > the max taken before the check (the P7-T2 / P7-T3 checks left two; removed on 11 Oct).
 - Deleting a posting that a job board still lists does not keep it away: its observation goes with it, so the next fetch creates it again (PENDING_REVIEW). The dialog says so; reject instead when the aim is to keep it out.
+- Upstream `editPost` returns 201 (not 200), and an edit with status PUBLISHED calls `notifyOnNewPost`, which mails every user. Check scripts publish experiences through Prisma, never through that PATCH.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -890,3 +893,12 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 779 passed (55 files).
 - The dev DB no longer has the old test rows (deliberate; the backup is in the session scratchpad only).
 - Next step: P8-T1.
+
+### 2026-10-11, P8-T1: seniors' reported stipend and rounds (F-29) — P8 complete
+- Did: migration `careers_senior_reports` (`--create-only`, SQL = one `ALTER TABLE "Experience" ADD COLUMN` × 4 nullable, forbidden grep empty, schema `^-` diff empty, `migrate deploy`, lock file restored), `seniorReports.js` (7 tests), `config/db.js` omit, `ForumController` addpost / editPost, `getCompanyPage`, client form section + company card (C-129).
+- Checks:
+  - `http_p8t1.mjs` (15/15): stipend 10 → 400 and nothing created; unknown key → 400; student creates with stipend "42000", 3 rounds, 2024 → 201, response without the numbers, DB has them (CTC null); without numbers → 201, columns null; admin PATCH without `report` (status DRAFT) → 201, title changed, numbers kept, response without them; with 2 published reports + 1 draft the company page shows nothing; after publishing the third: stipend {count 3, ₹40,000 – 60,000, 2024 – 2026}, rounds {usually 3, 2 – 4}, CTC null; company page experiences and the public `/posts` list (15 items) carry no numbers; Stripe shows nothing. Experiences back to 12.
+  - Browser: Zeta company page with 3 seeded reports → "Reported by seniors · Stipend: 3 seniors reported ₹40,000 – 60,000 a month (2024 – 2026). Interview rounds: usually 3 (2 – 4), from 3 seniors (2024 – 2026).", experience cards without the figures, 375 px scrollWidth 375. Share Experience form: "Numbers for juniors (optional)"; no type → all four fields, Placement → no stipend, Internship → no CTC; 375 px scrollWidth 375; submitted (Zeta, 45000, 3, 2025) → toast "Post submitted!", DB row DRAFT with 45000 / 3 / 2025, CTC null. All check rows removed (experiences 12).
+  - `npm test` → 786 passed (56 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- **P8 summary:** 3/3 (P8-T2 `cc81ff6`, P8-T3 `633ac9b`, P8-T1 `2d14c4e`), tests 768 → 786. Schema (additive, each reviewed): `careers_posting_deletions`, `careers_senior_reports`. Upstream files touched in P8: `config/db.js` (omit 4 more columns), `ForumController.js`, `CareerVaultuser/index.jsx` (user's one-off OK, D-15), `schema.prisma` (additions only). The dev DB's old test rows were removed by the cleanup command (backup in the session scratchpad).
+- Next step: wait for the user (push, P1-T10b / P4-T2 / P4-T3, go-live checklist, verify-later items).
