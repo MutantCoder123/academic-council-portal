@@ -293,6 +293,7 @@
 #### F-24 More job-board types
 - **Design:** adapters for ATSs with documented public JSON APIs that Indian companies use: SmartRecruiters (`/v1/companies/{id}/postings`) and Workable (`/api/v3/accounts/{subdomain}/jobs`), same `fetchPostings` contract, fixtures + tests like P1-T3. Workday stays in the stretch backlog (undocumented API).
 - **Effort:** M per adapter (verify each API live first, AI_Rules §12)
+- **Status:** ✅ Built 11 Oct (`29b0dec`, P7-T7, C-121, D-14): SmartRecruiters (`api.smartrecruiters.com/v1/companies/{id}/postings`, India only) and Workable (`apply.workable.com/api/v3/accounts/{account}/jobs`) adapters, selectable in Add board / bulk add; descriptions are opened only for titles that pass the relevance rules (≤ 40 per run).
 
 #### F-25 Internship season and duration
 - **Design:** read "Summer 2027", "Winter", "6 months", "Jan – Jun 2027" from the title/description (deterministic, flagged for review like B-03) into season / start month / duration; filter "Summer internships", "Winter", "6-month"; shown as a chip on cards. 🗄️ nullable `season`, `startMonth`, `durationMonths` on `Posting`.

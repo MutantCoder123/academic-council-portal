@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T6 done 10 Oct)**. Next: P7-T7. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12 new in P7; D-06 partly answered).
+- **Phase / task:** P0 – P3 done; P4-T1 done; bugs B-01 – B-21 fixed; P5 done (7/7); P6 done (11/11); **P7 in progress (T1 – T7 done 10 – 11 Oct)**. Next: P7-T8. Still open: P1-T10b (Gemini key), P4-T2, P4-T3; go-live checklist L-01 – L-07 in `bugs_and_features.md` §3. Decisions to review: `decisions_to_review.md` (D-11, D-12, D-14 new in P7; D-06 partly answered).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `3aa3460` feat(careers): P7-T6 F-32 share a posting (copy link, WhatsApp) (local, not pushed)
+- **Last commit:** `29b0dec` feat(careers): P7-T7 F-24 SmartRecruiters and Workable adapters (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 735 passed (48 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 746 passed (49 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 
 ## Where things are (fill in as files are created; saves re-reading the codebase)
@@ -91,6 +91,7 @@
 | Usage numbers | `server-acc/services/careers/usage/usage.js`, `GET /careers/admin/usage`, `POST /careers/postings/:id/apply-click`; migration `20261010125613_careers_usage_counts`; client `pages/admin/careers/components/UsageCard.jsx` | Operations page; All postings rows |
 | Review reminders | `server-acc/services/careers/ops/reviewReminder.js`, job `reviewReminder` in `services/careers/jobs.js`, alerts `REVIEW_WAITING` / `REVIEW_REMINDER_FAILING` in `ops/alerts.js`; settings `careers.reviewReminderEmails`, `careers.reviewReminderStatus` | toggles in `FlagsCard.jsx` |
 | Share a posting | client `pages/Careers/components/SharePosting.jsx`, `pages/Careers/lib/share.js` | job page, LIVE postings |
+| SmartRecruiters / Workable adapters | `server-acc/services/careers/ingest/adapters/{smartrecruiters,workable}.js` (`fetchAll`), `fetchJson(url, { body })` in `ingest/http.js`; fixtures `tests/careers/fixtures/{smartrecruiters,smartrecruiters_detail,workable,workable_detail}.json`; migration `20261011045900_careers_more_ats_kinds` | Add board / bulk add |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -168,6 +169,8 @@
 - The upstream app layout already renders a `<main>`; public pages rendered inside it should use a `<div>`.
 - Dev postings have no season data until re-built: the parser only runs in `buildPostingData` (new postings). To try the filters, set the three columns on a posting by hand and reset them after.
 - Dev DB: 19 postings have been PENDING_REVIEW since 1 Oct, so Ops always shows REVIEW_WAITING locally.
+- SmartRecruiters answers an unknown company id with an empty list (HTTP 200), so Add board accepts it with "0 jobs now"; the board then shows ZERO_RESULTS after its first run. Workable answers an unknown account with 404 (refused).
+- Add board queues a fetch in `careers.runRequest`; test scripts that add boards must restore that setting (the worker would otherwise run a full ingest when it starts).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -801,3 +804,14 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: `lib/share.js`, `SharePosting.jsx`, wired next to Save on `JobDetailPage.jsx` (C-120). No server change.
 - Checks (browser, with clipboard permission granted): job #64 → Copy link → button "Copied", `navigator.clipboard.readText()` = `http://localhost:5173/dashboard/career-vault/jobs/64`; "Share on WhatsApp" has `target=_blank` and decoded text "Software Engineer (CPD) - Winter Intern at Rubrik, on ACC Jobs & Internships: http://localhost:5173/dashboard/career-vault/jobs/64"; requesting the wa.me link ends at `api.whatsapp.com/send/?text=…` with that text (200); 375 px scrollWidth 375. Client build ✓; `npx eslint src` 36 (baseline); touched files 0 errors; `npm test` 735 passed.
 - Next step: P7-T7.
+
+### 2026-10-11, P7-T7: SmartRecruiters and Workable adapters (F-24) 🗄️ — enum values OK'd by the user
+- Verified live first (AI_Rules §12): SmartRecruiters list (Bosch 588, Swiggy 172, ServiceNow 74, Experian 43 India jobs; Visa 0), no description in the list, detail `jobAd.sections`; `jobs.smartrecruiters.com/{ID}/{id}` resolves. Workable: v1 widget returns 0 jobs everywhere; v3 POST list works (Skroutz 9, Blueground 9, Leena AI 11 with 3 in India), v2 detail has description / requirements / benefits / salary; page size 10 and `{ token: nextPage }` gives page 2 (the 11th job). Searched 30 Indian startups on Workable: only Leena AI has jobs.
+- Asked the user (enum values are outside AI_Rules §3): **allowed, note the decision** → D-14.
+- Did: both adapters with `fetchAll`, `fetchPostings` hook, POST in `fetchJson`, migration (`--create-only`, SQL = the 2 ADD VALUE lines; forbidden grep empty; schema diff additions only; Postgres 16 in compose; `migrate deploy`; API stopped for `prisma generate`), kind lists, verifyBoard, client options, real fixtures, 11 tests (C-121).
+- Checks:
+  - Live `fetchPostings` without the DB: Swiggy 172 fetched, 1 kept ("Software Dev Engineer I", description 2,028 chars, 4.9 s); Leena AI 11 (2 pages), 0 kept; Skroutz 9, 0 kept.
+  - `http_p7t7.mjs` (9/9, after fixing the script's response field): unknown SR company accepted with "0 jobs now"; unknown Workable account 400 BOARD_INVALID; Add board for Swiggy (token stored as `swiggy`) and Leena AI (new company) 201; student 403; Swiggy run 1 SUCCESS fetched 173 kept 1 new 1, run 2 new 0 seen 1, "Software Dev Engineer I" PENDING_REVIEW under Swiggy with its description; Leena AI run 1 and 2 SUCCESS, fetched 11, kept 0. Sources, runs, the posting, the company and `careers.runRequest` restored. (The first, broken run of the script left 3 sources without runs and a queued run request; both removed.)
+  - `npm test` → 746 passed (49 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
+- Not verified: dedup of a kept Workable posting (no Workable board with an early-career India role was found).
+- Next step: P7-T8.

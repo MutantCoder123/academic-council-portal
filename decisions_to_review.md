@@ -109,3 +109,13 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
 - **Why:** nothing that names a student is stored, so no endpoint can leak it; status changes have
   no history table, and `updatedAt` also moves when a note is edited.
 - **Status:** Taken by the AI (10 Oct 2026); for the user to review.
+
+## D-14 Two enum values added to SourceKind (P7-T7, C-121)
+- **What:** `ALTER TYPE "SourceKind" ADD VALUE 'SMARTRECRUITERS'` and `'WORKABLE'`, so boards on
+  those ATSs can be sources. AI_Rules §3 does not list enum additions and C-96 had avoided them.
+- **Why:** the user approved it on 11 Oct 2026 ("allow two values and take note in the decision
+  taken"). It is additive (no rows change), works in one migration on Postgres 16, and modelling
+  the ATS as anything other than the source's kind would have been a workaround. Note: Postgres
+  cannot drop an enum value, so these two stay even if the adapters are removed.
+- **Status:** Decided by the user (11 Oct 2026). AI_Rules §3 itself is unchanged (the AI may not
+  edit it); this entry is the record of the exception.
