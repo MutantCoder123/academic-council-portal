@@ -14,12 +14,12 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `524c085` feat(careers): F-33 filter the jobs list by my application status (local, not pushed)
+- **Last commit:** `162717c` feat(careers): F-34 Fill from link on Add posting (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 807 passed (60 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 812 passed (62 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -999,3 +999,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 
 ### 2026-10-11, B-29: Student links status filter as chips (user request)
 - Native select → toggle chips styled like the link status chips; per-link chip `whitespace-nowrap` (C-141). Browser: Pending review → 6 rows / tab 6, All links → 8; 375 px fine. Build ✓, eslint 36.
+
+### 2026-10-11, F-34: Fill from link on Add posting (user request)
+- Did: `linkDraft.js` (3 tests), route, client panel (`162717c`, C-142).
+- Checks (`http_draft.mjs`, 9/9): student 403; Stripe careers link `stripe.com/jobs/search?gh_jid=8066310` → ATS via the Stripe Greenhouse board (first version went to the AI step and found no title on the JS page; `greenhouseFromJobId` added); `boards.greenhouse.io/stripe/jobs/…` → ATS; Semesteria MyGyan page → AI (gpt-oss-120b): "Software Engineer Intern", company MyGyan (ACTIVE, matched), Bengaluru, HYBRID, 10 skills, "INR 30K" unclear (Unsure), clean description (460 chars); LinkedIn → 422; 127.0.0.1:3000 → 422 "Port 3000 is not allowed"; "hello" → 400; postings / companies / aliases / extractions / links unchanged, one LlmUsage row purpose "draft".
+- Browser: `/admin/careers/new?fromLink=11&url=…` → link prefilled → Fill from link → notice "Filled by the AI step … Check: compensation", company MyGyan with Change, fields filled, 2 Unsure rings on pay; 375 px scrollWidth 375. Not saved.

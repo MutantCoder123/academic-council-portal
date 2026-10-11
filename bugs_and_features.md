@@ -358,6 +358,12 @@
 - **Effort:** S
 - **Status:** ✅ Built 11 Oct (`524c085`, C-136).
 
+#### F-34 "Fill from link" when an admin adds a posting (added 11 Oct, user request)
+- **Problem:** "Create posting from this link" opened an empty form; the admin typed every field by hand.
+- **Design:** a "Fill from link" panel on Add posting (link prefilled from the student's submission, or pasted). The server reads the link like a student link, cheapest path first: never for store-only sites; the ATS API for Greenhouse / Lever / Ashby links (also a company page with `?gh_jid=` that one of our Greenhouse boards knows); the page's JobPosting JSON-LD; otherwise the AI step (only while it is on, under the daily cap). It returns a draft of the form plus a company suggestion (matched without creating anything); fields it is unsure about get the "Unsure" ring. Nothing is saved until the admin saves.
+- **Effort:** M
+- **Status:** ✅ Built 11 Oct (`162717c`, C-142).
+
 ---
 
 ## 3. Go-live checklist and suggested order
