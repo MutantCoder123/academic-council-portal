@@ -996,3 +996,6 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 
 ### 2026-10-11, B-28: Student links tab count follows the status filter (user report)
 - `onCount` from `ReviewLinks` → tab number while the tab is open (C-140). Browser: tab = rows for needs attention 1 / all 8 / pending review 6 / duplicate 1 / failed 0; back to 1 after switching tabs. Build ✓, eslint 36.
+
+### 2026-10-11, B-29: Student links status filter as chips (user request)
+- Native select → toggle chips styled like the link status chips; per-link chip `whitespace-nowrap` (C-141). Browser: Pending review → 6 rows / tab 6, All links → 8; 375 px fine. Build ✓, eslint 36.
