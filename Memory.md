@@ -14,12 +14,12 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `07234d2` feat(careers): P1-T10b Gemini provider (plain fetch, mocked tests); Groq in .env.example (local, not pushed)
+- **Last commit:** `8ef1221` fix(careers): B-22 AI-extracted postings keep only the job description, not the whole page (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 797 passed (58 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 805 passed (59 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -963,3 +963,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - Whole branch: 96 commits, +25,646 / −15 lines.
 - **Upstream moved:** 5 commits since the merge base (#151 doubt forum, #153 post-login redirect, #155 Level Up reveal). `git merge-tree` reports conflicts in `client-acc/src/App.jsx`, `client-acc/src/layout/DashboardLayout.jsx`, `server-acc/prisma/schema.prisma` and `server-acc/server.js`. A local `git merge --no-commit upstream/main` was refused by the permission check (shared resource), and was not retried another way. Left for the user.
 - `PR_DESCRIPTION.md` drafted for the maintainers: features, changes to existing files, the 21 migrations, env vars, deploy / rollback, testing, what is not verified, and a pointer to the private security report (no content from `upstream_vulnerabilities.md`). No AI attribution.
+
+### 2026-10-11, B-22: AI-extracted descriptions were the whole page (user report)
+- User: posting #101's "About the role" was badly formatted (menus, "Similar Jobs", a chat widget). Cause: `applyExtraction` stored `extraction.inputText` (the whole page text; `<main>` on Semesteria contains the similar-jobs list) as the description.
+- Did: anchors in the schema + prompt, `descriptionSpan.js` (8 tests: cut and lines kept, case / punctuation / spacing, missing / reversed / too short / too-short anchors → null, short end anchor "Status: Closed", word slipped inside a long anchor, widening to whole lines, verify-level wiring), `verify.js` / `applyExtraction.js` (`8ef1221`, C-133).
+- Backfill (scratchpad `fix_desc.mjs`, Groq, 20 s pacing, admin PATCH so each change has an EDIT row): #101 2,710 → 1,076 chars, #103 1,050 → 1,001, #115 696 → 510, #123 706 → 383. Two first-version misses taught the final rules: #123 failed on a 2-word end anchor ("Status: Closed") and on a word the model dropped ("M.A equivalent" vs "M.A or equivalent"); #115's first cut lost the sentence after the end anchor on the same line.
+- Browser: /dashboard/career-vault/jobs/101 → "About the role" shows the summary, About Company, Core Requirements, Responsibilities; no "Search for Jobs", "Similar Jobs", other companies or "AI chat". `npm test` → 805 passed.
