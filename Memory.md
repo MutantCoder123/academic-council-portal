@@ -14,7 +14,7 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `2d14c4e` feat(careers): P8-T1 F-29 seniors' reported stipend and rounds on company pages (local, not pushed)
+- **Last commit:** `accd3e0` fix(careers): P8-T1 seniors' numbers show a rounded median and middle half, never min / max (local, not pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** local Ollama `qwen2.5:7b` for testing; **Gemini for the final phase** (P1-T10b is required, before P4-T2). No API key needed until then.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -130,7 +130,7 @@
 - The review reminder goes only to users with role CAREER_ADMIN; SUPER_ADMIN and FACULTY can use the admin pages but get no mail.
 - P8-T2: a LIVE posting must be taken down before it can be deleted; the admin types the posting number back; a student link that made the posting is kept and marked dismissed ("removed by ACC"), which also blocks re-sharing it for 30 days (existing B-08 rule).
 - P8-T3: test data = fixed patterns only (test-host URLs, "… Test <timestamp>" companies, "test" / "bogus" sources); anything matching but still in use is listed as kept, never deleted. Deletions by the command are logged as user 0, "Cleanup command".
-- P8-T1: seniors' numbers are private per experience (global omit) and appear only as company aggregates from 3 published reports, with ranges widened to ₹5k / 1 lakh steps; the experience type decides stipend vs CTC.
+- P8-T1: seniors' numbers are private per experience (global omit) and appear only as company aggregates: a rounded median from 3 published reports, the middle half (25th – 75th percentile) from 5, never min / max (C-130); the experience type decides stipend vs CTC.
 
 ## Gotchas / things that surprised me
 
@@ -902,3 +902,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
   - `npm test` → 786 passed (56 files); client build ✓; `npx eslint src` 36 errors (baseline); touched files 0 errors.
 - **P8 summary:** 3/3 (P8-T2 `cc81ff6`, P8-T3 `633ac9b`, P8-T1 `2d14c4e`), tests 768 → 786. Schema (additive, each reviewed): `careers_posting_deletions`, `careers_senior_reports`. Upstream files touched in P8: `config/db.js` (omit 4 more columns), `ForumController.js`, `CareerVaultuser/index.jsx` (user's one-off OK, D-15), `schema.prisma` (additions only). The dev DB's old test rows were removed by the cleanup command (backup in the session scratchpad).
 - Next step: wait for the user (push, P1-T10b / P4-T2 / P4-T3, go-live checklist, verify-later items).
+
+### 2026-10-11, P8-T1 fix: no min / max in seniors' summaries (C-130)
+- Background security review of `2d14c4e` flagged privacy inference / k-anonymity in `seniorReports.js` (only the summary line reached the session). Cause: with 3 reports the stipend min and max were two seniors' own figures, next to their 3 experiences; adding one report moved the range.
+- Did: `summary()`: median (rounded to the step) from 3 reports, middle half (25th – 75th percentile, widened) from 5, never min / max; card and form hint text (`accd3e0`).
+- Checks: unit tests 7/7 (3 – 4 reports → typical only; 5 reports 20k / 41k / 50k / 59k / 150k → typical 50,000, middle half 40,000 – 60,000). `http_p8t1.mjs` 16/16, including 3 reports → {typical 50000, low null, high null, no min / max keys} and 5 reports (20k, 42k, 50k, 58k, 150k) → {typical 50000, low 40000, high 60000}, neither 20k nor 150k in the response. Browser (375 px): "Stipend: typically about ₹50,000 a month, from 3 seniors (2024 – 2026). Interview rounds: usually 3, from 3 seniors (2024 – 2026)." Seeded rows removed (experiences 12). `npm test` 786 passed; client build ✓; eslint 36 (baseline).
+- Remaining (inherent): a published median can still move when one report is added; at ₹5k rounding from 3 reports that reveals little.

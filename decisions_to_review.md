@@ -142,8 +142,9 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   job board still lists does not keep it away (the next fetch adds it back for review), and the
   dialog says so.
 - **What the AI chose for P8-T1:** the numbers are private per experience (omitted from every
-  query) and appear only as company aggregates once 3 published experiences report the same one;
-  ranges are widened to ₹5k (stipend) / 1 lakh (CTC) steps; the experience type decides stipend vs
+  query) and appear only as company aggregates once 3 published experiences report the same one:
+  a rounded typical value (median), plus the middle half (25th – 75th percentile) only from 5 reports;
+  min / max are never shown (changed after the background security review, C-130); the experience type decides stipend vs
   CTC (no separate role-type field). Upstream files edited: `ForumController.js` (+9 / −1),
   `CareerVaultuser/index.jsx` (+6 / −1), `config/db.js` (the omit line).
 - **What the AI chose for P8-T3:** only fixed patterns count as test data; anything matching but in
