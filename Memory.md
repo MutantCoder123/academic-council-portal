@@ -14,7 +14,7 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `2d28489` fix(careers): never count the viewer in applied counts (local, not pushed)
+- **Last commit:** `68b10e0` fix(careers): B-32 company search list on the experience form (pushed 12 Oct)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -1023,3 +1023,8 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Checks: `http_applied_toggle.mjs` 5/5 on Rubrik #117 (2 others: null, also after the viewer marks Applied; 3 others: 3 on job + company page; viewer clears status: still 3); `http_applied.mjs` 13/13 again; temporary users removed. `npm test` 816; build ✓; eslint 36.
 - Remaining by design: anyone watching a count change from 3 to 4 learns that one more student applied (not who). The company count (distinct students) and the per-posting counts can be compared, but neither names anyone.
 - Note: tracking rows now are the admin's own (#121 Applied at 12:28 from the browser, #122 In progress); not test data.
+
+### 2026-10-12, B-32 picker list hidden + handoff
+- Did: student `CompanyPicker` menu portalled to `<body>` (`68b10e0`, C-147). Build ✓, eslint 36. **Not browser-checked**: logging the Playwright browser in (reading `DEV_SEED_PASSWORD` from `.env` inside `browser_run_code_unsafe`) was refused by the auto-mode permission check this session. Next agent: check the experience form's "Company (optional)" list and the jobs-page company filter at 1280 and 375 px.
+- Earlier on 12 Oct: restarted API + worker (worker had missed cron runs while the machine slept). Six stray `nodemon server.js` processes from older `npm run dev` sessions were left running (port 3000 belongs to the plain `node server.js`).
+- Handoff: Indranil handed the work to a friend's coding agent on 12 Oct; both branches pushed to origin first.
