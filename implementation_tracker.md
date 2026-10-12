@@ -19,7 +19,7 @@ Update this file at the end of **every** task. The commit column = short SHA.
 | P8 Needs a decision | only with the user's OK | 3 | 3 | **Done** |
 | **Total incl. P5 – P8** | | **64** | **63** | **98 %** |
 
-**Next task:** `P4-T3`: the user decides how to bring in upstream/main (5 commits, 4 conflicting files), then opens the PR with `PR_DESCRIPTION.md`. Go-live checklist L-01 – L-08. Verify-later items: `verify_later.md` (V-01 – V-06). 12 Oct (Shrut): bugs B-33 – B-38 fixed (see `bugs_and_features.md`, C-148 – C-153); browser click-through by the user still open.
+**Next task:** `P4-T3`: the user decides how to bring in upstream/main (5 commits, 4 conflicting files), then opens the PR with `PR_DESCRIPTION.md`. Go-live checklist L-01 – L-08. Verify-later items: `verify_later.md` (V-01 – V-06). 12 – 13 Oct (Shrut): bugs B-33 – B-48 fixed (C-148 – C-162); B-33 – B-38 re-checked in the browser and a UI sweep (dropdowns, Escape, 375 px) found and fixed B-39 – B-48. Not pushed.
 Legend for P5 – P8: 🗄️ additive migration · ⚖️ needs the user's OK before starting (`[!]` until approved). Feature IDs (F-xx) refer to `bugs_and_features.md`; the bugs B-01 – B-21 were fixed on 9 Oct outside this table (see that file and C-80 – C-95).
 
 ---

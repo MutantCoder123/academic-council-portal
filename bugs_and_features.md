@@ -132,6 +132,16 @@
 | B-36 | Admin Student links has too many tags (user report, 12 Oct) | 10 overlapping filter chips styled like the row badges; dismissed rows say it twice | 4 plain chips: Needs attention · In progress · Done · All; one badge per row (D-16) | S |
 | B-37 | Student links buttons to be checked (user request, 12 Oct) | `ReviewLinks.jsx`: list fetches 100 rows with no paging | Check Retry / Dismiss / Create posting; add paging | S |
 | B-38 | Bulk add to be checked (user request, 12 Oct) | `sources/{bulkLines,addBoard}.js`: archived board reported as "Already there", rejected candidate company reused, inline `#` comments end up in the company name | Clear messages, strip comments, controller tests | S |
+| B-39 | Application status menu hidden under the next card ("Offer" unclickable), shifts the page ~30 px sideways at 375 px, stays open on Tab (UI sweep 13 Oct) | `ApplicationStatusButton.jsx` (absolute menu inside the card's z-10 strip, `left-0`, 240 px) | Portal to `<body>`, fixed position kept inside the window, closes on Tab / when its button is hidden | S |
+| B-40 | Admin posting editor drawer ignores Escape (UI sweep 13 Oct) | `PostingEditor.jsx` | Escape closes it (top layer only) | S |
+| B-41 | One Escape closes two stacked admin dialogs, e.g. company → Merge into… (UI sweep 13 Oct) | shared `Modal` (`components/ui.jsx`), one window listener per dialog | Escape-layer stack: only the newest dialog closes | S |
+| B-42 | Career Vault tabs at 375 px: grey scroll bar with arrows, "Saved" cut off (UI sweep 13 Oct) | `CareerVaultTabs.jsx` (`overflow-x-auto`) | Two rows on phones, one row from `sm` | S |
+| B-43 | Student company list closes as soon as the page / filter drawer scrolls (phone keyboard) (UI sweep 13 Oct) | student `CompanyPicker.jsx` (`closeMenuOnScroll` on any scroll) | Close only when the box is out of sight or covered | S |
+| B-44 | Operations "N student link(s) failed" counts links already dismissed, so the alert never clears (29 vs 21) (UI sweep 13 Oct) | `adminOpsController.js` (`count({ status })`) | Count only `dismissedAt: null` | S |
+| B-45 | Bulk add shows a green success toast when nothing was added and lines failed (UI sweep 13 Oct) | `BulkAddSourcesDialog.jsx` | Green only when added; error style when something failed; neutral otherwise | S |
+| B-46 | "Move back to candidates" says why it's refused only after confirming (UI sweep 13 Oct) | `CompanyDetail.jsx`, `getCompany` | `getCompany` returns `usage`; the confirm box lists what blocks it and disables the button | S |
+| B-47 | Company field in the admin experience editor styled like the student form and leaves a gap in the grid (UI sweep 13 Oct) | `ExperienceCompanyField.jsx`, student `CompanyPicker.jsx` | `plain` picker style; field spans two columns | S |
+| B-48 | Admin company list stays open when its box scrolls under the sticky bar on Link experiences (UI sweep 13 Oct) | admin `CompanyPicker.jsx` | Close when the box is out of sight or covered | S |
 
 
 **Status of the Low bugs (9 Oct):** all fixed.
@@ -158,6 +168,16 @@
 | B-36 | `c27acdc` | Needs attention · In progress · Done · All, disjoint (unit test over every row shape); one badge per row; HTTP 7/7 (C-151) |
 | B-37 | `1f8801b` | Retry / Dismiss / Create posting checked over HTTP (18/18); paging added; "Withdrawn" label fixed (C-152) |
 | B-38 | `b13de96` | Bulk add checked live (19/19); end-of-line comments, archived board and rejected company messages, controller tests (C-153) |
+| B-39 | `3a8c1ea` | Browser: menu over the next card fully on top, 375 px menu inside (right 367) with no sideways shift, Tab / Escape / button scrolled away close it, job page rail fine at 600 px (C-154) |
+| B-40 | `2131b15` | Browser: Escape closes the editor; Delete… opened from it closes first (C-155) |
+| B-41 | `56d701d` | Browser: company → Merge into… → Escape closes Merge only, second Escape the company (C-155) |
+| B-42 | `59afdf0` | Browser: 375 px nav 326/326, all four tabs visible; 1280 px one row (C-156) |
+| B-43 | `1b39bbb` | Browser: list stays open after a 40 px drawer scroll, closes when the box is off screen; share form unchanged (C-157) |
+| B-44 | `d85eca3` | Ops failed 21 = DB failed and not dismissed (was 29) (C-158) |
+| B-45 | `7e00c71` | Browser: red toast with a failure, plain toast when all were already there (C-159) |
+| B-46 | `2063a7d` | Browser: Rubrik "Not possible yet: 3 live postings, 1 job board use it", button disabled; empty company enabled (C-160) |
+| B-47 | `5f68d0f` | Browser: white field, editor corners / focus ring, Company + Resume fill the row (C-161) |
+| B-48 | `287c45f` | Browser: list follows a small scroll, closes under the sticky bar; other admin pickers unchanged (C-162) |
 
 ---
 
