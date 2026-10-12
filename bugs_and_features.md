@@ -126,6 +126,12 @@
 | B-22 | "About the role" of an AI-extracted posting is the whole fetched page: on an aggregator page (e.g. Semesteria) it includes menus, a "Similar Jobs" list and a chat widget (reported by the user, 11 Oct, posting #101) | `extract/applyExtraction.js` (`descriptionText: extraction.inputText`) | Model returns verbatim start / end anchors; code cuts the page between them | S |
 | B-23 | Posting #103: the header lines (title, "0 Years", location, "Full-Time") and the "Requirements" heading render as one paragraph (user report, 11 Oct) | `client-acc/.../lib/description.js` (a run of > 2 short lines is never a heading); the B-22 start anchor included the header lines | Last line of a short-line run that a list follows is the list's heading; prompt: start after the header lines | S |
 | B-24 | Posting #110: "Positions / Mode / Duration" lines look like plain text, and the description says "ob Title" (user report, 11 Oct) | `lib/description.js` (no layout for "Label: value" lines); the typo is in Paytm's own Lever posting (`<div>ob Title: …`) | Facts block for runs of ≥ 2 "Label: value" lines; typo corrected by an admin edit | S |
+| B-33 | Admin reviewing a new experience can't change which company it is linked to (user report, 12 Oct) | upstream admin editor `client-acc/src/components/Editor.jsx` has no company field; the server already accepts `companyId` from admins | Company picker in the editor, `companyId` sent only when changed (D-16) | S |
+| B-34 | Admin can't remove a company from the approved pool (user report, 12 Oct) | no route for ACTIVE companies; reject is candidates only | "Move back to candidates" (refused while live postings, boards or experiences use it) (D-16) | S |
+| B-35 | Approved companies don't show in the student Companies area (user report, 12 Oct) | `directoryWhere` lists only companies with a LIVE posting or a PUBLISHED experience | "Show all companies" toggle; default unchanged (D-16) | S |
+| B-36 | Admin Student links has too many tags (user report, 12 Oct) | 10 overlapping filter chips styled like the row badges; dismissed rows say it twice | 4 plain chips: Needs attention · In progress · Done · All; one badge per row (D-16) | S |
+| B-37 | Student links buttons to be checked (user request, 12 Oct) | `ReviewLinks.jsx`: list fetches 100 rows with no paging | Check Retry / Dismiss / Create posting; add paging | S |
+| B-38 | Bulk add to be checked (user request, 12 Oct) | `sources/{bulkLines,addBoard}.js`: archived board reported as "Already there", rejected candidate company reused, inline `#` comments end up in the company name | Clear messages, strip comments, controller tests | S |
 
 
 **Status of the Low bugs (9 Oct):** all fixed.
@@ -387,6 +393,7 @@ All bugs (B-01 – B-21) were fixed on 9 Oct, so this section now covers launch 
 | L-05 | One week admin-only (`visibleToStudents` off), then switch on; name the reviewer(s) and a daily review habit (F-16 / F-31 help) | Freshness depends on reviews |
 | L-06 | Council answer on self-reported CPI (PRD open question 3) | Privacy sign-off |
 | L-07 | P4-T3: final QA + PR description; the user opens the PR | Plan |
+| L-08 | Ask ACC whether students should get an email when new openings go live (user, 12 Oct; Shrut asks) | Today only the opt-in job alerts exist (F-19, off until `careers.alertEmailsEnabled`). A mail to everyone would be new work and must not reuse upstream `notifyOnNewPost` |
 
 ### Suggested feature order
 

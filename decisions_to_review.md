@@ -151,3 +151,21 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   use is listed as kept. The command's deletions are logged as "Cleanup command" (user id 0).
 - **Status:** Decided by the user (11 Oct 2026); the details were chosen by the AI. AI_Rules §4
   itself is unchanged (the AI may not edit it); this entry records the P8-T1 exception.
+
+## D-16 Fixes from Shrut's 12 Oct list (B-33 – B-38, L-08)
+- **What the user decided (12 Oct 2026):**
+  - B-33: the upstream admin experience editor (`client-acc/src/components/Editor.jsx`) may get a
+    company field, as a one-off exception to AI_Rules §4 (like D-15).
+  - B-34: an approved company is removed from the pool by moving it back to the candidates (not
+    hidden, not deleted).
+  - B-35: the student Companies page keeps its default (companies with open roles or experiences)
+    and gets a "Show all companies" toggle.
+  - B-36: the Student links filter becomes 4 plain chips: Needs attention, In progress, Done, All.
+  - "Check admin buttons" (B-37) means the Student links buttons only.
+  - L-08: Shrut asks ACC about emails for new openings; no code until they answer.
+- **What the AI chose:** the editor sends `companyId` only when the admin changed it (an unchanged
+  link to a company that is no longer active never blocks a save). Moving a company back to the
+  candidates is refused while live postings, job boards or linked experiences use it (merge or
+  unlink those first); its pending postings get the company flagged, as with a rejected candidate.
+- **Status:** Decided by the user (12 Oct 2026). AI_Rules §4 itself is unchanged; this entry
+  records the Editor.jsx exception.
