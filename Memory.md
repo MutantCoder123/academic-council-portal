@@ -8,18 +8,18 @@
 
 ## Current state (overwrite this section each session)
 
-- **Phase / task:** everything built; P4-T2 done; **P4-T3 QA done and PR description drafted (`PR_DESCRIPTION.md`), waiting on the user** for the upstream merge (5 upstream commits conflict in 4 files) and to open the PR. Go-live checklist L-01 – L-07. Verify-later: `verify_later.md` (V-01 – V-06).
+- **Phase / task:** everything built; P4-T2 done; **P4-T3 QA done and PR description drafted (`PR_DESCRIPTION.md`), waiting on the user** for the upstream merge (5 upstream commits conflict in 4 files) and to open the PR. Go-live checklist L-01 – L-08 (L-08: Shrut asks ACC about emails for new openings). Verify-later: `verify_later.md` (V-01 – V-06). **12 Oct (Shrut's machine): B-33 – B-38 fixed and committed locally (not pushed); browser click-through by the user still open** (list in the 12 Oct session log).
 - **Remotes:** `origin` = https://github.com/MutantCoder123/academic-council-portal (push here), `upstream` = PradeepSD476 (never push)
 - **Branches:** code = `feat/jobs-fetcher` (in `academic-council-portal/`); docs = orphan `planning-docs` (worktree at `planning/`). Two people work on them (Indranil Saha and Shrut Gautam, each with their own coding agent): `git pull --rebase` before starting and before pushing; never force-push.
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `68b10e0` fix(careers): B-32 company search list on the experience form (pushed 12 Oct)
+- **Last commit:** `b13de96` fix(careers): B-38 bulk add (local, not pushed; `68b10e0` is the last pushed)
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 816 passed (63 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 833 passed (66 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -101,6 +101,8 @@
 | Permanent delete | `server-acc/services/careers/postings/deletePosting.js`, `DELETE /careers/admin/postings/:id`, `GET …/:id/delete-preview`; audit table `PostingDeletion`; client `components/DeletePostingDialog.jsx` | not for LIVE postings |
 | Test-data cleanup | `server-acc/services/careers/ops/cleanup.js`; `npm run careers:job -- cleanup [--yes]` | refuses NODE_ENV=production |
 | Seniors' reported numbers | `server-acc/services/careers/companies/seniorReports.js` (`reportData` used by upstream `ForumController` addpost / editPost; `companyReports` in `getCompanyPage`); client `components/SeniorReportFields.jsx` (on the upstream form), `components/SeniorReportsCard.jsx` (company page), `lib/seniorReports.js` | columns omitted in `config/db.js` |
+| Admin experience editor company field | client `pages/Careers/components/ExperienceCompanyField.jsx`, used by upstream `components/Editor.jsx` (+4 lines, D-16) | B-33 |
+| Move a company back to candidates | `server-acc/services/careers/companies/unapproveCompany.js` (shares `companyUsage` / `flagCompanyPostings` with `rejectCandidate.js`), `POST /careers/admin/companies/:id/unapprove`; client `CompanyDetail.jsx` | B-34 |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -188,6 +190,10 @@
 - Deleting a posting that a job board still lists does not keep it away: its observation goes with it, so the next fetch creates it again (PENDING_REVIEW). The dialog says so; reject instead when the aim is to keep it out.
 - Upstream `editPost` returns 201 (not 200), and an edit with status PUBLISHED calls `notifyOnNewPost`, which mails every user. Check scripts publish experiences through Prisma, never through that PATCH.
 - Groq model ids contain a slash (`openai/gpt-oss-120b`): check availability with the `/models` list, not `/models/{id}`. After changing `LLM_PROVIDER`, also change `CAREERS_LLM_FAST_MODEL` (an Ollama model name makes Groq report MODEL_MISSING) and restart the API (the worker reads env at start).
+
+- (Shrut's Linux machine, 12 Oct) The local DB was **14 migrations behind** the code (10 – 11 Oct, from `careers_link_dismiss` to `careers_senior_reports`), so pages touching those columns failed with P2022 "column does not exist". After pulling, run `npx prisma migrate status` and `npx prisma migrate deploy` (committed, reviewed migrations only), then restart the API.
+- The careers API lives under `/api/v1` (e.g. `/api/v1/careers/admin/submissions`); the review counts endpoint returns `links` / `linksTotal`, not `submissions`.
+- Shrut's check scripts for 12 Oct are in that session's scratchpad (`lib.mjs` logs in with `DEV_SEED_PASSWORD` from `.env`, run with `node --env-file=.env` from `server-acc/`).
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -1028,3 +1034,16 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: student `CompanyPicker` menu portalled to `<body>` (`68b10e0`, C-147). Build ✓, eslint 36. **Not browser-checked**: logging the Playwright browser in (reading `DEV_SEED_PASSWORD` from `.env` inside `browser_run_code_unsafe`) was refused by the auto-mode permission check this session. Next agent: check the experience form's "Company (optional)" list and the jobs-page company filter at 1280 and 375 px.
 - Earlier on 12 Oct: restarted API + worker (worker had missed cron runs while the machine slept). Six stray `nodemon server.js` processes from older `npm run dev` sessions were left running (port 3000 belongs to the plain `node server.js`).
 - Handoff: Indranil handed the work to a friend's coding agent on 12 Oct; both branches pushed to origin first.
+
+### 2026-10-12, B-33 – B-38 + L-08 (Shrut's list `tobedone.txt`, D-16)
+- Did: pulled `planning-docs` (19 behind); `tobedone.txt` added to `planning/.gitignore` (never committed, stays local); L-08 and D-16 recorded; local DB brought up to date (`migrate deploy`, 14 pending). Then one commit per bug: B-33 `9f99f41` (company field in the admin experience editor; upstream `Editor.jsx` +4 lines, user OK), B-34 `b25ec79` (move an approved company back to the candidates), B-35 `1a82875` ("Show all companies"), B-36 `c27acdc` (four Student links filters, one badge per row), B-37 `1f8801b` (Student links buttons checked; paging; "Withdrawn" label), B-38 `b13de96` (bulk add checked; comments, archived / rejected messages, controller tests). C-148 – C-153.
+- Checks + actual results (HTTP scripts, throwaway rows removed and counts checked after each):
+  - B-33 `http_b33` 7/7: admin post list carries `company` for the pre-fill; save without `companyId` keeps Google; change to Microsoft; clear → null; status stayed DRAFT (never PATCHed with PUBLISHED). The "candidate id → 400" case was skipped (no unrejected candidate locally; covered by `experienceCompany.test.js`).
+  - B-34 `http_b34` 12/12: student 403; Rubrik (3 LIVE) → 409 unchanged; empty throwaway → 200 CANDIDATE, under Candidates, not Active, not in the student picker, company page 404; again → 409; approve → ACTIVE.
+  - B-35 `http_b35` 8/8: empty approved company absent by default, present with `all=true`; default 7, all 63 = every ACTIVE company; companies with something to show first; `all=yes` → 400.
+  - B-36 `http_b36` 7/7 (local DB: 5 links, all needing attention): chips add up to All, each link in exactly one, tab badge = Needs attention, raw FAILED still works, bad value 400, student 403. Unit test: 28 row shapes × AI on / off, exactly one bucket each.
+  - B-37 `http_b37` 18/18: Retry (student 403; FAILED → RECEIVED, error cleared, moves to In progress; again 409); Dismiss (no reason 400; student 403; reason + admin stored; moves to Done; twice 409; student sees "Not a job page"); Create posting from the link (student 403; 201 PENDING_REVIEW, link points at it, moves to Done; second posting 409; dismiss with posting 409); paging `limit=1&page=2`.
+  - B-38 `http_b38` 19/19 (live boards): student 403; empty 400; 31 lines 400; unknown kind / bad token / repeat reported per line; existing Stripe with a trailing comment → already there; archived Druva → "archived: restore it under Sources → Show archived"; unreachable → failed (404); rejected company → failed, no source; nothing added → 200, no fetch queued; real GitLab board → 201, new CANDIDATE, one fetch of ALL queued. Druva `archivedAt`, `careers.runRequest` (no row before) and source / company / alias counts restored.
+  - `npm test` → 833 passed (66 files); client build ✓; `npx eslint src` 36 errors (baseline; the one in `Editor.jsx` is upstream's unused `err`); touched files 0 errors.
+- Not verified (agent can't log into the browser): the UI. **For the user, at 1280 and 375 px:** (1) Admin → Manage posts → Edit a draft: Company pre-filled, change it, Save Draft, reopen; clear it (also the open B-32 picker check). (2) Admin Companies → an approved empty company → Move back to candidates… → Keep it approved / Move back; then it is under Candidates. (3) Student Companies → Show all companies. (4) Jobs review → Student links: four filters, badges, Retry / Dismiss / Create posting, Previous / Next. (5) Sources → Add boards in bulk with a mixed paste.
+- Next step: the user's browser check; push when asked; L-08 (ACC answer on emails); P4-T3 as before.

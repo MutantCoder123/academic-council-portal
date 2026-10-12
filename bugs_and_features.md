@@ -152,6 +152,12 @@
 | B-22 | `8ef1221` | Description cut from the page by the model's verbatim anchors, widened to whole lines; whole page only as a fallback; 4 existing postings fixed through the admin edit API (C-133) |
 | B-23 | `068abf0` | Run-before-list heading rule (2 postings change layout, all text kept); prompt starts the description after the header lines; #103 re-cut (C-134) |
 | B-24 | `bd2e69f` | Facts block with bold labels (9 blocks on 7 postings, all text kept); #110 "ob Title" → "Job Title" by admin edit (source typo; re-fetches never overwrite a seen posting) (C-135) |
+| B-33 | `9f99f41` | Company field on the admin experience editor, sent only when changed; HTTP 7/7 (change, clear, unchanged save keeps it) (C-148) |
+| B-34 | `b25ec79` | "Move back to candidates…" on an approved company; refused while live postings / boards / experiences use it; HTTP 12/12 (C-149) |
+| B-35 | `1a82875` | "Show all companies" toggle; default list unchanged; HTTP 8/8 (7 by default, 63 with all) (C-150) |
+| B-36 | `c27acdc` | Needs attention · In progress · Done · All, disjoint (unit test over every row shape); one badge per row; HTTP 7/7 (C-151) |
+| B-37 | `1f8801b` | Retry / Dismiss / Create posting checked over HTTP (18/18); paging added; "Withdrawn" label fixed (C-152) |
+| B-38 | `b13de96` | Bulk add checked live (19/19); end-of-line comments, archived board and rejected company messages, controller tests (C-153) |
 
 ---
 
