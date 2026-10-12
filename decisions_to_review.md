@@ -169,3 +169,13 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   unlink those first); its pending postings get the company flagged, as with a rejected candidate.
 - **Status:** Decided by the user (12 Oct 2026). AI_Rules §4 itself is unchanged; this entry
   records the Editor.jsx exception.
+
+## D-17 Maintainer SOP ships in the code branch (13 Oct 2026)
+- **What the user decided:** an operating guide for the portal's maintainers and ACC career admins,
+  in two parts (technical / admin), text only, as `docs/careers/SOP.md` on `feat/jobs-fetcher` so it
+  goes upstream with the PR. A one-off exception to "the code branch carries code only": it is a
+  maintainer guide, not a planning doc. Planning docs stay on `planning-docs`.
+- **What the AI chose:** every UI label is quoted as the portal shows it (checked against the
+  client code); no env values, no security findings; the 13 Oct UI-sweep checklist is section A10.
+- **Status:** Decided by the user (13 Oct 2026).
+

@@ -103,16 +103,19 @@ Existing variables reused: `SMTP_*` (alert / reminder emails), `CLIENT_URL` (lin
 
 ## Deploy
 
+The full operating guide for maintainers and career admins is `docs/careers/SOP.md`.
+
 1. `cd server-acc && npm ci && npx prisma migrate deploy` (applies the 21 migrations).
 2. `npm run careers:seed` (setting defaults and the company list; only inserts what is missing, so
    it is safe to re-run).
 3. `docker compose up -d --build backend-acc fetcher-acc`.
-4. As a career admin, open **Jobs Review → Sources & Ops**. Check that the worker heartbeat is
-   fresh, run a fetch, review the queue, then turn on **Visible to students**.
+4. As a career admin, open **Sources & Ops** (the Operations page). Check that the Worker card says
+   **Running**, run **Fetch all now** from Sources, review the queue, then turn on **Show Jobs &
+   Internships to students**.
 
 ## Roll back
 
-1. Turn **Visible to students** off in Operations: students immediately see nothing new, no
+1. Turn **Show Jobs & Internships to students** off in Operations: students immediately see nothing new, no
    redeploy needed.
 2. `docker compose stop fetcher-acc` stops all fetching and emails.
 3. The migrations are additive, so they can stay in place; the old code ignores the new tables and

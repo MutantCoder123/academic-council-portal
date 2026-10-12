@@ -103,6 +103,7 @@
 | Seniors' reported numbers | `server-acc/services/careers/companies/seniorReports.js` (`reportData` used by upstream `ForumController` addpost / editPost; `companyReports` in `getCompanyPage`); client `components/SeniorReportFields.jsx` (on the upstream form), `components/SeniorReportsCard.jsx` (company page), `lib/seniorReports.js` | columns omitted in `config/db.js` |
 | Admin experience editor company field | client `pages/Careers/components/ExperienceCompanyField.jsx`, used by upstream `components/Editor.jsx` (+4 lines, D-16) | B-33 |
 | Move a company back to candidates | `server-acc/services/careers/companies/unapproveCompany.js` (shares `companyUsage` / `flagCompanyPostings` with `rejectCandidate.js`), `POST /careers/admin/companies/:id/unapprove`; client `CompanyDetail.jsx` | B-34 |
+| Maintainer SOP | `docs/careers/SOP.md` (code branch, D-17) | Part A ops, Part B admins; keep labels in sync when UI text changes |
 | Registry schema | `server-acc/prisma/schema.prisma` (bottom) + `prisma/migrations/20260929174031_careers_foundation/` | Company, CompanyAlias, CompanyMergeLog, AppSetting, Experience.companyId |
 
 ## Decisions made during coding (small ones; big ones also go to change_specsheet.md)
@@ -1060,3 +1061,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Sweep results before the fixes: status menu covered by the next card (S1) and page shifted ~30 px at 375 (S2), no close on Tab (F7); posting editor no Escape (S4); one Escape closed company + Merge (S5); tabs scroll bar at 375 (F3); student picker closed on drawer scroll (S6); Ops failed count 29 vs 21 not dismissed (F8); green toast on failures (F6); refusal only after confirm (F2); editor field style / gap; backfill list floating over the sticky bar (F9). Passed: student dialogs (alerts, about, share link, report) Escape and 375 px; share form picker (B-32 check done); job page rail menu at 600 px; admin pickers in All postings, Add posting, Edit board, posting editor; Ops / Activity / Link experiences at 375 px.
 - After the fixes, each re-checked in the same browser (results in `bugs_and_features.md` B-39 – B-48). `npm test` 833 passed (66 files); client build ✓; `npx eslint src` 36 (baseline); touched files 0.
 - Data: baseline counts taken first; all throwaway rows removed (1 experience, 2 companies + aliases, 55 links, 3 saves, and the "Interested" status a mis-aimed click set on #21) — every count back to the baseline. Local DB setting `careers.llmEnabled` is still off (Shrut's DB). Next: push when asked; P4-T3 as before.
+
+### 2026-10-13, maintainer SOP (D-17, C-163)
+- Did: `docs/careers/SOP.md` on `feat/jobs-fetcher` (`46a0daa`): two parts (technical maintainers / career admins), text only, from the code and the 12 – 13 Oct browser sessions. Fixed the two wrong UI names in `PR_DESCRIPTION.md` and pointed it at the SOP.
+- Checks: every bold phrase in the SOP grepped in `client-acc/src`; the only misses are emphasis, arrow paths of verified parts, and runtime labels ("Approve N selected postings", "Link N selected"), both confirmed in code. Commands and cron times taken from `jobs.js`, `runJob.js`, the script headers and `package.json`; the seed also adds 11 starter boards (stated). Secret scan of the file: clean.
+- Next: push when asked; keep the SOP's labels in sync with UI text changes.
+
