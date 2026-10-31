@@ -204,6 +204,8 @@
 - A merge conflict can end mid-block when both sides share the same ending (a closing `}` or `/>`). Removing the markers then leaves one side unclosed; check with `prisma validate` and a client build, not just "no markers left".
 - Upstream migrations can sort between ours by timestamp. `migrate deploy` applies them fine on a database that already has ours (tested 31 Oct on a copy of the dev DB). `prisma migrate dev` may object to the order: never accept a reset.
 
+- `deploy.yml` (upstream, on push to main) only pulls and rebuilds the website on the VM. Backend rebuild, `migrate deploy`, seed and the worker are manual; the backend runs no migrations on start. `docker compose restart` does not reload `env_file`; use `docker compose up -d <services>`.
+
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
 - (29 Sep, dev laptop) Ollama 0.34.4 installed; models present: `qwen2.5:7b` (4.7 GB, Q4_K_M, 32k ctx), `llama3.2:1b`. GPU RTX 4060 8 GB, RAM 15.5 GB.

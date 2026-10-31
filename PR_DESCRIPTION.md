@@ -129,6 +129,10 @@ Existing variable reused: `SECRET_KEY` (keyed hash for weekly visitor counts). `
 
 The full operating guide for maintainers and career admins is `docs/careers/SOP.md`.
 
+**Merging is not enough.** The `Deploy on Institute VM` workflow only pulls the code and rebuilds the
+website, so the steps below must be run by hand on the VM. Until then the feature stays hidden. The
+AI step also needs an API key added to `server-acc/.env` on the server (see the SOP, section A3).
+
 1. `cd server-acc && npm ci && npx prisma migrate deploy` (applies the 21 careers migrations, plus
    any of `main`'s that are still pending).
 2. `npm run careers:seed` (setting defaults, the company list and 11 starter job boards; only
