@@ -14,7 +14,7 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `e38f4e6` merge of upstream/main (31 Oct, **local, not pushed**; `46a0daa` is the last pushed). After the merge the local dev DB still needs `npx prisma migrate deploy` (2 upstream migrations).
+- **Last commit:** `e38f4e6` merge of upstream/main (31 Oct, **local, not pushed**; `46a0daa` is the last pushed). The local dev DB has upstream's 2 migrations (applied 31 Oct).
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
@@ -1074,4 +1074,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: merged 72 upstream commits (`e38f4e6`), 8 conflicts in 4 files, all keep-both plus two mid-block repairs. Not pushed.
 - Checks: no markers; `prisma validate` ✓, 42 models (34 + 21 − 13 shared); `npm test` 833 passed (66 files); client build ✓; eslint 42 (the 6 extra are in upstream's `ResearchVaultAdmin.jsx` and `ResearchVault/index.jsx`), `App.jsx` and `DashboardLayout.jsx` 0; all migrations on an empty throwaway DB ✓ with no drift; on a throwaway copy of the dev DB upstream's two pending migrations applied after ours ✓ with no drift. Throwaway DBs dropped; the dev DB was only read.
 - Not done: `migrate deploy` on the dev DB, the browser sweep of the merged app (sidebar, new pages, our menus), `PR_DESCRIPTION.md` refresh (still says 5 upstream commits, 797 tests), push.
+
+### 2026-10-31, app running on the merged branch, PR description refreshed
+- Did: `prisma migrate deploy` on the dev DB (2 upstream migrations, up to date); started API, client and worker; `/health` OK, client 200, `/api/v1/vault/faculty` 200, `/careers/status` without login 401 (expected). `PR_DESCRIPTION.md`: 833 tests, lint wording (PR adds none; 42 total = 36 + 6 of upstream's), merged-with-main note, `Editor.jsx` row, 23 migrations checked, seed adds 11 boards, F-33 / F-35 / B-34 – B-36 features; the browser sweep of the merged branch is listed as not verified: remove that line once it is done.
+- PR description has no AI attribution line (AI_Rules §2).
+- Next: browser sweep of the merged app, push, the user opens the PR.
 
