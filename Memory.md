@@ -1080,3 +1080,7 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - PR description has no AI attribution line (AI_Rules §2).
 - Next: browser sweep of the merged app, push, the user opens the PR.
 
+### 2026-10-31, UI checked on the merged branch
+- Shrut checked the merged app's UI by hand and reported it done (no problems reported). "Not verified" line removed from `PR_DESCRIPTION.md`.
+- Next: push when asked, then the user opens the PR.
+

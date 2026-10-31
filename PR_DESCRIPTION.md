@@ -151,10 +151,10 @@ The full operating guide for maintainers and career admins is `docs/careers/SOP.
   restart, and the AI step (stop on an unusable provider, daily cap).
 - Browser check of the careers pages at desktop and phone width (375 px) on 13 Oct: dropdowns,
   dialogs, Escape, sideways overflow. It found ten small UI bugs, all fixed and re-checked.
+  The UI was checked again by hand after merging `main`.
 - **Not verified yet:**
   - Email delivery through a real SMTP server (checked only with nodemailer's JSON transport).
   - A live Gemini call (the provider is unit-tested; testing used Groq).
-  - A browser check of the merged branch: the 13 Oct check above was before merging `main`.
 
 ## Security
 
