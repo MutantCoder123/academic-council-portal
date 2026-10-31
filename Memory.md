@@ -14,12 +14,12 @@
 - **Push only when the human asks.** The 30 Sep history rewrite was force-pushed by Indranil on 6 Oct; since then all pushes are normal fast-forwards. Backups of the old history (Indranil's machine only): branches `backup/code-before-author-fix`, `backup/planning-before-author-fix`.
 - **Upstream PR:** only the human opens it (P4-T3). PR #154 (MutantCoder123:feat/jobs-fetcher → PradeepSD476:main, 9 Oct) was opened by mistake and closed 33 s later, unmerged; it stays visible on upstream. Don't open PRs against upstream from an agent.
 - **`planning/upstream_vulnerabilities.md` is gitignored**: local only, never commit or paste it anywhere.
-- **Last commit:** `46a0daa` docs(careers): maintainer SOP (pushed 13 Oct with B-33 – B-48; planning `5970fb8`)
+- **Last commit:** `e38f4e6` merge of upstream/main (31 Oct, **local, not pushed**; `46a0daa` is the last pushed). After the merge the local dev DB still needs `npx prisma migrate deploy` (2 upstream migrations).
 - **Commit author = whoever is working, with their own git identity:** Indranil Saha <indranil9905@gmail.com> on Indranil's machine (repo-local config), Shrut Gautam <shrut890@gmail.com> on Shrut's machine (set per commit with `git -c user.name=… -c user.email=… commit`). Never an AI co-author or attribution line.
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 833 passed (66 files). Client: build ✓, `npx eslint src` 36 errors (baseline).
+- **Tests:** `npm test` → 833 passed (66 files). Client: build ✓, `npx eslint src` 42 errors (new baseline after the 31 Oct merge: 36 + 6 in upstream's Research Vault files).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -200,6 +200,9 @@
 - UI checks: an `elementFromPoint` probe at a few points can say "visible" while another element is drawn over the middle of a menu (B-39 was found from the screenshot, not the probe). Always look at the screenshot. Measure sideways overflow on every scrolling element, not just `documentElement` (the inner `<main>` overflowed while the page did not).
 - Playwright `fill()` on react-select doesn't open its menu; type with `keyboard.type`.
 - The worker processes throwaway `RECEIVED` links while a check runs (they become FAILED); counts move under you.
+
+- A merge conflict can end mid-block when both sides share the same ending (a closing `}` or `/>`). Removing the markers then leaves one side unclosed; check with `prisma validate` and a client build, not just "no markers left".
+- Upstream migrations can sort between ours by timestamp. `migrate deploy` applies them fine on a database that already has ours (tested 31 Oct on a copy of the dev DB). `prisma migrate dev` may object to the order: never accept a reset.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -1066,4 +1069,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Did: `docs/careers/SOP.md` on `feat/jobs-fetcher` (`46a0daa`): two parts (technical maintainers / career admins), text only, from the code and the 12 – 13 Oct browser sessions. Fixed the two wrong UI names in `PR_DESCRIPTION.md` and pointed it at the SOP.
 - Checks: every bold phrase in the SOP grepped in `client-acc/src`; the only misses are emphasis, arrow paths of verified parts, and runtime labels ("Approve N selected postings", "Link N selected"), both confirmed in code. Commands and cron times taken from `jobs.js`, `runJob.js`, the script headers and `package.json`; the seed also adds 11 starter boards (stated). Secret scan of the file: clean.
 - Next: push when asked; keep the SOP's labels in sync with UI text changes.
+
+### 2026-10-31, upstream/main merged (P4-T3 step, C-164)
+- Did: merged 72 upstream commits (`e38f4e6`), 8 conflicts in 4 files, all keep-both plus two mid-block repairs. Not pushed.
+- Checks: no markers; `prisma validate` ✓, 42 models (34 + 21 − 13 shared); `npm test` 833 passed (66 files); client build ✓; eslint 42 (the 6 extra are in upstream's `ResearchVaultAdmin.jsx` and `ResearchVault/index.jsx`), `App.jsx` and `DashboardLayout.jsx` 0; all migrations on an empty throwaway DB ✓ with no drift; on a throwaway copy of the dev DB upstream's two pending migrations applied after ours ✓ with no drift. Throwaway DBs dropped; the dev DB was only read.
+- Not done: `migrate deploy` on the dev DB, the browser sweep of the merged app (sidebar, new pages, our menus), `PR_DESCRIPTION.md` refresh (still says 5 upstream commits, 797 tests), push.
 
