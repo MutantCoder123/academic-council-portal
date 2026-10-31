@@ -1084,3 +1084,9 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Shrut checked the merged app's UI by hand and reported it done (no problems reported). "Not verified" line removed from `PR_DESCRIPTION.md`.
 - Next: push when asked, then the user opens the PR.
 
+### 2026-10-31, emails and paid-key budget hidden (D-18, C-165)
+- Did: removed the three switches, the budget field and the students' Job alerts button; the four settings are `editable: false`; code kept. SOP, PR description, L-08 updated.
+- Checks: `http_hide` 7/7 (each of the four settings 400 and nothing changed; `submissionDailyLimit` still 200; Ops OK, budget not enforced); `careers:job -- alerts` and `reminder` both report switched off; dev DB had no stored "on" values and 0 saved searches; `npm test` 833; client build ✓; eslint 42 (unchanged), touched files 0.
+- Not browser-checked by the agent: the Operations switches card and the jobs page without the button (build only).
+- Next: the user's look at those two pages, push when asked, then the user opens the PR.
+

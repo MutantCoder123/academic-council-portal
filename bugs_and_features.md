@@ -419,7 +419,7 @@ All bugs (B-01 – B-21) were fixed on 9 Oct, so this section now covers launch 
 | L-05 | One week admin-only (`visibleToStudents` off), then switch on; name the reviewer(s) and a daily review habit (F-16 / F-31 help) | Freshness depends on reviews |
 | L-06 | Council answer on self-reported CPI (PRD open question 3) | Privacy sign-off |
 | L-07 | P4-T3: final QA + PR description; the user opens the PR | Plan |
-| L-08 | Ask ACC whether students should get an email when new openings go live (user, 12 Oct; Shrut asks) | Today only the opt-in job alerts exist (F-19, off until `careers.alertEmailsEnabled`). A mail to everyone would be new work and must not reuse upstream `notifyOnNewPost` |
+| L-08 | Ask ACC whether students should get an email when new openings go live (user, 12 Oct; Shrut asks) | Job alerts (F-19) are built but hidden since 31 Oct (D-18); bringing them back is a small code change. A mail to everyone would be new work and must not reuse upstream `notifyOnNewPost` |
 
 ### Suggested feature order
 

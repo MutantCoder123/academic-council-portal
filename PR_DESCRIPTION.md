@@ -21,8 +21,6 @@ default**. While it is off, students see nothing new and every existing page beh
   show by default, and **Show all companies** lists every approved one.
 - **Share a link** to an opening. It is checked and processed automatically, and an admin reviews
   it before it appears.
-- **Job alerts by email** (daily / weekly, unsubscribe without logging in). These emails are off
-  until an admin turns them on.
 
 ## What career admins get
 
@@ -38,7 +36,6 @@ default**. While it is off, students see nothing new and every existing page beh
 - **Sources & Operations:** add job boards (Greenhouse, Lever, Ashby, SmartRecruiters, Workable),
   per-board keyword rules, health and run history, feature flags, AI-extraction status and usage,
   weekly usage numbers (counts only), an activity log, and alerts.
-- **Optional daily email** listing postings waiting for review (off by default).
 
 ## How it works
 
@@ -47,7 +44,6 @@ default**. While it is off, students see nothing new and every existing page beh
   - fetch the job boards 4× a day;
   - recheck liveness daily;
   - process student links every 10 minutes;
-  - send job alerts and review reminders daily (both off by default).
 - Board postings are filtered to India early-career roles and deduplicated across sources.
   **Nothing is published without an admin's approval.**
 - Student links are fetched with an SSRF guard: private / loopback addresses and odd ports are
@@ -55,6 +51,19 @@ default**. While it is off, students see nothing new and every existing page beh
   stored, not fetched. Pages without structured data go to an AI extraction step behind a provider
   switch: local Ollama, Groq or Gemini, chosen by env. AI output is verified against the page text
   by code, and the step can be turned off from Operations.
+
+## Built but hidden
+
+Three things are in the code but switched off, with no controls in the portal, until ACC decides
+whether it wants them:
+
+- job-alert emails to students (daily / weekly digests with a no-login unsubscribe);
+- a daily email to career admins about postings waiting for review;
+- a monthly spending cap for a billed Gemini key.
+
+Their settings can't be changed through the portal or the API, so this PR sends no email. The worker
+jobs run but do nothing, and the `SavedSearch` table stays empty. With a billed AI key the only limit
+in the portal is the daily call cap, so set a budget in the provider's console too.
 
 ## Changes to existing files
 
@@ -113,8 +122,8 @@ removed later.
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | Only for that provider; server-side only |
 | `DEV_SEED_PASSWORD` | Local development seed only; not needed in production |
 
-Existing variables reused: `SMTP_*` (alert / reminder emails), `CLIENT_URL` (links in emails),
-`SECRET_KEY` (keyed hash for weekly visitor counts).
+Existing variable reused: `SECRET_KEY` (keyed hash for weekly visitor counts). `SMTP_*` and
+`CLIENT_URL` are only used by the hidden emails below.
 
 ## Deploy
 
@@ -133,7 +142,7 @@ The full operating guide for maintainers and career admins is `docs/careers/SOP.
 
 1. Turn **Show Jobs & Internships to students** off in Operations: students immediately see nothing new, no
    redeploy needed.
-2. `docker compose stop fetcher-acc` stops all fetching and emails.
+2. `docker compose stop fetcher-acc` stops all fetching.
 3. The migrations are additive, so they can stay in place; the old code ignores the new tables and
    columns.
 
@@ -153,7 +162,8 @@ The full operating guide for maintainers and career admins is `docs/careers/SOP.
   dialogs, Escape, sideways overflow. It found ten small UI bugs, all fixed and re-checked.
   The UI was checked again by hand after merging `main`.
 - **Not verified yet:**
-  - Email delivery through a real SMTP server (checked only with nodemailer's JSON transport).
+  - Email delivery through a real SMTP server, for the hidden emails (checked only with nodemailer's
+    JSON transport).
   - A live Gemini call (the provider is unit-tested; testing used Groq).
 
 ## Security

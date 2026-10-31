@@ -179,3 +179,14 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   client code); no env values, no security findings; the 13 Oct UI-sweep checklist is section A10.
 - **Status:** Decided by the user (13 Oct 2026).
 
+## D-18 Job-alert emails, review reminders and the paid-key budget are hidden (31 Oct 2026)
+- **What the user decided:** remove "Email job alerts to students", "Gemini key is billed" and
+  "Remind career admins by email", by hiding them and keeping the code (chosen over deleting the
+  features), so emails can return if ACC wants them (L-08).
+- **What the AI chose:** also removed the Monthly LLM budget field (no effect without the billed
+  switch) and the students' Job alerts button (it would have said "not switched on yet" forever).
+  The four settings are `editable: false`, so the API refuses them too.
+- **Consequence:** a billed Gemini key has no spending cap in the portal, only the daily call limit.
+  The SOP and the PR description say so.
+- **Status:** Decided by the user (31 Oct 2026). This changes F-19, F-31 and part of the P1 budget work.
+
