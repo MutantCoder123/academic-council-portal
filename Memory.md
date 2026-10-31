@@ -19,7 +19,7 @@
 - **LLM provider:** three providers, chosen by env only: **Groq** `openai/gpt-oss-120b` (active for testing and the demo, user 11 Oct; `GROQ_API_KEY` rotated by the user 11 Oct), local **Ollama** `qwen2.5:7b`, **Gemini** `gemini-3.1-flash-lite` (built P1-T10b, live call waits for `GEMINI_API_KEY`, V-06). Keys only in the local `server-acc/.env`, never committed. `careers.llmEnabled` is on in the dev DB since 11 Oct.
 - **Local env working?** Yes. Postgres = `docker compose up -d postgres-acc` (container `acc-postgres`, port 5432, creds from the repo-root `.env`). API: `cd server-acc && npm run dev` (:3000). Client: `cd client-acc && npm run dev` (:5173).
 - **Dev logins:** `devstudent_2401cs98@iitp.ac.in` (STUDENT, CS, 2024) and `devadmin_2401ee97@iitp.ac.in` (CAREER_ADMIN, EE, 2024), password = the `DEV_SEED_PASSWORD` value in the local `server-acc/.env` (never write it in committed files).
-- **Tests:** `npm test` → 833 passed (66 files). Client: build ✓, `npx eslint src` 42 errors (new baseline after the 31 Oct merge: 36 + 6 in upstream's Research Vault files).
+- **Tests:** `npm test` → 836 passed (67 files). Client: build ✓, `npx eslint src` 42 errors (new baseline after the 31 Oct merge: 36 + 6 in upstream's Research Vault files).
 - **Blockers:** none.
 - **Verify later:** `verify_later.md` lists built-but-not-fully-checked items (V-01 real SMTP, V-02 Workable dedup, V-03 SmartRecruiters unknown id, V-04 merge from the company screen, V-05 season on older postings).
 
@@ -205,6 +205,9 @@
 - Upstream migrations can sort between ours by timestamp. `migrate deploy` applies them fine on a database that already has ours (tested 31 Oct on a copy of the dev DB). `prisma migrate dev` may object to the order: never accept a reset.
 
 - `deploy.yml` (upstream, on push to main) only pulls and rebuilds the website on the VM. Backend rebuild, `migrate deploy`, seed and the worker are manual; the backend runs no migrations on start. `docker compose restart` does not reload `env_file`; use `docker compose up -d <services>`.
+
+- Production deploy: `frontend-acc` serves the site; run migrations and the seed with `docker compose run --rm backend-acc …`, not on the VM host. No outbound proxy support in the fetchers (Node `fetch` ignores `HTTP_PROXY`), untested on the institute VM. `nginx-acc/` isn't in the repo.
+- A local `docker compose` needs an `smp/server/.env` to exist (an empty one is enough; it is gitignored). Remove it after.
 
 ## Verified facts (e.g. ATS response shapes, board tokens that work)
 
@@ -1091,4 +1094,11 @@ same job link again (tracking params) -> 200 "This link was already shared. Than
 - Checks: `http_hide` 7/7 (each of the four settings 400 and nothing changed; `submissionDailyLimit` still 200; Ops OK, budget not enforced); `careers:job -- alerts` and `reminder` both report switched off; dev DB had no stored "on" values and 0 saved searches; `npm test` 833; client build ✓; eslint 42 (unchanged), touched files 0.
 - Not browser-checked by the agent: the Operations switches card and the jobs page without the button (build only).
 - Next: the user's look at those two pages, push when asked, then the user opens the PR.
+
+### 2026-10-31, B-49 and deploy steps corrected (D-19, C-167, C-168)
+- Pre-deploy review on the real image: `docker build` on `node:20-alpine` (Node 20.20.2) ✓; all 66 test files passed inside it; no Node 21+ APIs; on a throwaway DB, through the image: `migrate deploy` ✓, seed ✓, `verifyBoard` over real HTTPS ✓, worker boot + `workerHealth` exit 0 ✓, API boot ✓.
+- Did: B-49 `4ca3b16` (test fails with the fix removed); SOP A2 / A7 / A9 and PR description rewritten; each new command run for real: `docker compose build backend-acc fetcher-acc frontend-acc` ✓, backup via `pg_dump` ✓ (474 KB dev dump), `docker compose run` for status (exit 1 while pending, normal), deploy ✓, seed ✓, `verifyBoard` ✓, on a throwaway DB (dropped). Test images removed. `docker compose up -d` itself wasn't run.
+- `npm test` 836 passed (67 files).
+- Unknown until the VM: outbound network / proxy, nginx timeout, production migration state, how deploys really happen.
+- Still open: the user's look at Sources & Ops and the jobs page (D-18 changes); push; the user opens the PR.
 

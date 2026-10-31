@@ -82,7 +82,7 @@ Everything new lives under `careers` paths (`server-acc/{routes,controllers,serv
 | `server-acc/prisma/schema.prisma` | Additions only (new models / enums / nullable columns); compared with current `main`, no existing line is removed or changed |
 | `server-acc/package.json` (+ lock) | Scripts `worker`, `test`, `careers:job`, `careers:seed`; deps `cheerio`, `fastest-levenshtein`, `node-cron`, `undici`, `zod`; dev dep `vitest` |
 | `server-acc/config/db.js` | Prisma `omit` so self-reported private fields (CPI, programme, graduation year, a senior's reported stipend / CTC / rounds / year) are never returned by any query unless asked for explicitly |
-| `server-acc/controllers/ForumController.js` | Optional `companyId` and optional reported numbers on add / edit post; `company` in the post list (+ open-roles count) |
+| `server-acc/controllers/ForumController.js` | Optional `companyId` and optional reported numbers on add / edit post; `company` in the post list (+ open-roles count). **Behaviour change:** the "new experience" email to all users now goes out only when an experience first goes live, not on every save of a published one |
 | `client-acc/src/App.jsx` | Routes for the new pages |
 | `client-acc/src/layout/DashboardLayout.jsx` | Sidebar entries (+ review count badge for career admins, new-jobs badge for students); the mobile sidebar button moves down so it no longer covers back links |
 | `client-acc/src/pages/CareerVaultuser/index.jsx` | Tabs, optional company picker and optional "numbers for juniors" on the share form, open-roles chip |
@@ -129,18 +129,31 @@ Existing variable reused: `SECRET_KEY` (keyed hash for weekly visitor counts). `
 
 The full operating guide for maintainers and career admins is `docs/careers/SOP.md`.
 
-**Merging is not enough.** The `Deploy on Institute VM` workflow only pulls the code and rebuilds the
-website, so the steps below must be run by hand on the VM. Until then the feature stays hidden. The
-AI step also needs an API key added to `server-acc/.env` on the server (see the SOP, section A3).
+**Merging is not enough.** The `Deploy on Institute VM` workflow only pulls the code and runs a client
+build, and the site is served by the `frontend-acc` container, so nothing new goes live until the
+steps below are run by hand on the VM, from the repo root. Run migrations through Docker as shown:
+the `.env` database address only works inside Docker.
 
-1. `cd server-acc && npm ci && npx prisma migrate deploy` (applies the 21 careers migrations, plus
-   any of `main`'s that are still pending).
-2. `npm run careers:seed` (setting defaults, the company list and 11 starter job boards; only
-   inserts what is missing, so it is safe to re-run).
-3. `docker compose up -d --build backend-acc fetcher-acc`.
-4. As a career admin, open **Sources & Ops** (the Operations page). Check that the Worker card says
+1. Back up the database:
+   `docker compose exec -T postgres-acc sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > ~/acc-backup-$(date +%F).sql`
+2. `docker compose build backend-acc fetcher-acc frontend-acc`
+3. `docker compose run --rm backend-acc npx prisma migrate status`: expect the 21 careers migrations
+   as pending, plus `doubt_forum` and `research_vault` if they are not live yet. Stop if it reports a
+   failed migration, or if those tables were created some other way.
+4. `docker compose run --rm backend-acc npx prisma migrate deploy`
+5. `docker compose run --rm backend-acc npm run careers:seed` (setting defaults, the company list and
+   11 starter job boards; only inserts what is missing, so it is safe to re-run).
+6. `docker compose up -d backend-acc fetcher-acc frontend-acc` (the backend and website restart, so
+   pick a quiet time).
+7. `docker compose run --rm fetcher-acc node scripts/careers/verifyBoard.js greenhouse stripe` checks
+   that the VM can reach job boards. There is no proxy support, so it needs outbound HTTPS.
+8. As a career admin, open **Sources & Ops** (the Operations page). Check that the Worker card says
    **Running**, run **Fetch all now** from Sources, review the queue, then turn on **Show Jobs &
    Internships to students**.
+
+The AI step needs an API key added to `server-acc/.env` on the server (SOP, section A3). `nginx-acc/`
+is not in the repo: **Add boards in bulk** and **Fill from link** can take over a minute, so check
+that `proxy_read_timeout` allows it.
 
 ## Roll back
 
@@ -152,8 +165,12 @@ AI step also needs an API key added to `server-acc/.env` on the server (see the 
 
 ## Testing
 
-- After merging `main`: `npm test` in `server-acc`: **833 tests** (66 files) pass, and `npm run build`
+- After merging `main`: `npm test` in `server-acc`: **836 tests** (67 files) pass, and `npm run build`
   in `client-acc` passes.
+- The production image (`node:20-alpine`) was built and tested: all test files pass inside it; the
+  backup, `migrate status`, `migrate deploy`, seed and `verifyBoard` commands above were run through
+  `docker compose` against a throwaway database; the worker starts and passes its health check, and
+  the API starts. The final `docker compose up` on the VM has not been run.
 - This PR adds no lint errors. Every client file it adds has 0, and the only error in a file it
   changes is the existing unused `err` in `Editor.jsx`. `npx eslint src` reports 42 in total: the
   existing 36 plus 6 in `main`'s Research Vault files.

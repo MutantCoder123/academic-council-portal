@@ -190,3 +190,10 @@ Status: **Accepted** = the user said OK; **Open** = still needs the user's answe
   The SOP and the PR description say so.
 - **Status:** Decided by the user (31 Oct 2026). This changes F-19, F-31 and part of the P1 budget work.
 
+## D-19 One condition changed in upstream's `editPost` (31 Oct 2026)
+- **What the user decided:** fix the repeat email, as a one-off exception to AI_Rules §4 for
+  `server-acc/controllers/ForumController.js` (this file was "P3 only").
+- **Change:** `notifyOnNewPost` runs only when the status changes to PUBLISHED. It changes behaviour
+  in an upstream flow, so the PR description calls it out.
+- **Status:** Decided by the user (31 Oct 2026). AI_Rules §4 itself is unchanged.
+

@@ -141,6 +141,7 @@
 | B-45 | Bulk add shows a green success toast when nothing was added and lines failed (UI sweep 13 Oct) | `BulkAddSourcesDialog.jsx` | Green only when added; error style when something failed; neutral otherwise | S |
 | B-46 | "Move back to candidates" says why it's refused only after confirming (UI sweep 13 Oct) | `CompanyDetail.jsx`, `getCompany` | `getCompany` returns `usage`; the confirm box lists what blocks it and disables the button | S |
 | B-47 | Company field in the admin experience editor styled like the student form and leaves a gap in the grid (UI sweep 13 Oct) | `ExperienceCompanyField.jsx`, student `CompanyPicker.jsx` | `plain` picker style; field spans two columns | S |
+| B-49 | Editing a published experience emails every user again; the new company field (B-33) makes that likely, because Publish Post is the only way to save a published one (pre-deploy review, 31 Oct) | upstream `ForumController.editPost`: `status === "PUBLISHED"` on every save | Email only when the status changes to PUBLISHED (D-19) | S |
 | B-48 | Admin company list stays open when its box scrolls under the sticky bar on Link experiences (UI sweep 13 Oct) | admin `CompanyPicker.jsx` | Close when the box is out of sight or covered | S |
 
 
@@ -177,6 +178,7 @@
 | B-45 | `7e00c71` | Browser: red toast with a failure, plain toast when all were already there (C-159) |
 | B-46 | `2063a7d` | Browser: Rubrik "Not possible yet: 3 live postings, 1 job board use it", button disabled; empty company enabled (C-160) |
 | B-47 | `5f68d0f` | Browser: white field, editor corners / focus ring, Company + Resume fill the row (C-161) |
+| B-49 | `4ca3b16` | 3 tests with the mailer mocked (draft → published emails once; published → published sends nothing and still saves); with the fix removed the test fails (C-167) |
 | B-48 | `287c45f` | Browser: list follows a small scroll, closes under the sticky bar; other admin pickers unchanged (C-162) |
 
 ---
